@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/BellTower/BellTower.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/BellTower.Tests/BellTower.Tests.csproj" />
+  </Folder>
+</Solution>

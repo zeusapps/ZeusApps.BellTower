@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <UseWindowsForms>true</UseWindowsForms>
+    <AssemblyName>bell-tower</AssemblyName>
+    <RootNamespace>BellTower</RootNamespace>
+    <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
+    <PublishSingleFile>true</PublishSingleFile>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+    <ApplicationIcon>Assets/bell-tower.ico</ApplicationIcon>
+  </PropertyGroup>
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.WindowsDesktop.App.WPF" />
+    <PackageReference Include="System.CommandLine" Version="2.0.13" />
+    <EmbeddedResource Include="Integration/BellTower.psm1" LogicalName="BellTower.Integration.BellTower.psm1" />
+    <EmbeddedResource Include="Assets/Tones/*.wav" LogicalName="BellTower.Assets.Tones.%(Filename)%(Extension)" />
+    <EmbeddedResource Include="Assets/bell-tower.ico" LogicalName="BellTower.Assets.bell-tower.ico" />
+  </ItemGroup>
+</Project>

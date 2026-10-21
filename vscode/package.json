@@ -1,0 +1,34 @@
+{
+  "name": "bell-tower",
+  "displayName": "Bell Tower Focus",
+  "description": "Local terminal registration and focusing for Bell Tower.",
+  "publisher": "zeusapps",
+  "version": "0.1.7",
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "main": "./extension.js",
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "extensionKind": [
+    "ui"
+  ],
+  "contributes": {
+    "configuration": {
+      "title": "Bell Tower",
+      "properties": {
+        "bellTower.executablePath": {
+          "type": "string",
+          "default": "bell-tower",
+          "description": "Path to the Bell Tower executable."
+        },
+        "bellTower.dataDirectory": {
+          "type": "string",
+          "default": "",
+          "description": "Optional Bell Tower data directory."
+        }
+      }
+    }
+  }
+}

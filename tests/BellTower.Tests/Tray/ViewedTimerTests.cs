@@ -1,0 +1,64 @@
+using BellTower.Core;
+using BellTower.Hosts;
+using BellTower.IO;
+using BellTower.Tests.Testing;
+using BellTower.Tray;
+using Xunit;
+
+namespace BellTower.Tests.Tray;
+
+public sealed class ViewedTimerTests
+{
+    [Fact]
+    public void ViewedWaitKeepsItsChipAndProviderStateButHidesItsTimerAcrossRestart()
+    {
+        using var workspace = new TestWorkspace();
+        var events = new EventStore(workspace.Paths);
+        var store = new StateStore(workspace.Paths);
+        var wait = TestWorkspace.Event(EventKind.Permission, DateTimeOffset.UtcNow.AddMinutes(-1), "blocked");
+        events.Publish(wait);
+        events.Publish(wait with { Id = Guid.NewGuid().ToString("N"), Provider = "codex" });
+        store.Drain();
+        store.MarkViewed(wait.Key, wait.Id);
+
+        var restored = new StateStore(workspace.Paths).Drain();
+        var session = restored.Sessions[wait.Key];
+        Assert.True(session.RequiresAttention(DateTimeOffset.UtcNow));
+        Assert.Equal(AttentionReason.Permission, session.Reason);
+        Assert.Equal(wait.At, session.Since);
+        Assert.Null(session.AcknowledgedEpisode);
+        var chips = Chips(workspace, restored);
+        Assert.Equal(2, chips.Count);
+        Assert.Empty(chips.Single(chip => chip.Key == wait.Key).Elapsed);
+        Assert.NotEmpty(chips.Single(chip => chip.Key != wait.Key).Elapsed);
+    }
+
+    [Fact]
+    public void DelayedNavigationCannotHideTheTimerOfANewerWait()
+    {
+        using var workspace = new TestWorkspace();
+        var events = new EventStore(workspace.Paths);
+        var store = new StateStore(workspace.Paths);
+        var started = DateTimeOffset.UtcNow.AddMinutes(-1);
+        var first = TestWorkspace.Event(EventKind.Permission, started, "first");
+        events.Publish(first);
+        store.Drain();
+        store.MarkViewed(first.Key, first.Id);
+        events.Publish(TestWorkspace.Event(EventKind.Prompt, started.AddSeconds(1)));
+        var second = TestWorkspace.Event(EventKind.Permission, started.AddSeconds(2), "second");
+        events.Publish(second);
+        store.Drain();
+
+        // The previous focus request finishes after the new episode has already arrived.
+        store.MarkViewed(first.Key, first.Id);
+        var restored = store.Read();
+        var chip = Assert.Single(Chips(workspace, restored));
+        Assert.Equal(second.Id, chip.Episode);
+        Assert.NotEmpty(chip.Elapsed);
+        Assert.True(restored.Sessions[first.Key].RequiresAttention(DateTimeOffset.UtcNow));
+    }
+
+    private static IReadOnlyList<ChipView> Chips(TestWorkspace workspace, AppState state) =>
+        new SessionViewFactory(new IdentityStore(workspace.Paths), new AttachmentStore(workspace.Paths), new Navigator(workspace.Paths))
+            .Chips(state.Sessions.Values, DateTimeOffset.UtcNow, new Dictionary<string, GitContext>());
+}
