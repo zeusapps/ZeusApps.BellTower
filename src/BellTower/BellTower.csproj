@@ -15,5 +15,6 @@
     <EmbeddedResource Include="Integration/BellTower.psm1" LogicalName="BellTower.Integration.BellTower.psm1" />
     <EmbeddedResource Include="Assets/Tones/*.wav" LogicalName="BellTower.Assets.Tones.%(Filename)%(Extension)" />
     <EmbeddedResource Include="Assets/bell-tower.ico" LogicalName="BellTower.Assets.bell-tower.ico" />
+    <PackageReference Include="Tomlyn" Version="2.10.1" />
   </ItemGroup>
 </Project>

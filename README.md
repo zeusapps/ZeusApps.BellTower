@@ -33,10 +33,11 @@ Code organization and formatting follow the [development conventions](docs/devel
 
 ## Attention behavior
 
-- Completion waits 20 seconds; observed permission, question, and terminal failure waits are actionable immediately.
+- Completion waits 20 seconds. Managed Codex permissions use verified human-approval status with a 5-second grace; other permission paths use a 15-second debounce. Questions and terminal failures remain immediate.
 - Background subagent/workflow/monitor activity suppresses completion, while foreground questions remain visible.
 - Left-click requests focus; successful chip navigation hides only its timer for the current wait. Right-click dismisses the chip.
 - The tray Sessions overview includes working sessions and allows manual name, change association, and role editing.
+- Supported successful OpenSpec operations update each session's change-derived title independently. Manual names take precedence; [session-title coverage and Codex limitations](docs/session-titles.md) describe the current trial.
 - Branch and linked-worktree names are supplementary context, shown in detail and tooltips.
 - Chips show `name · reason · HH:mm:ss` in one row. Time is elapsed waiting for that reason, including the completion grace.
 - Bundled default tones distinguish permission, question, completion and error. Choose a custom WAV or the classic chime from the tray, or restore event tones with `bell-tower tone --reset`.

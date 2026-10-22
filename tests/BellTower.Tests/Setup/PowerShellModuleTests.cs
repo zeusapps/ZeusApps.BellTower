@@ -36,7 +36,8 @@ public sealed class PowerShellModuleTests
             $hook = @{ session_id = 'native-test'; hook_event_name = 'SessionStart'; cwd = (Get-Location).Path } | ConvertTo-Json -Compress
             $hook | & {{PowerShellModule.Literal(BuiltApplication.Executable)}} event --provider {{provider}} --data-dir $env:BELLTOWER_DATA_DIR | Out-Null
             $details = @{ pid = $PID; shell = $env:BELLTOWER_SHELL_PID; name = $env:BELLTOWER_NAME; role = $env:BELLTOWER_ROLE; dedicated = $env:BELLTOWER_DEDICATED; arguments = $savedArguments; cwd = (Get-Location).Path }
-            [IO.File]::WriteAllText($SnapshotPath, ($details | ConvertTo-Json -Compress))
+            [IO.File]::WriteAllText($SnapshotPath + '.tmp', ($details | ConvertTo-Json -Compress))
+            Move-Item -LiteralPath ($SnapshotPath + '.tmp') -Destination $SnapshotPath
             $deadline = [DateTime]::UtcNow.AddSeconds(10)
             while (!(Test-Path -LiteralPath $ReleasePath) -and [DateTime]::UtcNow -lt $deadline) { Start-Sleep -Milliseconds 50 }
             exit 7
@@ -48,7 +49,8 @@ public sealed class PowerShellModuleTests
         {
             fakeExecutable = Path.Combine(workspace.Root, "fake-agent.cmd");
             File.WriteAllText(fakeExecutable, $"@echo off\r\npowershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File \"{fake}\" \"{snapshot}\" \"{release}\" %*\r\nexit /b %errorlevel%\r\n");
-            nativeArguments = ["two words", "--flag"];
+            // Exercise the explicit standalone path with this non-server fake agent.
+            nativeArguments = ["--no-daemon", "two words", "--flag"];
         }
         var script = Path.Combine(workspace.Root, "launch.ps1");
         var function = (provider == "claude" ? "Start-ClaudeCode" : "Start-Codex") + (legacyRole ? "PM" : "");
@@ -89,7 +91,8 @@ public sealed class PowerShellModuleTests
             using var agent = JsonDocument.Parse(File.ReadAllText(snapshot));
             var ancestors = ProcessProbe.Ancestors(agent.RootElement.GetProperty("pid").GetInt32());
             Assert.Contains(ancestors, ancestor => ancestor.Pid == process.Id);
-            Assert.DoesNotContain(ancestors, ancestor => ancestor.Name.Equals("bell-tower.exe", StringComparison.OrdinalIgnoreCase));
+            Assert.DoesNotContain(ancestors.TakeWhile(ancestor => ancestor.Pid != process.Id),
+                ancestor => ancestor.Name.Equals("bell-tower.exe", StringComparison.OrdinalIgnoreCase));
             Assert.Equal(process.Id.ToString(), agent.RootElement.GetProperty("shell").GetString());
             Assert.Equal("Task Ω", agent.RootElement.GetProperty("name").GetString());
             Assert.Equal(projectDirectory, agent.RootElement.GetProperty("cwd").GetString());

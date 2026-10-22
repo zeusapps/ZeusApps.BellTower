@@ -18,7 +18,7 @@ internal sealed class SetupCommand : Command
         var project = CommonOptions.Text("--project", "Add project-specific profiles starting in this directory; --remove removes only these project profiles.");
         var statusLine = new Option<bool>("--status-line")
         {
-            Description = "Enable the bundled Claude name chip."
+            Description = "Enable the Claude name chip and native Codex name/branch footer fields."
         };
         var remove = new Option<bool>("--remove")
         {

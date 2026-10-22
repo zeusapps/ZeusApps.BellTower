@@ -30,8 +30,9 @@ public sealed class PolicyTests
         var now = DateTimeOffset.UtcNow;
         var policy = new AlertPolicy(now);
         var s = Waiting(now.AddSeconds(1));
-        Assert.Single(policy.Collect([s], now.AddSeconds(2), false));
-        Assert.Empty(policy.Collect([s], now.AddSeconds(3), false));
+        Assert.Empty(policy.Collect([s], now.AddSeconds(15), false));
+        Assert.Single(policy.Collect([s], now.AddSeconds(16), false));
+        Assert.Empty(policy.Collect([s], now.AddSeconds(17), false));
     }
 
     [Fact]
@@ -40,8 +41,8 @@ public sealed class PolicyTests
         var now = DateTimeOffset.UtcNow;
         var s = Waiting(now.AddSeconds(1));
         var policy = new AlertPolicy(now);
-        Assert.Empty(policy.Collect([s], now.AddSeconds(2), true));
-        Assert.Empty(policy.Collect([s], now.AddSeconds(3), false));
+        Assert.Empty(policy.Collect([s], now.AddSeconds(16), true));
+        Assert.Empty(policy.Collect([s], now.AddSeconds(17), false));
     }
 
     [Fact]

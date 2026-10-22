@@ -8,7 +8,7 @@ public sealed class AlertPolicy(DateTimeOffset startedAt)
         var result = new List<SessionState>();
         foreach (var s in sessions)
         {
-            if (!s.RequiresAttention(now) || s.Episode is null)
+            if (!s.RequiresAttention(now) || s.Episode is null || s.NotificationDue is not { } due || due > now)
             {
                 continue;
             }
@@ -19,7 +19,7 @@ public sealed class AlertPolicy(DateTimeOffset startedAt)
                 continue;
             }
 
-            if (!muted && s.NotificationDue > startedAt)
+            if (!muted && due > startedAt)
             {
                 result.Add(s);
             }

@@ -13,16 +13,32 @@ Bell Tower SHALL show one chip per actionable, unacknowledged session in a topmo
 - **WHEN** one session is working and another has an actionable wait
 - **THEN** only the waiting session appears in the strip and displaying it preserves the user's current keyboard focus
 
-### Requirement: Completion grace and immediate waits
-Bell Tower SHALL delay completion attention for 20 seconds after becoming eligible. Confirmed permission, question, and terminal error waits SHALL become actionable immediately. A completion that resolves before its grace expires SHALL NOT create an alert.
+### Requirement: Completion and permission grace
+Bell Tower SHALL delay completion attention for 20 seconds after becoming eligible. For Codex sessions with fresh verified owning-runtime status, permission attention SHALL require a confirmed human approval wait and a 5-second grace from confirmation. Without such verification, permission attention SHALL use a 15-second hook debounce. Permission waits SHALL be tracked immediately. Questions and terminal errors SHALL become actionable immediately. A wait that resolves before grace expires SHALL NOT alert, duplicate observations SHALL NOT extend grace, and distinct episodes SHALL receive independent audio deadlines.
 
 #### Scenario: A new prompt arrives during grace
 - **WHEN** completion has been pending for fewer than 20 seconds and the user submits another prompt
 - **THEN** no completion chip or sound is produced for that completed turn
 
 #### Scenario: Permission is required
-- **WHEN** the provider confirms an outstanding permission prompt
-- **THEN** the session becomes eligible for a chip and sound without the completion grace
+- **WHEN** a verified human approval remains pending for 5 seconds, or an unverified hook wait remains outstanding for 15 seconds
+- **THEN** the session becomes eligible for a chip and sound while its timer retains the actual wait start
+
+#### Scenario: Permission is automatically approved
+- **WHEN** correlated resumption or a result resolves a permission request during its applicable grace
+- **THEN** that request creates no chip or sound for either provider
+
+#### Scenario: A managed Codex command is automatically reviewed or already executing
+- **WHEN** the verified owning runtime reports no pending human approval while a permission hook wait is still recorded
+- **THEN** Bell Tower suppresses permission attention without waiting for the tool result or answering an approval request
+
+#### Scenario: Native approval verification becomes unavailable
+- **WHEN** the runtime is unavailable, its thread status is unknown, or its verification expires
+- **THEN** Bell Tower uses the explicit 15-second hook fallback without treating cached state as confirmation
+
+#### Scenario: A parallel permission request resolves quickly
+- **WHEN** a newer permission request resolves during grace while an older request remains outstanding
+- **THEN** the older wait retains its original grace and notification receipt without being silenced or reannounced
 
 ### Requirement: Per-episode acknowledgment
 Right-clicking a chip SHALL acknowledge only its current attention episode and hide that chip. A later resolved-then-new wait or a distinct new blocker at the displayed attention priority SHALL create a fresh episode. Metadata refreshes and duplicate observations of the same wait SHALL NOT resurrect an acknowledged episode.
@@ -36,7 +52,7 @@ Right-clicking a chip SHALL acknowledge only its current attention episode and h
 - **THEN** a fresh chip is eligible under the applicable timing rule
 
 ### Requirement: Silent restoration
-Bell Tower SHALL restore already-due attention after a tray restart without playing catch-up sound. A wait that became due while the tray was stopped SHALL also restore silently. If a restored completion grace has not elapsed, Bell Tower SHALL retain its remaining grace.
+Bell Tower SHALL restore already-due attention after a tray restart without playing catch-up sound. A wait that became due while the tray was stopped SHALL also restore silently. If a restored completion or permission grace has not elapsed, Bell Tower SHALL retain its remaining grace.
 
 #### Scenario: A wait becomes due while Bell Tower is stopped
 - **WHEN** Bell Tower starts and finds that the persisted wait is already due for a live session

@@ -4,7 +4,17 @@ The user requested archive and commit after reviewing live acceptance. These ite
 
 ## Repeated permission notifications
 
+Review verification on 2026-10-22: all 276 .NET tests and 8 bridge tests pass, along with formatting, the Release build, and strict OpenSpec validation. Windows desktop/process fixtures require a run outside the sandbox; the sandbox-only run could not discover the disposable automation tabs. Permission verification now checks up to four sessions concurrently and only suppresses an overdue fallback during the first check of each attachment/episode, so retries cannot repeatedly hide the chip. Restoring an older blocker preserves its dismissed/viewed state. Footer setup uses TOML serialization to preserve Unicode strings, and runtime-host cleanup removes local records/tokens even when startup or output draining fails. The broader live acceptance gaps below remain open.
+
 Nonblocking by user decision. The original report was a missing second notification after approval of the first request. Version 0.1.7 normalizes shell/patch command correlation across hook stages and gives distinct new blockers fresh notification episodes. Automated regressions pass; the user has not repeated the actual add/commit approval flow and intends to report any remaining problem separately.
+
+The subsequent auto-approval report adds a five-second permission grace for both providers, covering chips and audio. Requests resolved within the grace never alert; a genuinely outstanding request retains its own deadline and notification receipt. Repeated observations do not extend the delay, and an auto-approved parallel request neither reannounces nor silences an older wait. Automated timing/correlation/restart coverage is separate from live provider acceptance.
+
+The user still observed a notification after the first debounce trial. The synthetic test had supplied a resumption/result during five seconds, but Codex's permission hook runs before automatic review and does not itself confirm that a human is needed. Managed Codex now gates attention with the owning runtime's `waitingOnApproval` status and starts five-second grace only on human-wait confirmation. Hook-only fallback was raised to fifteen seconds and tested with a result delayed twelve seconds. The current real resumed Codex runtime reported no pending human approval through the metadata API. Fallback remains timing-based and can still produce false positives when review/results exceed fifteen seconds; Claude's actual automatic-review behavior remains unverified.
+
+Corrected verification: all 271 .NET tests, formatting, and strict attention-spec validation pass. A read-only 18-second probe against the user's existing owning runtime kept an otherwise overdue in-memory permission fixture suppressed and confirmed the actual native name `follow-openspec-session-titles`. No synthetic permission event was written into production state. The corrected tray was installed at the same registered path while retaining the live Codex runtime. The earlier isolated "silent" tray test did intentionally display a synthetic pending-permission chip; silent referred to its audio sink, so that visible test may have contributed to the user's observation.
+
+Permission-debounce verification on 2026-10-22: all 257 .NET tests and 8 bridge tests pass, along with formatting and strict validation of the attention-notifications specification. Tests use synthetic provider observations and silent sinks; actual Claude/Codex auto-approval timing remains a live-use check. One unrelated font-layout assertion failed on an earlier full run, then passed in isolation and in the final complete run.
 
 ## Display and RDP resizing
 
@@ -12,7 +22,7 @@ Nonblocking by user decision. Bounds-clamping and layout checks are automated; l
 
 ## Automatic change naming and worktree association
 
-Deferred scope. Current names use an explicit manual name, explicit change association or directory fallback. Git context reflects the recorded session directory. A future integration should update the correct session when an agent chooses a change or works in a different worktree, preserve manual overrides and remain independent of personal mods and WorkLog. See the archived change's handoff.md for candidate standalone integration approaches.
+The `follow-openspec-session-titles` change implements supported literal OpenSpec selection, isolated by provider/session, with manual-name precedence and atomic updates. The user-approved runtime extension adds one dedicated authenticated Codex runtime per new managed local launch. Isolated live TUI trials verified switches, native rename pause/resume, parallel names, a real linked-worktree label with branch, and shared backend/shell console membership. See [session titles](session-titles.md). Authenticated tool-hook captures and the full Claude/VS Code/Windows Terminal matrix remain open; the native trials used dummy credentials and explicitly supplied Bell Tower metadata, without model turns.
 
 ## Retained hook fixtures and rare scenarios
 

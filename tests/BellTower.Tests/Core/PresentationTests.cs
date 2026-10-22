@@ -8,6 +8,17 @@ namespace BellTower.Tests.Core;
 public sealed class PresentationTests
 {
     [Fact]
+    public void CodexNameAddsOnlyLinkedWorktreeAndReservesSpaceForItsLabel()
+    {
+        Assert.Equal("Task", SessionPresentation.CodexName("Task", new("branch")));
+        Assert.Equal("Task | worktree: checkout-two", SessionPresentation.CodexName("Task", new("branch", "checkout-two")));
+        var longName = SessionPresentation.CodexName(new string('n', 100), new("branch", "checkout-two"));
+        Assert.Equal(100, longName.Length);
+        Assert.EndsWith(" | worktree: checkout-two", longName);
+        Assert.DoesNotContain('\u001b', SessionPresentation.CodexName("Task\u001b", new(null, "tree\n")));
+    }
+
+    [Fact]
     public void TitleKeepsTaskNameSeparateFromBranchAndWorktree()
     {
         Assert.Equal("Fix navigation | feature/focus | worktree: focus-tree", SessionPresentation.Title("Fix navigation", new("feature/focus", "focus-tree")));

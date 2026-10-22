@@ -18,7 +18,7 @@ function Invoke-BellTowerSession {
     $environmentNames = @(
         'BELLTOWER_ATTACHMENT', 'BELLTOWER_DATA_DIR', 'BELLTOWER_NAME',
         'BELLTOWER_CHANGE', 'BELLTOWER_ROLE', 'BELLTOWER_SHELL_PID',
-        'BELLTOWER_DEDICATED', 'BELLTOWER_MANAGED_TITLE', 'BELLTOWER_MANAGED_BACKGROUND'
+        'BELLTOWER_DEDICATED', 'BELLTOWER_MANAGED_TITLE', 'BELLTOWER_MANAGED_BACKGROUND', 'BELLTOWER_CODEX_TOKEN'
     )
     $previousEnvironment = @{}
     foreach ($variableName in $environmentNames) {
@@ -27,6 +27,7 @@ function Invoke-BellTowerSession {
     $originalTitle = $null
     $originalLocation = Get-Location
     $managedBackground = $false
+    $ownsRuntime = $false
     $agentExitCode = 1
     $attachmentId = [Guid]::NewGuid().ToString('N')
     try {
@@ -44,8 +45,10 @@ function Invoke-BellTowerSession {
         $env:BELLTOWER_DEDICATED = $null
         $env:BELLTOWER_MANAGED_TITLE = $null
         $env:BELLTOWER_MANAGED_BACKGROUND = $null
+        $env:BELLTOWER_CODEX_TOKEN = $null
 
         $nativeArguments = @($AgentArguments)
+        $standalone = $nativeArguments -contains '--no-daemon'
         $remote = @($nativeArguments | Where-Object { $_ -eq '--remote' -or $_ -like '--remote=*' }).Count -gt 0
         if ($Provider -eq 'codex' -and !$remote) {
             if ($nativeArguments -notcontains '--no-daemon') {
@@ -90,7 +93,23 @@ function Invoke-BellTowerSession {
             Write-Warning 'Bell Tower is unavailable. The agent will still run.'
         }
 
-        # The native agent is a child of this PowerShell process, never of bell-tower.exe.
+        if ($Provider -eq 'codex' -and !$remote -and !$standalone) {
+            try {
+                $runtimeJson = & $script:BellTowerExecutable prepare-codex-runtime --attachment $attachmentId --executable $agent.Source --data-dir $script:BellTowerDataDirectory | Out-String
+                if ($LASTEXITCODE -eq 0) {
+                    $runtime = $runtimeJson | ConvertFrom-Json
+                    if ($runtime.endpoint -match '^ws://127\.0\.0\.1:\d+$' -and (Test-Path -LiteralPath $runtime.tokenPath)) {
+                        $env:BELLTOWER_CODEX_TOKEN = [IO.File]::ReadAllText($runtime.tokenPath)
+                        $ownsRuntime = $true
+                        $nativeArguments = @('--remote', $runtime.endpoint, '--remote-auth-token-env', 'BELLTOWER_CODEX_TOKEN') + @($nativeArguments | Where-Object { $_ -ne '--no-daemon' })
+                    }
+                }
+            } catch {
+                Write-Warning 'Codex native name updates are unavailable. Starting a standalone session.'
+            }
+        }
+
+        # The interactive native agent remains a child of this PowerShell process.
         & $agent.Source @nativeArguments
         $agentExitCode = $LASTEXITCODE
     } finally {
@@ -98,6 +117,13 @@ function Invoke-BellTowerSession {
             & $script:BellTowerExecutable detach --attachment $attachmentId --data-dir $script:BellTowerDataDirectory | Out-Null
         } catch {
             # Hook/liveness reconciliation remains available when Bell Tower is unavailable.
+        }
+        if ($ownsRuntime) {
+            try {
+                & $script:BellTowerExecutable stop-codex-runtime --attachment $attachmentId --data-dir $script:BellTowerDataDirectory | Out-Null
+            } catch {
+                # The runtime also ends if its owning shell exits.
+            }
         }
         if ($null -ne $originalTitle) {
             try { $Host.UI.RawUI.WindowTitle = $originalTitle } catch { }

@@ -45,6 +45,14 @@ public sealed class HookIngestor(DataPaths paths)
             dedicated ? IdentityText.Optional(Environment.GetEnvironmentVariable("BELLTOWER_NAME")) : null,
             dedicated ? IdentityText.Optional(Environment.GetEnvironmentVariable("BELLTOWER_CHANGE")) : null,
             dedicated ? IdentityText.Optional(Environment.GetEnvironmentVariable("BELLTOWER_ROLE")) : null, initialPalette);
+        try
+        {
+            new OpenSpecSelectionObserver(paths).Observe(observation.Key, observation.Directory, input);
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or ArgumentException or JsonException)
+        {
+            new LocalLog(paths).Write("selection-unavailable");
+        }
         new EventStore(paths).Publish(observation);
         AtomicFile.Write(Path.Combine(paths.Root, provider + "-observed.json"), IO.Json.Encode(new
         {

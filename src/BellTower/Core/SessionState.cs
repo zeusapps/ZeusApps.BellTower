@@ -21,11 +21,39 @@ public sealed class SessionState
     public DateTimeOffset? EpisodeStarted { get; set; }
     public string? AcknowledgedEpisode { get; set; }
     public string? ViewedEpisode { get; set; }
+    [System.Text.Json.Serialization.JsonIgnore]
+    public bool? NativePermissionPending { get; set; }
+    [System.Text.Json.Serialization.JsonIgnore]
+    public DateTimeOffset? NativePermissionSince { get; set; }
     public AttentionReason? Reason => Waits.Count == 0 ? null : Waits.Max(w => w.Reason);
     public DateTimeOffset? Since => Reason is { } reason ? Waits.Where(w => w.Reason == reason).Min(w => w.Since) : null;
-    public DateTimeOffset? Due => Since is { } since ? since + (Reason == AttentionReason.Done ? TimeSpan.FromSeconds(20) : TimeSpan.Zero) : null;
-    public DateTimeOffset? NotificationDue => EpisodeStarted is { } started ?
-        started + (Reason == AttentionReason.Done ? TimeSpan.FromSeconds(20) : TimeSpan.Zero) : Due;
+    private TimeSpan Grace => Reason switch
+    {
+        AttentionReason.Done => TimeSpan.FromSeconds(20),
+        AttentionReason.Permission => TimeSpan.FromSeconds(NativePermissionPending == true ? 5 : 15),
+        _ => TimeSpan.Zero
+    };
+    public DateTimeOffset? Due => PermissionStart(Since) is { } since ? since + Grace : null;
+    private DateTimeOffset? PermissionStart(DateTimeOffset? started) => Reason != AttentionReason.Permission ? started :
+        NativePermissionPending == false ? null : NativePermissionSince is { } confirmed && started < confirmed ? confirmed : started;
+    public DateTimeOffset? NotificationDue
+    {
+        get
+        {
+            // A newer auto-approved request must not announce an older outstanding wait.
+            // Legacy snapshots have no per-wait episode, so use their recorded start.
+            if (Reason == AttentionReason.Permission && EpisodeStarted is { } permissionStarted &&
+                !Waits.Any(wait => wait.Reason == AttentionReason.Permission &&
+                    (wait.Episode == Episode || wait.Episode is null && wait.Since == permissionStarted)))
+            {
+                return null;
+            }
+            // Keep announcement eligibility anchored to the original observation so
+            // fresh runtime verification cannot replay a restored wait after restart.
+            return EpisodeStarted is { } started && (Reason != AttentionReason.Permission || NativePermissionPending != false)
+                ? started + Grace : Due;
+        }
+    }
 
     public bool RequiresAttention(DateTimeOffset now) => !Ended && Episode != AcknowledgedEpisode && Due is { } due && due <= now;
     public string Activity => Ended ? "ended" : Background.Count != 0 ? "background work" : ForegroundStopped ? "idle" : "working";

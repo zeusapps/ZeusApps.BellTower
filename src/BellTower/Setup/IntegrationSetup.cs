@@ -31,7 +31,10 @@ public sealed class IntegrationSetup(DataPaths paths, string executable, string?
         {
             throw new ArgumentException("This project has no registered Bell Tower profiles.");
         }
-        var ownership = new IntegrationOwnership(new(previous.Commands), new(previous.StatusLines));
+        var ownership = new IntegrationOwnership(new(previous.Commands), new(previous.StatusLines))
+        {
+            CodexFooters = new(previous.CodexFooters)
+        };
         var editor = new ProviderSettingsEditor(new HookCommandBuilder(executable, paths));
         var changes = new List<FileChange>();
         var actions = new List<SetupAction>();
@@ -48,6 +51,21 @@ public sealed class IntegrationSetup(DataPaths paths, string executable, string?
             if (before != after && (!remove || before is not null))
             {
                 changes.Add(new(path, before, after));
+            }
+            if (provider == "codex" && (statusLine || desktop || remove))
+            {
+                var configPath = Path.Combine(Path.GetDirectoryName(path)!, "config.toml");
+                var configBefore = File.Exists(configPath) ? File.ReadAllText(configPath) : null;
+                var configAfter = CodexFooterSettings.Edit(configPath, configBefore, previous.CodexFooters,
+                    ownership.CodexFooters, remove, notes);
+                if (configBefore != configAfter)
+                {
+                    changes.Add(new(configPath, configBefore, configAfter));
+                }
+                if (!remove)
+                {
+                    notes.Add("Codex footer fields: native chat name and branch. New managed local sessions use a dedicated authenticated runtime for live name updates; existing sessions and standalone --no-daemon launches are unchanged.");
+                }
             }
         }
 

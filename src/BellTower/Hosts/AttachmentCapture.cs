@@ -22,6 +22,10 @@ public static class AttachmentCapture
         var kind = Environment.GetEnvironmentVariable("TERM_PROGRAM") == "vscode" ? "vscode" :
             Environment.GetEnvironmentVariable("WT_SESSION") is not null ? "windows-terminal" : "unknown";
         var window = ancestors.FirstOrDefault(a => a.Name.Equals("WindowsTerminal.exe", StringComparison.OrdinalIgnoreCase));
+        if (window.Pid == 0 && shell.Pid > 0)
+        {
+            window = ProcessProbe.Ancestors(shell.Pid).FirstOrDefault(a => a.Name.Equals("WindowsTerminal.exe", StringComparison.OrdinalIgnoreCase));
+        }
         var agentIdentity = ProcessProbe.Identify(agent.Pid);
         var id = Environment.GetEnvironmentVariable("BELLTOWER_ATTACHMENT") ??
             (agentIdentity is { } process ? $"{provider}-{process.Pid}-{process.StartedUtcTicks}" : Guid.NewGuid().ToString("N"));

@@ -24,6 +24,7 @@ internal static class CliApplication
         root.Subcommands.Add(new StatusLineCommand(dataDirectory));
         root.Subcommands.Add(new ListCommand(dataDirectory));
         root.Subcommands.Add(new RenameCommand(dataDirectory));
+        root.Subcommands.Add(new NativeSyncCommand(dataDirectory));
         root.Subcommands.Add(new FocusCommand(dataDirectory));
         root.Subcommands.Add(new SetupCommand(dataDirectory));
         root.Subcommands.Add(new ImportCommand(dataDirectory));
@@ -35,6 +36,9 @@ internal static class CliApplication
         root.Subcommands.Add(new SyncTitleCommand(dataDirectory));
         root.Subcommands.Add(new FocusTerminalCommand(dataDirectory));
         root.Subcommands.Add(new PrepareSessionCommand(dataDirectory));
+        root.Subcommands.Add(new PrepareCodexRuntimeCommand(dataDirectory));
+        root.Subcommands.Add(new CodexRuntimeHostCommand(dataDirectory));
+        root.Subcommands.Add(new StopCodexRuntimeCommand(dataDirectory));
         root.Subcommands.Add(new ToneCommand(dataDirectory));
         root.Options.OfType<VersionOption>().Single().Action = new ApplicationVersionAction();
         // Keep invocation synchronous so the tray runs on Program's STA thread.

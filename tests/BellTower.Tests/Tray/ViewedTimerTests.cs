@@ -9,6 +9,44 @@ namespace BellTower.Tests.Tray;
 
 public sealed class ViewedTimerTests
 {
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void RestoringAnOlderWaitPreservesItsViewedAndDismissedState(bool dismiss)
+    {
+        using var workspace = new TestWorkspace();
+        var events = new EventStore(workspace.Paths);
+        var store = new StateStore(workspace.Paths);
+        var first = TestWorkspace.Event(EventKind.Permission, DateTimeOffset.UtcNow.AddMinutes(-1), "first");
+        events.Publish(first);
+        store.Drain();
+        store.MarkViewed(first.Key, first.Id);
+        if (dismiss)
+        {
+            store.Acknowledge(first.Key);
+        }
+        var second = TestWorkspace.Event(EventKind.Permission, first.At.AddSeconds(1), "second");
+        events.Publish(second);
+        store.Drain();
+        store.MarkViewed(second.Key, second.Id);
+        store.Acknowledge(second.Key);
+        events.Publish(second with { Id = Guid.NewGuid().ToString("N"), Kind = EventKind.ToolEnd, At = second.At.AddSeconds(1) });
+
+        var restored = new StateStore(workspace.Paths).Drain();
+        var session = restored.Sessions[first.Key];
+        Assert.Equal(first.Id, session.Episode);
+        Assert.Equal(first.Id, session.ViewedEpisode);
+        Assert.Equal(dismiss ? first.Id : null, session.AcknowledgedEpisode);
+        if (dismiss)
+        {
+            Assert.Empty(Chips(workspace, restored));
+        }
+        else
+        {
+            Assert.Empty(Assert.Single(Chips(workspace, restored)).Elapsed);
+        }
+    }
+
     [Fact]
     public void ViewedWaitKeepsItsChipAndProviderStateButHidesItsTimerAcrossRestart()
     {

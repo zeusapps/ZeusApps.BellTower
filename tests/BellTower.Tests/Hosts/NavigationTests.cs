@@ -64,7 +64,7 @@ public sealed class NavigationTests
         var store = new StateStore(w.Paths);
         var attachment = new Attachment("attachment-1", "claude", process, new("vscode", process), w.Root, DateTimeOffset.UtcNow);
         new AttachmentStore(w.Paths).Save(attachment);
-        new EventStore(w.Paths).Publish(TestWorkspace.Event(EventKind.Permission));
+        new EventStore(w.Paths).Publish(TestWorkspace.Event(EventKind.Permission, DateTimeOffset.UtcNow.AddSeconds(-15)));
         store.Drain();
         AtomicFile.Write(Path.Combine(w.Paths.Hosts, "window.json"), BellTower.IO.Json.Encode(new HostRegistration("window", process, DateTimeOffset.UtcNow, [process.Pid])));
         var focus = new Navigator(w.Paths).FocusAsync(attachment);

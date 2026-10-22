@@ -20,7 +20,6 @@ public sealed class ReducerTests
     }
 
     [Theory]
-    [InlineData(EventKind.Permission, AttentionReason.Permission)]
     [InlineData(EventKind.Question, AttentionReason.Question)]
     [InlineData(EventKind.Failure, AttentionReason.Error)]
     public void ForegroundWaitsAreImmediate(EventKind kind, AttentionReason reason)
@@ -28,6 +27,15 @@ public sealed class ReducerTests
         Apply(TestWorkspace.Event(kind, start));
         Assert.Equal(reason, Session.Reason);
         Assert.True(Session.RequiresAttention(start));
+    }
+
+    [Fact]
+    public void PermissionHasFifteenSecondGraceWithoutChangingItsWaitStart()
+    {
+        Apply(TestWorkspace.Event(EventKind.Permission, start));
+        Assert.False(Session.RequiresAttention(start.AddMilliseconds(14999)));
+        Assert.True(Session.RequiresAttention(start.AddSeconds(15)));
+        Assert.Equal(start, Session.Since);
     }
 
     [Fact]
@@ -235,7 +243,7 @@ public sealed class ReducerTests
         Apply(TestWorkspace.Event(EventKind.ToolEnd, start.AddSeconds(1), "one"));
         Apply(TestWorkspace.Event(EventKind.Permission, start.AddSeconds(2), "two"));
         Assert.NotEqual(old, Session.Episode);
-        Assert.True(Session.RequiresAttention(start.AddSeconds(2)));
+        Assert.True(Session.RequiresAttention(start.AddSeconds(17)));
     }
 
     [Fact]

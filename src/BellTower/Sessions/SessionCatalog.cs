@@ -19,29 +19,40 @@ public sealed class SessionCatalog
     }
 
     public IReadOnlyList<SessionSummary> List() => sessions.Read().Sessions.Values.Where(session => !session.Ended)
-        .Select(session => new SessionSummary(session.Key, identities.Get(session.Key, session.Directory), session.Activity,
-            session.Reason, session.Since, navigator.Precision(attachments.Get(session.AttachmentId)))).ToArray();
+        .Select(session =>
+        {
+            var identity = identities.Get(session.Key, session.Directory);
+            return new SessionSummary(session.Key, identity, session.Activity,
+                session.Reason, session.Since, navigator.Precision(attachments.Get(session.AttachmentId)))
+            {
+                NativePresentationName = session.Provider == "codex" ? SessionPresentation.CodexName(identity.Name, new GitReader().Read(session.Directory)) : null,
+                NativeNameSynchronization = session.Provider == "codex" ? identity.NativeSyncStatus : null
+            };
+        }).ToArray();
     public SessionIdentity Rename(string key, string? name, string? change, string? role)
     {
         var session = Find(key);
-        var identity = identities.Get(key, session.Directory);
-        if (name is not null)
+        return identities.Update(key, session.Directory, identity =>
         {
-            identity.ManualName = IdentityText.Optional(name);
-        }
+            if (name is not null)
+            {
+                identity.ManualName = IdentityText.Optional(name);
+            }
 
-        if (change is not null)
-        {
-            identity.Change = IdentityText.Optional(change);
-        }
+            if (change is not null)
+            {
+                identity.Change = IdentityText.Optional(change);
+                identity.SelectionOperation = null;
+                identity.SelectionRoot = null;
+                identity.SelectionStore = null;
+            }
 
-        if (role is not null)
-        {
-            identity.Role = IdentityText.Optional(role);
-        }
-
-        identities.Save(identity);
-        return identity;
+            if (role is not null)
+            {
+                identity.Role = IdentityText.Optional(role);
+            }
+            return name is not null || change is not null || role is not null;
+        });
     }
 
     public Task<FocusResult> FocusAsync(string key) => navigator.FocusAsync(attachments.Get(Find(key).AttachmentId));

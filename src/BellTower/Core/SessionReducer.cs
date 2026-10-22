@@ -62,6 +62,20 @@ public static class SessionReducer
             session.Directory = observation.Directory;
         }
 
+        for (var index = 0; index < session.Waits.Count; index++)
+        {
+            var wait = session.Waits[index];
+            if (session.Episode is not null && (wait.Episode == session.Episode ||
+                wait.Episode is null && wait.Since == session.EpisodeStarted))
+            {
+                session.Waits[index] = wait with
+                {
+                    Episode = session.Episode,
+                    Acknowledged = wait.Acknowledged || session.AcknowledgedEpisode == session.Episode,
+                    Viewed = wait.Viewed || session.ViewedEpisode == session.Episode
+                };
+            }
+        }
         var hadAttention = session.Waits.Count != 0;
         if (observation.OperationId is not null && observation.Kind is EventKind.ToolStart or EventKind.Question)
         {
@@ -118,6 +132,16 @@ public static class SessionReducer
         {
             session.Episode = observation.Id;
             session.EpisodeStarted = observation.At;
+        }
+        else if (session.Waits.All(wait => wait.Episode != session.Episode) &&
+            session.Waits.Where(wait => wait.Reason == session.Reason).MaxBy(wait => wait.Since) is { Episode: not null } remaining)
+        {
+            // Resolving a newer request restores the outstanding blocker's original
+            // grace/announcement receipt, rather than giving that older wait a new alert.
+            session.Episode = remaining.Episode;
+            session.EpisodeStarted = remaining.Since;
+            session.AcknowledgedEpisode = remaining.Acknowledged ? remaining.Episode : null;
+            session.ViewedEpisode = remaining.Viewed ? remaining.Episode : null;
         }
     }
 
@@ -339,7 +363,7 @@ public static class SessionReducer
         }
 
         var previousReason = session.Reason;
-        session.Waits.Add(new(reason, observation.At, operationId, observation.OperationFingerprint, candidates));
+        session.Waits.Add(new(reason, observation.At, operationId, observation.OperationFingerprint, candidates, observation.Id));
         if (previousReason is null || reason >= previousReason.Value)
         {
             // A distinct blocker needs a new notification even if an older wait is unresolved.

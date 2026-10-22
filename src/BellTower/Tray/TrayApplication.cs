@@ -1,6 +1,8 @@
+using BellTower.Cli;
 using BellTower.Core;
 using BellTower.Hosts;
 using BellTower.IO;
+using BellTower.Sessions;
 
 namespace BellTower.Tray;
 
@@ -23,6 +25,8 @@ public sealed class TrayApplication : ApplicationContext
     private readonly Navigator navigation;
     private readonly SessionViewFactory views;
     private readonly TerminalTitlePump titles;
+    private readonly CodexNamePump nativeNames;
+    private readonly CodexPermissionPump permissions;
     private readonly AlertPolicy policy = new(DateTimeOffset.UtcNow);
     private readonly AudioQueue audio;
     private AppState state = new();
@@ -41,10 +45,14 @@ public sealed class TrayApplication : ApplicationContext
         navigation = new(paths);
         views = new(identities, attachments, navigation);
         titles = new(paths);
+        nativeNames = new(paths);
+        permissions = new(paths);
         config = configuration.Read();
         overview.Icon = appIcon;
         audio = new(silent ? new SilentAudioSink() : new WindowsAudioSink(new ToneLibrary(paths)), IsCurrentAlert, () => config);
         var menu = new ContextMenuStrip();
+        menu.Items.Add(new ToolStripMenuItem("Bell Tower v" + ApplicationInfo.Version) { Enabled = false });
+        menu.Items.Add(new ToolStripSeparator());
         menu.Items.Add("Sessions", null, (_, _) =>
         {
             overview.Show();
@@ -115,7 +123,24 @@ public sealed class TrayApplication : ApplicationContext
         strip.Acknowledge += key => store.Acknowledge(key);
         strip.Navigate += key => Navigate(key, hideTimer: true);
         overview.Navigate += key => Navigate(key, hideTimer: false);
-        overview.SaveIdentity += identity => identities.Save(identity);
+        overview.SaveIdentity += (key, name, change, role) => new SessionCatalog(paths).Rename(key, name, change, role);
+        overview.SetNativeSync += (key, enabled) =>
+        {
+            if (state.Sessions.TryGetValue(key, out var session))
+            {
+                _ = Task.Run(() =>
+                {
+                    try
+                    {
+                        new CodexNameService(paths).SetEnabled(session, enabled);
+                    }
+                    catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or System.Text.Json.JsonException)
+                    {
+                        new LocalLog(paths).Write("native-name-control-failed");
+                    }
+                });
+            }
+        };
         var position = AtomicFile.Read<StripPosition>(paths.Position);
         strip.Location = position is null ? new Point(30, 30) : new Point(position.X, position.Y);
         strip.PositionChanged += p => AtomicFile.Write(paths.Position, Json.Encode(p));
@@ -147,6 +172,8 @@ public sealed class TrayApplication : ApplicationContext
             state = store.Drain();
             var now = DateTimeOffset.UtcNow;
             var live = state.Sessions.Values.Where(s => !s.Ended).ToArray();
+            permissions.Update(live);
+            permissions.Apply(live, now);
             strip.UpdateChips(views.Chips(live, now, contexts));
             foreach (var s in policy.Collect(live, now, config.Muted))
             {
@@ -158,6 +185,7 @@ public sealed class TrayApplication : ApplicationContext
             {
                 nextOverview = now.AddSeconds(2);
                 titles.Update(live);
+                nativeNames.Update(live);
                 RefreshOverview(live);
             }
         }
@@ -197,7 +225,8 @@ public sealed class TrayApplication : ApplicationContext
     }
 
     private bool IsCurrentAlert(AudioItem item) => state.Sessions.TryGetValue(item.Key, out var session) &&
-        session.Episode == item.Episode && session.RequiresAttention(DateTimeOffset.UtcNow);
+        session.Episode == item.Episode && session.RequiresAttention(DateTimeOffset.UtcNow) &&
+        session.NotificationDue <= DateTimeOffset.UtcNow;
 
     private async void Navigate(string key, bool hideTimer)
     {
@@ -253,6 +282,8 @@ public sealed class TrayApplication : ApplicationContext
         Microsoft.Win32.SystemEvents.DisplaySettingsChanged -= DisplayChanged;
         audio.Dispose();
         titles.Dispose();
+        nativeNames.Dispose();
+        permissions.Dispose();
         tray.Visible = false;
         tray.Dispose();
         strip.Dispose();

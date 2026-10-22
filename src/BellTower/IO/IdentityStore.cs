@@ -8,6 +8,12 @@ public sealed class IdentityStore(DataPaths paths)
     public SessionIdentity Get(string key, string directory, string? initialName = null, string? initialChange = null, string? initialRole = null, Palette? initialPalette = null)
     {
         using var gate = new DataLock(paths, "identity");
+        return GetCore(key, directory, initialName, initialChange, initialRole, initialPalette);
+    }
+
+    private SessionIdentity GetCore(string key, string directory, string? initialName = null, string? initialChange = null,
+        string? initialRole = null, Palette? initialPalette = null)
+    {
         var path = Path.Combine(paths.Identities, ContentHash.Compute(key) + ".json");
         SessionIdentity? identity = null;
         foreach (var candidate in new[]
@@ -51,6 +57,22 @@ public sealed class IdentityStore(DataPaths paths)
     public void Save(SessionIdentity identity)
     {
         using var gate = new DataLock(paths, "identity");
+        SaveCore(identity);
+    }
+
+    public SessionIdentity Update(string key, string directory, Func<SessionIdentity, bool> update)
+    {
+        using var gate = new DataLock(paths, "identity");
+        var identity = GetCore(key, directory);
+        if (update(identity))
+        {
+            SaveCore(identity);
+        }
+        return identity;
+    }
+
+    private void SaveCore(SessionIdentity identity)
+    {
         if (!Palette.IsHex(identity.Palette.Background) || !Palette.IsHex(identity.Palette.Accent) || !Palette.IsHex(identity.Palette.Foreground))
         {
             throw new InvalidDataException("Invalid palette.");
