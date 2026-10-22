@@ -19,4 +19,14 @@ The authenticated GitHub account was verified as zeusapps; the planned repositor
 
 Clean checkout of implementation commit ed16b9f passed locked restore with normal vulnerability auditing enabled, warning-free Release build, all 296 .NET tests, all 8 bridge tests, formatting, and scripts/update-acceptance.ps1. That acceptance also asserted literal/Unicode argument forwarding, inherited working directory/environment, child exit status, an event queued while the tray was stopped, racing tray starts, overlapping status reads, superseded update refusal, active-version cleanup retention, and rollback. Fixture evidence is retained locally under artifacts/clean-checkout/artifacts/update-acceptance/run-ebae0354ed734424aff217c3ef921ab8.
 
-Observed remote workflows and independent published-asset verification remain pending until actual evidence is added below. Existing session-title/provider live-acceptance gaps remain separate.
+The public repository was created with main tracking origin/main. [Initial remote Windows validation](https://github.com/zeusapps/ZeusApps.BellTower/actions/runs/39765936367) passed on commit 23172350a1468e30b52b4eb9b5b8f97f038a352b, including all tests, formatting, packaging, updater acceptance, and artifact upload. The immutable v0.1.8 tag targets that validated commit. [Tagged validation and publication](https://github.com/zeusapps/ZeusApps.BellTower/actions/runs/39766500039) both passed and published [release v0.1.8](https://github.com/zeusapps/ZeusApps.BellTower/releases/tag/v0.1.8).
+
+All three public assets were independently downloaded after publication. The ZIP's SHA-256 matched its checksum and release metadata:
+
+~~~text
+d23702de5d05c1eed5a4575d0d11b0d45267ec3aa01360b0d582ad19c6a36b67
+~~~
+
+Every payload file matched its manifest hash. The extracted root launcher reported 0.1.8; the read-only distribution probe reported supported layout/bootstrap/state contracts. An explicit update --check against isolated data successfully read the public GitHub feed and reported running/selected 0.1.8 with no newer compatible release. Offline update --status reported no prior outcome as expected for the new installation. The public latest-release endpoint returned stable v0.1.8 with exactly the ZIP, checksum, and release-metadata assets. Evidence is retained under artifacts/published-verification-0c9869dd77964f14a7a8b2a2f651d499.
+
+The user's active legacy installation was not upgraded or replaced. Its one-time migration remains a separate explicit operational action documented in releases.md. Existing session-title/provider live-acceptance gaps remain separate.

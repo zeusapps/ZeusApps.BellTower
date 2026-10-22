@@ -48,8 +48,8 @@
 ## 8. Publish and independently verify
 
 - [x] 8.1 Verify authenticated GitHub account and the proposed public zeusapps/ZeusApps.BellTower destination/visibility, inspect tracked outgoing files/history and distribution prerequisites, and resolve unexpected remote/repository conflicts; record the verified target before making external changes.
-- [ ] 8.2 Establish main without rewriting history, create/connect the verified repository as needed, push prepared source, and observe remote validation; verify origin/branch and actual workflow success before tagging, preserving unrelated local work.
-- [ ] 8.3 Choose an unpublished version above 0.1.7 with all manifests synchronized, push its immutable matching tag, and observe the release job; independently download all assets, compare checksum/metadata, run isolated packaged bootstrap/version/update checks, and confirm the latest stable endpoint before recording publication complete. Never use the real active installation or authenticated agent sessions as test fixtures.
+- [x] 8.2 Establish main without rewriting history, create/connect the verified repository as needed, push prepared source, and observe remote validation; verify origin/branch and actual workflow success before tagging, preserving unrelated local work.
+- [x] 8.3 Choose an unpublished version above 0.1.7 with all manifests synchronized, push its immutable matching tag, and observe the release job; independently download all assets, compare checksum/metadata, run isolated packaged bootstrap/version/update checks, and confirm the latest stable endpoint before recording publication complete. Never use the real active installation or authenticated agent sessions as test fixtures.
 
 ## Planning record
 
