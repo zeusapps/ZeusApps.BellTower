@@ -1,8 +1,10 @@
 using BellTower.Cli;
 using BellTower.Core;
+using BellTower.Distribution;
 using BellTower.Hosts;
 using BellTower.IO;
 using BellTower.Sessions;
+using BellTower.Updates;
 
 namespace BellTower.Tray;
 
@@ -35,6 +37,10 @@ public sealed class TrayApplication : ApplicationContext
     private bool refreshing;
     private bool disposed;
     private readonly Dictionary<string, GitContext> contexts = [];
+    private readonly CancellationTokenSource updateCancellation = new();
+    private readonly HttpClient updateHttp = ReleaseClient.CreateClient();
+    private readonly UpdateDiscovery updates;
+    private bool ready;
     public TrayApplication(DataPaths paths, bool silent)
     {
         this.paths = paths;
@@ -48,10 +54,23 @@ public sealed class TrayApplication : ApplicationContext
         nativeNames = new(paths);
         permissions = new(paths);
         config = configuration.Read();
+        updates = new(paths, new ReleaseClient(updateHttp));
+        if (Installation.ForPayload(Environment.ProcessPath!) is not null)
+        { _ = Task.Run(() => updates.RunAsync(updateCancellation.Token)); }
         overview.Icon = appIcon;
         audio = new(silent ? new SilentAudioSink() : new WindowsAudioSink(new ToneLibrary(paths)), IsCurrentAlert, () => config);
         var menu = new ContextMenuStrip();
         menu.Items.Add(new ToolStripMenuItem("Bell Tower v" + ApplicationInfo.Version) { Enabled = false });
+        menu.Items.Add("Check for updates", null, async (_, _) => await CheckUpdateAsync(false));
+        var installUpdate = new ToolStripMenuItem("Install update");
+        installUpdate.Click += async (_, _) => await CheckUpdateAsync(true);
+        menu.Items.Add(installUpdate);
+        menu.Opening += (_, _) =>
+        {
+            var offer = updates.Hint();
+            installUpdate.Enabled = offer is not null;
+            installUpdate.Text = offer is null ? "Install update" : "Install update " + offer.Version;
+        };
         menu.Items.Add(new ToolStripSeparator());
         menu.Items.Add("Sessions", null, (_, _) =>
         {
@@ -170,6 +189,12 @@ public sealed class TrayApplication : ApplicationContext
 
             config = configuration.Read();
             state = store.Drain();
+            if (!ready)
+            {
+                DistributionJson.Write(UpdateTransaction.Presence(paths), new TrayPresence(ProcessProbe.Identify(Environment.ProcessId)!, ApplicationInfo.Version,
+                    paths.Root, Environment.GetEnvironmentVariable("BELLTOWER_UPDATE_ACTIVATION")));
+                ready = true;
+            }
             var now = DateTimeOffset.UtcNow;
             var live = state.Sessions.Values.Where(s => !s.Ended).ToArray();
             permissions.Update(live);
@@ -194,6 +219,36 @@ public sealed class TrayApplication : ApplicationContext
             new LocalLog(paths).Write("tray-refresh-failed");
             overview.SetStatus("Local state could not be refreshed. Check diagnostics.");
         }
+    }
+
+    private async Task CheckUpdateAsync(bool install)
+    {
+        try
+        {
+            if (install)
+            {
+                var start = new System.Diagnostics.ProcessStartInfo(Installation.StableExecutable(Environment.ProcessPath!))
+                { UseShellExecute = false, CreateNoWindow = true, WindowStyle = System.Diagnostics.ProcessWindowStyle.Hidden, RedirectStandardOutput = true, RedirectStandardError = true };
+                foreach (var argument in new[] { "update", "--data-dir", paths.Root })
+                { start.ArgumentList.Add(argument); }
+                using var process = System.Diagnostics.Process.Start(start) ?? throw new IOException("Update command could not start.");
+                var output = process.StandardOutput.ReadToEndAsync();
+                var error = process.StandardError.ReadToEndAsync();
+                await process.WaitForExitAsync(updateCancellation.Token);
+                if (!disposed)
+                { overview.SetStatus((await output) + (await error)); }
+            }
+            else
+            {
+                var result = await updates.CheckAsync(true, updateCancellation.Token);
+                if (!disposed)
+                { overview.SetStatus(result?.Error ?? (updates.Hint() is { } offer ? "Update available: " + offer.Version + ". Use Install update in the tray menu." : "No newer compatible stable release available.")); }
+            }
+            if (!disposed)
+            { overview.Show(); }
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException or OperationCanceledException or System.ComponentModel.Win32Exception)
+        { if (!disposed) { overview.SetStatus("Update could not complete: " + error.Message); overview.Show(); } }
     }
 
     private async void RefreshOverview(SessionState[] live)
@@ -278,6 +333,8 @@ public sealed class TrayApplication : ApplicationContext
         }
 
         disposed = true;
+        updateCancellation.Cancel();
+        updateHttp.Dispose();
         timer.Stop();
         Microsoft.Win32.SystemEvents.DisplaySettingsChanged -= DisplayChanged;
         audio.Dispose();

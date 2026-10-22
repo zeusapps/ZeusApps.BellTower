@@ -2,6 +2,8 @@ namespace BellTower.Core;
 
 public sealed record SessionIdentity
 {
+    [System.Text.Json.Serialization.JsonExtensionData]
+    public Dictionary<string, System.Text.Json.JsonElement>? AdditionalData { get; set; }
     public required string Key { get; init; }
     public string DefaultName { get; init; } = "Session";
     public string? ManualName { get; set; }

@@ -2,6 +2,8 @@ namespace BellTower.Core;
 
 public sealed class SessionState
 {
+    [System.Text.Json.Serialization.JsonExtensionData]
+    public Dictionary<string, System.Text.Json.JsonElement>? AdditionalData { get; set; }
     public required string Key { get; init; }
     public required string Provider { get; init; }
     public required string SessionId { get; init; }

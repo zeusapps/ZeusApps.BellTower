@@ -15,7 +15,7 @@ node --test vscode/service.test.js vscode/focus.test.js
 ./scripts/package.ps1
 ```
 
-Run the executable in artifacts/releases/bell-tower-0.1.7-win-x64:
+Download a [Windows release](https://github.com/zeusapps/ZeusApps.BellTower/releases), or run the root executable in artifacts/releases/bell-tower-0.1.8-win-x64 after packaging:
 
 ```powershell
 ./bell-tower.exe setup --desktop --apply
@@ -58,4 +58,6 @@ bell-tower exit
 
 Use --data-dir PATH or BELLTOWER_DATA_DIR for an independent data directory. The default is %LOCALAPPDATA%/ZeusApps.BellTower. Keep data separate from the executable installation.
 
-MCP identity tools, WorkLog integration, per-repository instruction setup, and release/update automation are deferred in the archived change's [handoff](openspec/changes/archive/2026-10-21-build-standalone-session-attention/handoff.md).
+The installed tray checks for stable releases automatically. Use its **Install update** action or `bell-tower update`; check the eventual outcome with `bell-tower update --status`. Compatible updates restart the tray and reconnect to running sessions while agents and their existing runtime processes continue. See [release/update operations](docs/releases.md) for verification, rollback, and the one-time legacy migration.
+
+MCP identity tools, WorkLog integration, and per-repository instruction setup remain deferred in the archived change's [handoff](openspec/changes/archive/2026-10-21-build-standalone-session-attention/handoff.md).

@@ -3,4 +3,5 @@
 artifacts/
 .vs/
 *.user
+**/TestResults/
 

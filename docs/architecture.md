@@ -1,6 +1,6 @@
 # Architecture
 
-Bell Tower uses one .NET 10 Windows executable, responsibility-based folders, and a separate xUnit test project. WorkLog is an organizational reference and has no project/runtime dependency.
+Bell Tower uses a .NET 10 Windows application, a small stable launcher, a shared distribution-contract library, and separate xUnit/packaged acceptance projects. WorkLog is an organizational reference and has no project/runtime dependency.
 
 | Area | Responsibility |
 | --- | --- |
@@ -39,7 +39,7 @@ The VS Code bridge registers its extension-host process creation time and curren
 
 Desktop ownership stores optional project directories and selected providers. Setup generates named project profiles additively and supplies explicit Windows Terminal starting directories. The PowerShell session functions accept a directory, invoke the native agent there, and restore the invoking shell's location afterward. Scoped console presentation applies the stored identity palette only when the launch opted into background ownership; the wrapper resets configured profile colors on exit.
 
-The packaged application has no updater or external service. Setup and legacy import are explicit commands; ordinary startup does not modify agent settings.
+The packaged application uses immutable versions beneath a stable launcher and atomically selected current.json. Shared launch/lifetime leases protect old runtime processes against cleanup. Background release discovery is independent of monitoring; explicit update activation restarts only the selected data-directory tray, validates readiness, and restores the prior version on failure. Hook ingestion remains available during restart. Contract 1 retains existing shared state/runtime/integration formats. Owned integration refreshes occur only during explicit setup/update, preserving user edits and selected providers. See [release operations](releases.md) for migration, rollback, and bootstrap maintenance.
 
 The desktop workflow is terminal profile -> PowerShell role function -> native agent. The executable launcher is optional. The bundled shell module sets attachment metadata, resolves the native command, starts the tray separately, and restores shell environment/title on exit. Hook observations bind the provider session ID to that attachment. Local Codex role functions use its dedicated mode so the backend does not inherit another session's terminal metadata.
 

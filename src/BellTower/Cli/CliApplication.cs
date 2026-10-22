@@ -18,6 +18,7 @@ internal static class CliApplication
         root.Subcommands.Add(new TrayCommand(dataDirectory));
         root.Subcommands.Add(new StartCommand(dataDirectory));
         root.Subcommands.Add(new ExitCommand(dataDirectory));
+        root.Subcommands.Add(new UpdateCommand(dataDirectory));
         root.Subcommands.Add(new TestSoundCommand(dataDirectory));
         root.Subcommands.Add(new ToggleVoiceCommand(dataDirectory));
         root.Subcommands.Add(new EventCommand(dataDirectory));

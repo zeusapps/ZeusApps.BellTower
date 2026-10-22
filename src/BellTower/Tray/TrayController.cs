@@ -18,12 +18,14 @@ public sealed class TrayController(DataPaths paths)
 
     public void Start(bool silent)
     {
+        if (BellTower.Updates.UpdateTransaction.RestartPending(paths))
+        { return; }
         if (IsRunning())
         {
             return;
         }
 
-        var start = new ProcessStartInfo(Environment.ProcessPath!)
+        var start = new ProcessStartInfo(BellTower.Distribution.Installation.StableExecutable(Environment.ProcessPath!))
         {
             UseShellExecute = true,
             WorkingDirectory = AppContext.BaseDirectory,

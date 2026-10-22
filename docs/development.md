@@ -1,6 +1,6 @@
 # Development conventions
 
-Bell Tower follows WorkLog's small-helper structure: one executable project, a separate test project, folders by responsibility, one top-level type per file, and a command class per CLI verb. WorkLog is a style reference, with no project or runtime dependency.
+Bell Tower follows WorkLog's small-helper structure: application folders by responsibility, one top-level type per file, and a command class per CLI verb. A small stable launcher and shared distribution-contract library support immutable versioned payloads; xUnit and packaged acceptance projects verify their behavior. WorkLog is a style reference, with no project or runtime dependency.
 
 ## CLI commands
 

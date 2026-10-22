@@ -11,6 +11,7 @@ public sealed class CliTests
 {
     [Theory]
     [InlineData("rename", "--session")]
+    [InlineData("update", "--check", "--status")]
     [InlineData("rename", "--provider", "codex")]
     [InlineData("process-info", "--pid", "not-a-number")]
     [InlineData("setup", "--clients", "unknown")]
@@ -156,7 +157,9 @@ public sealed class CliTests
     {
         using var w = new TestWorkspace();
         Assert.Contains("Bell Tower", Run(w, null, "--help").Output);
-        Assert.Equal("0.1.7", Run(w, null, "--version").Output.Trim());
+        var expectedVersion = typeof(BellTower.Program).Assembly.GetCustomAttributes(typeof(System.Reflection.AssemblyInformationalVersionAttribute), false)
+            .Cast<System.Reflection.AssemblyInformationalVersionAttribute>().Single().InformationalVersion.Split('+')[0];
+        Assert.Equal(expectedVersion, Run(w, null, "--version").Output.Trim());
         Assert.Equal(0, Run(w, null, "doctor").Code);
         Assert.Equal(1, Run(w, null, "unknown-command").Code);
     }

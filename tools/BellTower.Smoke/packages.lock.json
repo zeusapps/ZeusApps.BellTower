@@ -1,0 +1,28 @@
+{
+  "version": 1,
+  "dependencies": {
+    "net10.0-windows7.0": {
+      "System.CommandLine": {
+        "type": "Transitive",
+        "resolved": "2.0.13",
+        "contentHash": "TIO2lMV+sSP7WW7pD/oCRHD9ENWY+jqwXmYzgks3R46cEdDzwjQOAhsiBn+M3EegfGjgTpa2h+eIrcU+AM2k6A=="
+      },
+      "Tomlyn": {
+        "type": "Transitive",
+        "resolved": "2.10.1",
+        "contentHash": "ykjOY3IpYmC4SpPcAZRTl/w2jTmhPMDydHq8xcV7tTBAQ22nKBsOkPqauIrZlMjHm03cmKfV23UOPscKp+J4Og=="
+      },
+      "bell-tower": {
+        "type": "Project",
+        "dependencies": {
+          "BellTower.Distribution": "[0.1.8, )",
+          "System.CommandLine": "[2.0.13, )",
+          "Tomlyn": "[2.10.1, )"
+        }
+      },
+      "belltower.distribution": {
+        "type": "Project"
+      }
+    }
+  }
+}

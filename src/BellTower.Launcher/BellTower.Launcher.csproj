@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType><AssemblyName>bell-tower</AssemblyName><RootNamespace>BellTower.Launcher</RootNamespace>
+    <RuntimeIdentifiers>win-x64</RuntimeIdentifiers><PublishSingleFile>true</PublishSingleFile><IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+  </PropertyGroup>
+  <ItemGroup><ProjectReference Include="../BellTower.Distribution/BellTower.Distribution.csproj" /></ItemGroup>
+</Project>

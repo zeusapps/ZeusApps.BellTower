@@ -10,6 +10,7 @@
     <ApplicationIcon>Assets/bell-tower.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
+    <ProjectReference Include="../BellTower.Distribution/BellTower.Distribution.csproj" />
     <FrameworkReference Include="Microsoft.WindowsDesktop.App.WPF" />
     <PackageReference Include="System.CommandLine" Version="2.0.13" />
     <EmbeddedResource Include="Integration/BellTower.psm1" LogicalName="BellTower.Integration.BellTower.psm1" />

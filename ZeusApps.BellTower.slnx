@@ -1,8 +1,13 @@
 <Solution>
   <Folder Name="/src/">
     <Project Path="src/BellTower/BellTower.csproj" />
+    <Project Path="src/BellTower.Distribution/BellTower.Distribution.csproj" />
+    <Project Path="src/BellTower.Launcher/BellTower.Launcher.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/BellTower.Tests/BellTower.Tests.csproj" />
+  </Folder>
+  <Folder Name="/tools/">
+    <Project Path="tools/BellTower.Smoke/BellTower.Smoke.csproj" />
   </Folder>
 </Solution>

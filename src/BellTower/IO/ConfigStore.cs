@@ -11,6 +11,7 @@ public sealed class ConfigStore(DataPaths paths)
         try
         {
             lastGood = AtomicFile.Read<AppConfig>(paths.Config) ?? lastGood;
+            lastGood.Updates ??= new();
         }
         catch (Exception e) when (e is IOException or JsonException or InvalidDataException)
         {

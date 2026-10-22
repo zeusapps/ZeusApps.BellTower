@@ -1,0 +1,86 @@
+name: Validate
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_call:
+permissions:
+  contents: read
+jobs:
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          global-json-file: global.json
+          cache: true
+          cache-dependency-path: '**/packages.lock.json'
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '24.13.0'
+      - name: Restore locked dependencies
+        run: dotnet restore --locked-mode
+      - name: Build
+        run: dotnet build -c Release --no-restore
+      - name: .NET tests
+        run: dotnet test -c Release --no-build --logger trx
+      - name: VS Code bridge tests
+        run: node --test vscode/service.test.js vscode/focus.test.js
+      - name: Formatting
+        shell: pwsh
+        run: ./scripts/format.ps1 -Verify
+      - name: Verify tag agreement
+        shell: pwsh
+        env:
+          RELEASE_REF_TYPE: ${{ github.ref_type }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          $version = ([xml](Get-Content Directory.Build.props -Raw)).Project.PropertyGroup.Version
+          if ($env:RELEASE_REF_TYPE -eq 'tag' -and $env:RELEASE_TAG -cne "v$version") { throw 'Release tag/version mismatch.' }
+      - name: Previous published baseline
+        id: baseline
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          $version = ([xml](Get-Content Directory.Build.props -Raw)).Project.PropertyGroup.Version
+          $releaseText = gh api "repos/$env:GH_REPO/releases/latest" 2>$null
+          if ($LASTEXITCODE -eq 0) {
+            $release = $releaseText | ConvertFrom-Json
+            if ($release.tag_name -match '^v(\d+\.\d+\.\d+)$' -and [version]$Matches[1] -lt [version]$version) {
+              $name = "bell-tower-$($Matches[1])-win-x64.zip"
+              New-Item -ItemType Directory -Path artifacts/update-acceptance/published -Force | Out-Null
+              gh release download $release.tag_name --pattern $name --dir artifacts/update-acceptance/published
+              if ($LASTEXITCODE -ne 0) { throw 'Previous release download failed.' }
+              "archive=artifacts/update-acceptance/published/$name" >> $env:GITHUB_OUTPUT
+            }
+          }
+          exit 0
+      - name: Packaged session-preserving update acceptance
+        shell: pwsh
+        env:
+          BASELINE_ARCHIVE: ${{ steps.baseline.outputs.archive }}
+        run: ./scripts/update-acceptance.ps1 -BaselineArchive $env:BASELINE_ARCHIVE
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: windows-release
+          archive: true
+          if-no-files-found: error
+          path: |
+            artifacts/releases/*.zip
+            artifacts/releases/*.sha256
+            artifacts/releases/*.release.json
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: windows-validation
+          archive: true
+          path: |
+            **/TestResults/*.trx
+            artifacts/update-acceptance/run-*/installation/updates/*/outcome.json
+            artifacts/update-acceptance/run-*/installation/updates/outcome.json

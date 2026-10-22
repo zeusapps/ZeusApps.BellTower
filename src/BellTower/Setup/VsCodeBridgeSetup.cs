@@ -9,6 +9,11 @@ public static class VsCodeBridgeSetup
     {
         var installation = VsCodeInstallation.Find();
         var packageDirectory = Path.GetDirectoryName(executable)!;
+        if (File.Exists(Path.Combine(packageDirectory, "installation.json")))
+        {
+            var bellTowerInstallation = new BellTower.Distribution.Installation(packageDirectory);
+            packageDirectory = bellTowerInstallation.Payload(bellTowerInstallation.Selection().Version);
+        }
         var vsix = Directory.Exists(packageDirectory)
             ? Directory.EnumerateFiles(packageDirectory, "bell-tower-focus-*.vsix").Order(StringComparer.Ordinal).LastOrDefault() : null;
         var extensions = Path.Combine(fixtureHome ?? Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".vscode", "extensions");

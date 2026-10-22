@@ -78,7 +78,7 @@ Windows Terminal chip navigation first focuses the verified owning window while 
 
 ## Private state and configuration
 
-config.json contains voice and muted booleans. Changes are reloaded live. Position and identity files persist independently of the executable directory. Events, state, attachments, host registrations, and focus requests are local to the chosen data root. Logs are capped below 256 KB and contain diagnostic codes, not prompts/transcripts/tool payloads.
+config.json contains voice and muted booleans plus updates.enabled (default true). Changes are reloaded live. Disabling updates.enabled suppresses automatic network checks/notices; explicit update checks remain available. Position and identity files persist independently of the executable directory. Events, state, attachments, host registrations, and focus requests are local to the chosen data root. Logs are capped below 256 KB and contain diagnostic codes, not prompts/transcripts/tool payloads.
 
 The default notification tones are bundled inside the app: doorbell for permission, magic ring for questions, interface sound for completion, and fail sound for errors. No Downloads directory is needed. More than two queued notifications use the highest-priority reason's tone and the aggregate waiting phrase. Voice remains independently configurable.
 
@@ -87,7 +87,7 @@ The default notification tones are bundled inside the app: doorbell for permissi
 The CLI offers the same selection without playback:
 
 ```powershell
-.\bell-tower.exe tone --file 'C:\Users\ezagv\Downloads\tones\mixkit-doorbell-single-press-333.wav'
+.\bell-tower.exe tone --file (Join-Path $env:USERPROFILE 'Downloads/tones/mixkit-doorbell-single-press-333.wav')
 .\bell-tower.exe tone --reset
 .\bell-tower.exe tone --chime
 ```
@@ -111,9 +111,9 @@ Original files are read only. There is no background scan or permanent dependenc
 
 ## Manual update and rollback
 
-Run bell-tower exit for the same data directory, wait for its process to exit, replace only the application package, then run bell-tower start. Never terminate Claude, Codex, VS Code, or Windows Terminal to update Bell Tower. Keep the executable at its registered stable path, or rerun setup and update the VS Code executable setting after relocating it.
+For a versioned installation use **Check for updates / Install update** in the tray or `bell-tower update --check`, `bell-tower update`, then `bell-tower update --status` after the coordinator finishes. The root launcher stays at its registered stable path; a new payload is selected without overwriting files used by active runtimes. The tray reconnects to the same data directory while agents, runtimes, and terminal hosts continue. Source builds and legacy executable-only installations receive manual migration guidance.
 
-For rollback, stop Bell Tower, restore the earlier application files, restore owned client settings from the private backup when needed, and restart Bell Tower. Preserve data separately. No release checker or self-updater is included.
+Failed activation attempts restore the prior selection and monitoring when possible; data is not rolled back. Keep recovery metadata and inspect status when recovery is incomplete. Migrating a legacy executable at the same path, or replacing the stable launcher itself, may require a one-time maintenance window after sessions finish naturally. See [release/update operations](releases.md) for migration alternatives, retained versions, integration refresh, compatibility, and manual recovery. Never terminate agents or terminal hosts to update Bell Tower.
 
 ## Verification
 

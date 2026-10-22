@@ -42,7 +42,7 @@ internal sealed class SetupCommand : Command
         SetAction(result =>
         {
             var paths = CommonOptions.Paths(result, dataDirectory);
-            var setup = new IntegrationSetup(paths, Environment.ProcessPath!, result.GetValue(home));
+            var setup = new IntegrationSetup(paths, BellTower.Distribution.Installation.StableExecutable(Environment.ProcessPath!), result.GetValue(home));
             var plan = setup.Plan(result.GetValue(clients)!, result.GetValue(remove), result.GetValue(statusLine), result.GetValue(desktop), result.GetValue(project));
             var output = result.InvocationConfiguration.Output;
             foreach (var file in plan.Changes)
