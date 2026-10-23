@@ -37,7 +37,8 @@ public sealed class DiagnosticsReporter(DataPaths paths)
         Desktop = new
         {
             ShellModule = File.Exists(Path.Combine(paths.Root, "shell", "BellTower.psm1")) ? "installed; open a new terminal tab" : "not installed; use setup --desktop",
-            Titles = "opt-in role-function console title synchronization; verified process creation times; live host acceptance pending",
+            Titles = "shared change-driven isolated title writes; tray-owned five-second checkout cache; bounded failure backoff and owned-writer cleanup; live host acceptance pending",
+            AttachmentHealth = "both providers: verified-live, confirmed-ended, unverified or unavailable; shell liveness alone does not verify an agent; shared-runtime mode remains explicitly classified",
             Background = "new local managed launches apply colors before agent startup; resets configured colors on exit; -NoBackground opts out",
             Naming = "manual Name > session-selected OpenSpec change > directory; successful literal OpenSpec CLI operations observed through main-session Bash hooks",
             SelectionCoverage = "new change, status --change and instructions --change; bounded causal receipts; sufficient successful post-only evidence is accepted; JSON success or verified local scaffold; shell programs and hidden nested orchestration are ignored",

@@ -35,7 +35,7 @@ public sealed class StateSnapshotStore(DataPaths paths)
         AtomicFile.Write(paths.State, encoded, backup: true);
     }
 
-    private static bool IsValid(AppState? state) => state is not null && state.SchemaVersion == 1 &&
+    private static bool IsValid(AppState? state) => state is not null && state.SchemaVersion == 1 && state.AttachmentHealthVersion is 0 or 1 &&
         state.Sessions is not null && state.AppliedEvents is not null && state.CaptureReceipts is not null &&
         state.CaptureReceipts.All(receipt => receipt.Value is not null && receipt.Value.Length <= 128) && state.Sessions.Values.All(session =>
             session is not null && session.Waits is not null && session.Background is not null &&

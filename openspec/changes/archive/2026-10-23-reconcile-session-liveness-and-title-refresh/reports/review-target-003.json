@@ -1,0 +1,359 @@
+{
+  "baseline": "0a7445a506e5306cca515c251e1fadad38fd99de",
+  "currentHead": "64d3e94626b636ca38a3ab0c5b3789686c8fa15b",
+  "method": "git diff --binary baseline -- explicit paths; stdout lines joined with LF plus final LF if nonempty, UTF-8 without BOM",
+  "diffSha256": "62493f1c59e9be402efeccea2a1d85f02739453fac4da029d6590f876fb1b7e0",
+  "files": [
+    {
+      "path": "docs/architecture.md",
+      "tracked": true,
+      "sha256": "fd498660f3e6fb285716216d6c3a7e90d22aef4d98a439e7c01b4d89a492d610"
+    },
+    {
+      "path": "docs/attachment-health.md",
+      "tracked": false,
+      "sha256": "6275a45ecda41b0c8e469ee10dccc006753b372f77549c4276f62bb02472a0c4"
+    },
+    {
+      "path": "docs/compatibility.md",
+      "tracked": true,
+      "sha256": "f2382dc9e001578c1a9766e191c3ef1d39429b63e8e3b02f0adb7e491b91e636"
+    },
+    {
+      "path": "docs/installation.md",
+      "tracked": true,
+      "sha256": "756c3ac65f0475e2a601c13c799a97f1c1fc001007f1076826c7e487b6f16b7a"
+    },
+    {
+      "path": "openspec/changes/reconcile-session-liveness-and-title-refresh/evidence/development-trial-notes.md",
+      "tracked": false,
+      "sha256": "87b4516b146db1aede07c36436e33eb4ab2148aa32007fdd95603556ecd0da5c"
+    },
+    {
+      "path": "openspec/changes/reconcile-session-liveness-and-title-refresh/evidence/development-trial-operations.ps1",
+      "tracked": false,
+      "sha256": "9095e36c5c3238bb2eb4b6d1925aed34b8b56bfdc8d24c6cdab7ad1979711dc5"
+    },
+    {
+      "path": "openspec/changes/reconcile-session-liveness-and-title-refresh/evidence/implementation-paths.txt",
+      "tracked": false,
+      "sha256": "12773e0998da2ba076ee353b36d53b6dcded19e256086eca1222b47cab98769d"
+    },
+    {
+      "path": "openspec/changes/reconcile-session-liveness-and-title-refresh/evidence/implementation.md",
+      "tracked": false,
+      "sha256": "e99e7e2c35ee6a513c8da428cd5aa52dbbafa99d3563cf273f4130bf929a94bf"
+    },
+    {
+      "path": "scripts/package.ps1",
+      "tracked": true,
+      "sha256": "2f2f39de6eda7f68486e9400915e0cb47f24af6b48acb343c4c6629cac00e68b"
+    },
+    {
+      "path": "src/BellTower.Distribution/AttachmentHealthCompatibility.cs",
+      "tracked": false,
+      "sha256": "2d590c34d6176f90d3fa5d6087c6d12d2cd134705ce2c13ff9da6340f3c40173"
+    },
+    {
+      "path": "src/BellTower.Distribution/CaptureCompatibility.cs",
+      "tracked": true,
+      "sha256": "12f85ab8e8a390fa1dbd142302cae7b5fc7d0ad2773a73aca522734e0cc690b6"
+    },
+    {
+      "path": "src/BellTower.Distribution/ReleaseContract.cs",
+      "tracked": true,
+      "sha256": "54cba2ccf850d13a86729f897ded5687c9293c1cf5198c88d0d35349db9e7ae4"
+    },
+    {
+      "path": "src/BellTower.Ingress/BellTower.Ingress.csproj",
+      "tracked": true,
+      "sha256": "c6cca1249e56f7804cbfce50cab670271ccbc7feb0658c74354972c6caed0057"
+    },
+    {
+      "path": "src/BellTower.Launcher/Program.cs",
+      "tracked": true,
+      "sha256": "5c774395356d300e6b491de510ff072558a4e3b321c340b71def38de7001d051"
+    },
+    {
+      "path": "src/BellTower/Cli/SyncTitleCommand.cs",
+      "tracked": true,
+      "sha256": "358f9e4aa8e0dcaa2da2344f93f1d6095c48a6cbf31a7045027022a686cd1924"
+    },
+    {
+      "path": "src/BellTower/Core/AppConfig.cs",
+      "tracked": true,
+      "sha256": "8edf84f89aa77a6a7a1e2b848069cf1884be3c6b7d6044d29d8b7ccbd1c27b6d"
+    },
+    {
+      "path": "src/BellTower/Core/AppState.cs",
+      "tracked": true,
+      "sha256": "0c442e5d123086c383f350dccfc98374d7b7a9fe6df2e9e4bc01f461e761f72c"
+    },
+    {
+      "path": "src/BellTower/Core/Attachment.cs",
+      "tracked": true,
+      "sha256": "8413496d9de640e2ed587d01968ae828459372c71a00dd5f723862d6f8285095"
+    },
+    {
+      "path": "src/BellTower/Core/CausalSessionReducer.cs",
+      "tracked": true,
+      "sha256": "25c7247b3ecaa05436d84c0bf11266ae72d94dd49c46d26882cf1110a4ce3ae9"
+    },
+    {
+      "path": "src/BellTower/Core/HostTarget.cs",
+      "tracked": true,
+      "sha256": "7e1a0fed39cc31d12e2db00aca08b9a37d3177065b3355bda5a729465eab89ac"
+    },
+    {
+      "path": "src/BellTower/Core/LaunchPresentation.cs",
+      "tracked": true,
+      "sha256": "523aa5b9ec5a7f6dbaa6a1215e5a13c079ae928878600429ee299de7a30a35aa"
+    },
+    {
+      "path": "src/BellTower/Core/SessionState.cs",
+      "tracked": true,
+      "sha256": "3dc41666d03d0ca98ec382cb342fcf722dc40d207ed4d800913a894e98c11903"
+    },
+    {
+      "path": "src/BellTower/Diagnostics/CaptureHealthReporter.cs",
+      "tracked": true,
+      "sha256": "164e77013c600f07b686b67aba8f66c426d043478c81bc1faed2275e50740b7c"
+    },
+    {
+      "path": "src/BellTower/Diagnostics/DiagnosticsReporter.cs",
+      "tracked": true,
+      "sha256": "309d3518d243bae52316f84d877e1cfceeca2a5b77167f7fb4aab231dedc7a42"
+    },
+    {
+      "path": "src/BellTower/Hosts/AttachmentCapture.cs",
+      "tracked": true,
+      "sha256": "b25d0f6e3ae7b992b4996ba12bbf77006148242bc3bc430637708839e9c52af9"
+    },
+    {
+      "path": "src/BellTower/Hosts/DesiredTerminalPresentation.cs",
+      "tracked": false,
+      "sha256": "7a43ff2bdfd0761dc3931fc404391111155173a1d6c770418131c87aa92c161a"
+    },
+    {
+      "path": "src/BellTower/Hosts/IsolatedTerminalPresentationWriter.cs",
+      "tracked": false,
+      "sha256": "f15721eb3a74b67fc04ac4f5d572f63e1929bbae2a744e41b8976afdc2d875d7"
+    },
+    {
+      "path": "src/BellTower/Hosts/ITerminalPresentationWriter.cs",
+      "tracked": false,
+      "sha256": "2f38053838ef775f2979a1943b3bd4809fc11bda48a0cae2b3ac564b38f14f23"
+    },
+    {
+      "path": "src/BellTower/Hosts/Navigator.cs",
+      "tracked": true,
+      "sha256": "0a62a9e5b6fe427fbaeb8916f26a5aa5489b376381dbf46eb092515139884dbd"
+    },
+    {
+      "path": "src/BellTower/Hosts/TerminalPresentationResolver.cs",
+      "tracked": false,
+      "sha256": "aa1bee1d833d304ce466f6faf5f7f04cb0f61c042b5eb341068fda9da25a4bc3"
+    },
+    {
+      "path": "src/BellTower/Hosts/TerminalTitlePump.cs",
+      "tracked": true,
+      "sha256": "a775ca555bbf3a2dcf4430bf48a3919ad2e34a50b399a513728e62c069b67832"
+    },
+    {
+      "path": "src/BellTower/Hosts/TerminalTitleService.cs",
+      "tracked": true,
+      "sha256": "db999ea117cdce4208d8009dd99ab1213c8fddf74a4fd2bcd434a6c04d7449ea"
+    },
+    {
+      "path": "src/BellTower/IO/AttachmentHealth.cs",
+      "tracked": false,
+      "sha256": "eb0355797edbf8203a311dc7ad6fccfffd145fdbc63f0987acf190be233dad8b"
+    },
+    {
+      "path": "src/BellTower/IO/AttachmentStore.cs",
+      "tracked": true,
+      "sha256": "dd3d28917457b2d61d55a02c2008b4f27d5346d4977bdb5bcda4a45ba8c984b8"
+    },
+    {
+      "path": "src/BellTower/IO/CheckoutCache.cs",
+      "tracked": false,
+      "sha256": "7ba7d7ec1ddad3ef754c7973a2096fd09ad613c2882f8ae237163d47ff955dc5"
+    },
+    {
+      "path": "src/BellTower/IO/ConfigStore.cs",
+      "tracked": true,
+      "sha256": "f02562dff8c75d3353c35f4b57c872eac6f4b6945bbd8da6ff8c4a8f9c49573f"
+    },
+    {
+      "path": "src/BellTower/IO/GitReader.cs",
+      "tracked": true,
+      "sha256": "2d0cc9dd23f7df190670f3652576128b94b4ec08d1a4380dbaa2f42fc8fd3f29"
+    },
+    {
+      "path": "src/BellTower/IO/LaunchPresentationStore.cs",
+      "tracked": true,
+      "sha256": "690870231258c9896110f16404f6b6a136530c65c76d5db374ff71824a93854b"
+    },
+    {
+      "path": "src/BellTower/IO/OwnedProcessRunner.cs",
+      "tracked": false,
+      "sha256": "36240d7023cf427498db6aae2ed16c3f9b51d759899b0e1eeab1c9c940f0d467"
+    },
+    {
+      "path": "src/BellTower/IO/ProcessLiveness.cs",
+      "tracked": false,
+      "sha256": "f135deb77bc090f9b6529cca9d26f4a506d80d0f0a9aa6959b12ed14ee9c0c88"
+    },
+    {
+      "path": "src/BellTower/IO/ProcessProbe.cs",
+      "tracked": true,
+      "sha256": "36b799fc0a5f4a7cca4067755c05280917f2a4da5c401fc478fe3e453aa966c1"
+    },
+    {
+      "path": "src/BellTower/IO/StateSnapshotStore.cs",
+      "tracked": true,
+      "sha256": "676a65579bc9c62c9d68db2459aed45bf7983e87f06f302081dcd791161baa6a"
+    },
+    {
+      "path": "src/BellTower/IO/StateStore.cs",
+      "tracked": true,
+      "sha256": "698f9649ad8300db0c7148d4026a9129209381d1c1484d1b304f96179ae8e7a3"
+    },
+    {
+      "path": "src/BellTower/Program.cs",
+      "tracked": true,
+      "sha256": "2bcc2048456badc00698b05e5db8a9fd9dbeea64c21349c83fa3c06cd26c526f"
+    },
+    {
+      "path": "src/BellTower/Providers/CaptureConsumer.cs",
+      "tracked": true,
+      "sha256": "85f79ee58fe9693b09003c693a53ac67e274b9c60d77231ac95583d6573c80b2"
+    },
+    {
+      "path": "src/BellTower/Providers/HookIngestor.cs",
+      "tracked": true,
+      "sha256": "b02c12d19861ba8dc72904c7e630b345ca234d92ebdca79f1b02f3df1408163f"
+    },
+    {
+      "path": "src/BellTower/Sessions/AgentLauncher.cs",
+      "tracked": true,
+      "sha256": "e0cc749da602abc865ac66ef240ad7380310d57ccd2bdaad09ec71cad306aa09"
+    },
+    {
+      "path": "src/BellTower/Sessions/CodexNamePump.cs",
+      "tracked": true,
+      "sha256": "102f6f1738035f2d81b4e9b8806c2d8b6d87b79731d70b1dae291fd3977af89b"
+    },
+    {
+      "path": "src/BellTower/Sessions/CodexNameService.cs",
+      "tracked": true,
+      "sha256": "40aa1a90dd11676ccace5ec54fdd7c8dc92d5cbed82ef36b994ca111bc358aee"
+    },
+    {
+      "path": "src/BellTower/Sessions/SessionCatalog.cs",
+      "tracked": true,
+      "sha256": "bc3692522fb7376245708d1dfc62501493628a4d3650d5670fb028ee0adf3933"
+    },
+    {
+      "path": "src/BellTower/Sessions/SessionSummary.cs",
+      "tracked": true,
+      "sha256": "b2355e938645f20f0d215482838d627d12b81b1666af975f42f864a8d7e48741"
+    },
+    {
+      "path": "src/BellTower/Tray/OverviewForm.cs",
+      "tracked": true,
+      "sha256": "2cab9c39c8a2780522a8f330704ec2a0e44c1b8e3ffa6cef5683ba5a916b86e5"
+    },
+    {
+      "path": "src/BellTower/Tray/TrayApplication.cs",
+      "tracked": true,
+      "sha256": "3996661247ecaadad0724417664676e67c0753bf689e0b15afa26313bfe4ceb3"
+    },
+    {
+      "path": "src/BellTower/Updates/ReleasePackage.cs",
+      "tracked": true,
+      "sha256": "0ebc3e700cb200e20a395d2c5ba042ba2f48e65fc09cc39d443a03a359676dd9"
+    },
+    {
+      "path": "src/BellTower/Updates/UpdateTransaction.cs",
+      "tracked": true,
+      "sha256": "991df540185076db4b930d94a7d49f118a371eed3e2d8dff65452f669bfc5db9"
+    },
+    {
+      "path": "tests/BellTower.Tests/Cli/CliTests.cs",
+      "tracked": true,
+      "sha256": "92a26ac9f00081440bfea0d35a4b64dcb8dd1abc42823ccd34a6268f4df65062"
+    },
+    {
+      "path": "tests/BellTower.Tests/Hosts/ConsoleTitleProcessTests.cs",
+      "tracked": true,
+      "sha256": "7df2952f7bd3d38b5bfaf6e3c9c0ba8451ca283266109d1a2341e8382910ad82"
+    },
+    {
+      "path": "tests/BellTower.Tests/Hosts/PresentationSchedulerTests.cs",
+      "tracked": false,
+      "sha256": "7425a1af71a233d07ce8423b8da1d494489f40337ce0313d8b55f851282d8f7d"
+    },
+    {
+      "path": "tests/BellTower.Tests/IO/AttachmentHealthTests.cs",
+      "tracked": false,
+      "sha256": "b86299daf2e54510ebf6aa548d03fce08a66cd28a392c575f6f0e5c54e62ff01"
+    },
+    {
+      "path": "tests/BellTower.Tests/Providers/CodexNameTests.cs",
+      "tracked": true,
+      "sha256": "7d3e3168dc02ff4d5d4a0a11986b2f2241f4caa1bddcd15f9941deff7b825b0c"
+    },
+    {
+      "path": "tests/BellTower.Tests/Updates/AttachmentHealthCompatibilityTests.cs",
+      "tracked": false,
+      "sha256": "be3b17419ea88301a02c4c6e7580531aca9c6a0d004b96944c54d0d33d06b4ac"
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "D:/Code/ZeusApps.BellTower/artifacts/update-acceptance/development-trial/trial-1792777572388-w25ah4/bell-tower-0.1.9-win-x64.zip",
+      "sha256": "186bfbd47ad41659bc221f32a1b5c98f2ff0b64cc54a3f0e2ad73d31a6bdceaa"
+    },
+    {
+      "path": "D:/Code/ZeusApps.BellTower/artifacts/update-acceptance/development-trial/trial-1792777572388-w25ah4/bell-tower-0.1.9-win-x64.release.json",
+      "sha256": "4d5c5c920712daa370d50bc660bd4cef60c58979c8346804cbdda70ecedd2dd5"
+    },
+    {
+      "path": "src/BellTower/bin/Release/net10.0-windows/bell-tower.dll",
+      "sha256": "084f7ac75bced6ca00bd6c287c0decd798c908d4dd86058b8b61fdc7f1ed74dd"
+    },
+    {
+      "path": "src/BellTower/bin/Release/net10.0-windows/BellTower.Distribution.dll",
+      "sha256": "58795098d3ffe9519dace189f94217a0c1c6d6e5ff1fc792c01af722bc172498"
+    },
+    {
+      "path": "src/BellTower/bin/Release/net10.0-windows/BellTower.Protocol.dll",
+      "sha256": "ae796b742e79def6dadb7587fe58b38e2d2f8fd699a666775ec7eab9ef5e27db"
+    },
+    {
+      "path": "openspec/changes/reconcile-session-liveness-and-title-refresh/evidence/development-trial-operations.ps1",
+      "sha256": "9095e36c5c3238bb2eb4b6d1925aed34b8b56bfdc8d24c6cdab7ad1979711dc5"
+    },
+    {
+      "path": "D:/Code/ZeusApps.BellTower/artifacts/development-trial/trial-1792777572388-w25ah4/smoke.ps1",
+      "sha256": "f93ddcd381309b587e7cda66c7157e03ecfff3e7a007d2a5b8a24afb54789ae0"
+    },
+    {
+      "path": "D:/Code/ZeusApps.BellTower/artifacts/development-trial/trial-1792777572388-w25ah4/operational-rehearsal.ps1",
+      "sha256": "f9ab3579b5129fd77852616081850b7a2ffb742df40653fd09b385fc804fae1a"
+    },
+    {
+      "path": "D:/Code/ZeusApps.BellTower/artifacts/development-trial/trial-1792777572388-w25ah4/queue-during-rollback.ps1",
+      "sha256": "bae2e343f12352feba3f9794b7b97bee750c896106053ffd9d967e86a37161c5"
+    },
+    {
+      "path": "artifacts/development-trial/published-v0.1.8/bell-tower-0.1.8-win-x64.zip",
+      "sha256": "d23702de5d05c1eed5a4575d0d11b0d45267ec3aa01360b0d582ad19c6a36b67"
+    },
+    {
+      "path": "artifacts\\development-trial\\trial-1792777572388-w25ah4\\final-provenance.json",
+      "sha256": "b1a55a785bfdb332c4b4811ccf3f139a9d76808b7104ce4846407f5869154be0"
+    }
+  ]
+}

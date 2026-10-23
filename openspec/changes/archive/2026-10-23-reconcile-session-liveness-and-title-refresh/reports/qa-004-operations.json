@@ -1,0 +1,28 @@
+[
+  {
+    "status": "passed",
+    "injectedPostHealthFailure": false,
+    "actualHistoricalBaselineSha256": "d23702de5d05c1eed5a4575d0d11b0d45267ec3aa01360b0d582ad19c6a36b67",
+    "candidateSha256": "186bfbd47ad41659bc221f32a1b5c98f2ff0b64cc54a3f0e2ad73d31a6bdceaa",
+    "hostPreserved": true,
+    "oldBytesPreserved": true,
+    "restoredHealthVersion": 0,
+    "retainedCurrentOverrideConfigAndRuntimeToken": true,
+    "queuedEventDeliveredAfterRollback": true,
+    "trialMonitoringAside": true,
+    "operationManifest": "D:\\Code\\ZeusApps.BellTower\\artifacts\\development-trial\\trial-1792777572388-w25ah4\\operations-qa004-20261023-001-false\\private\\bell-tower-trial-5fd87ece5da64a51960b60999ccdfd5f\\operation.json"
+  },
+  {
+    "status": "passed",
+    "injectedPostHealthFailure": true,
+    "actualHistoricalBaselineSha256": "d23702de5d05c1eed5a4575d0d11b0d45267ec3aa01360b0d582ad19c6a36b67",
+    "candidateSha256": "186bfbd47ad41659bc221f32a1b5c98f2ff0b64cc54a3f0e2ad73d31a6bdceaa",
+    "hostPreserved": true,
+    "oldBytesPreserved": true,
+    "restoredHealthVersion": 0,
+    "retainedCurrentOverrideConfigAndRuntimeToken": true,
+    "queuedEventDeliveredAfterRollback": true,
+    "trialMonitoringAside": true,
+    "operationManifest": "D:\\Code\\ZeusApps.BellTower\\artifacts\\development-trial\\trial-1792777572388-w25ah4\\operations-qa004-20261023-001-true\\private\\bell-tower-trial-ca1ce35f52f24a9c8373626da83ebeb6\\operation.json"
+  }
+]

@@ -37,8 +37,11 @@ public static class AttachmentCapture
 
         var host = new HostTarget(kind, ProcessProbe.Identify(shell.Pid), ProcessProbe.Identify(window.Pid),
             handle, Environment.GetEnvironmentVariable("WT_SESSION"));
-        return new(id, provider, agentIdentity, host, directory, DateTimeOffset.UtcNow,
+        return new Attachment(id, provider, agentIdentity, host, directory, DateTimeOffset.UtcNow,
             ManagedTitle: Environment.GetEnvironmentVariable("BELLTOWER_MANAGED_TITLE") == "1",
-            ManagedBackground: Environment.GetEnvironmentVariable("BELLTOWER_MANAGED_BACKGROUND") == "1");
+            ManagedBackground: Environment.GetEnvironmentVariable("BELLTOWER_MANAGED_BACKGROUND") == "1")
+        {
+            Ownership = Environment.GetEnvironmentVariable("BELLTOWER_ATTACHMENT") is not null ? "managed" : "observed"
+        };
     }
 }

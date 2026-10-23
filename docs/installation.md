@@ -1,5 +1,7 @@
 # Installation and operation
 
+Both clients share [attachment health and bounded terminal refresh](attachment-health.md), including persisted unavailable status, the `attachmentEvidenceGraceMinutes` control and consumer compatibility requirements.
+
 ## Fast hook setup
 
 New versioned packages include a dedicated native ingress for both providers. Setup provisions verified immutable bytes under the selected data directory and previews direct hooks. Regular hooks use async capture; SessionEnd uses fast synchronous capture. Restart an older monitoring tray with the selected version before enabling capture-v1. Agent sessions can remain open.

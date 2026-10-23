@@ -70,7 +70,7 @@ try {
     $ownedNames = @('bell-tower.exe', 'bell-tower-ingress.exe', 'README.md', "bell-tower-focus-$version.vsix", 'helpers/Invoke-BellTower.ps1')
     $ownedNames += Get-ChildItem -LiteralPath docs -File -Recurse | ForEach-Object { 'docs/' + [System.IO.Path]::GetRelativePath((Join-Path $projectRoot 'docs'), $_.FullName).Replace('\', '/') }
     foreach ($name in $ownedNames) { $inventory[$name] = (Get-FileHash -LiteralPath (Join-Path $publishRoot $name) -Algorithm SHA256).Hash.ToLowerInvariant() }
-    $contract = [ordered]@{ version = $version; runtime = 'win-x64'; selfContained = $true; layout = 1; bootstrap = 1; state = 1; runtimeRecords = 1; shell = 1; bridge = 1; capture = 1; files = $inventory }
+    $contract = [ordered]@{ version = $version; runtime = 'win-x64'; selfContained = $true; layout = 1; bootstrap = 1; state = 1; runtimeRecords = 1; shell = 1; bridge = 1; capture = 1; attachmentHealth = 1; files = $inventory }
     $contract | ConvertTo-Json -Depth 20 | Set-Content -LiteralPath (Join-Path $publishRoot 'release.json') -Encoding utf8
     @{ layout = 1; bootstrap = 1 } | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $installationRoot 'installation.json') -Encoding utf8
     @{ version = $version } | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $installationRoot 'current.json') -Encoding utf8

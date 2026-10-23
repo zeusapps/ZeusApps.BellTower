@@ -5,6 +5,7 @@ namespace BellTower.IO;
 
 public sealed class GitReader
 {
+    public int ChildLaunchCount { get; private set; }
     private readonly Dictionary<string, (DateTimeOffset At, GitContext Value)> cache = new(StringComparer.OrdinalIgnoreCase);
     public GitContext Read(string directory)
     {
@@ -13,6 +14,17 @@ public sealed class GitReader
             return hit.Value;
         }
 
+        var result = ReadUncached(directory);
+        if (cache.Count >= 256)
+        {
+            cache.Clear();
+        }
+        cache[directory] = (DateTimeOffset.UtcNow, result);
+        return result;
+    }
+
+    public GitContext ReadUncached(string directory)
+    {
         var root = Run(directory, "rev-parse", "--show-toplevel");
         if (root is null)
         {
@@ -23,17 +35,10 @@ public sealed class GitReader
         var gitDir = Run(directory, "rev-parse", "--absolute-git-dir");
         var common = Run(directory, "rev-parse", "--path-format=absolute", "--git-common-dir");
         var worktree = gitDir is not null && common is not null && !string.Equals(gitDir, common, StringComparison.OrdinalIgnoreCase) ? Path.GetFileName(root) : null;
-        var result = new GitContext(branch, worktree);
-        if (cache.Count > 256)
-        {
-            cache.Clear();
-        }
-
-        cache[directory] = (DateTimeOffset.UtcNow, result);
-        return result;
+        return new GitContext(branch, worktree);
     }
 
-    private static string? Run(string directory, params string[] arguments)
+    private string? Run(string directory, params string[] arguments)
     {
         if (!Directory.Exists(directory))
         {
@@ -56,6 +61,7 @@ public sealed class GitReader
             }
 
             using var process = Process.Start(start)!;
+            ChildLaunchCount++;
             var output = process.StandardOutput.ReadToEndAsync();
             var error = process.StandardError.ReadToEndAsync();
             if (!process.WaitForExit(2000))

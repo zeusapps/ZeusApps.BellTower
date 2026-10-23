@@ -53,6 +53,12 @@ public sealed class CaptureHealthReporter(DataPaths paths)
             LatestConsumptionLagSeconds = new { Claude = Lag("claude"), Codex = Lag("codex") },
             UnverifiedActiveSessions = new StateStore(paths).Read().Sessions.Values.Count(s => !s.Ended &&
                 new AttachmentStore(paths).Get(s.AttachmentId)?.Process is null),
+            AttachmentEvidenceGraceMinutes = new ConfigStore(paths).Read().AttachmentEvidenceGraceMinutes,
+            AttachmentHealth = new StateStore(paths).Read().Sessions.Values.GroupBy(session => session.AttachmentHealth)
+                .ToDictionary(group => group.Key, group => group.Count()),
+            Ownership = new StateStore(paths).Read().Sessions.Values.Where(session => !session.Ended)
+                .Select(session => new AttachmentStore(paths).Get(session.AttachmentId)?.Ownership ?? "unverified")
+                .GroupBy(mode => mode).ToDictionary(group => group.Key, group => group.Count()),
             TranscriptTimeoutInspection = "opt-in doctor --transcript; Claude 2.1.306 hook_cancelled records supported; Codex 0.164.0 cli/exec does not persist structured timeout records in chat transcripts; capture health remains available",
             NativeLatencyAcceptance = "requires packaged provider-shell benchmark"
         };

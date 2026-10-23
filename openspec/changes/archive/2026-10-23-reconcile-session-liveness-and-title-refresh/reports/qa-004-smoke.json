@@ -1,0 +1,34 @@
+{
+  "status": "passed",
+  "candidate": "D:/Code/ZeusApps.BellTower/artifacts/update-acceptance/development-trial/trial-1792777572388-w25ah4/bell-tower-0.1.9-win-x64",
+  "dataRoot": "D:\\Code\\ZeusApps.BellTower\\artifacts\\development-trial\\qa-004-smoke-20261023-001\\data",
+  "normalTrayStartup": {
+    "exitCode": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  "migratedRestart": {
+    "exitCode": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  "legacyNormalizedSessions": 2,
+  "nativeCaptureSessions": 2,
+  "providers": [
+    "claude",
+    "codex"
+  ],
+  "mixedSessions": 4,
+  "committedHealthVersion": 1,
+  "stableIdentityEpisodesPalettes": true,
+  "privateHostPreserved": true,
+  "declaredLegacyRefusal": {
+    "exitCode": 1,
+    "stdout": "",
+    "stderr": "bell-tower launcher: Attachment health requires a health-v1 consumer; selection and sessions were preserved. Keep a compatible tray selected.\r\n"
+  },
+  "rollbackCopyHashMatched": true,
+  "physicalAudio": "silent sinks only",
+  "historicalBaseline": "not exercised: declared-capability fixture is not historical release evidence",
+  "production": "not read or modified by smoke"
+}

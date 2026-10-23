@@ -1,0 +1,2 @@
+requests=A,B; desired=A; actual=B; expectedRequests=A,B,A; defect=True
+newAgent=True; newShell=True; newWindow=False; kind=windows-terminal; handle=111; terminal=old-terminal; expected=vscode/222/new-terminal; synthetic window handles only; no focus executed

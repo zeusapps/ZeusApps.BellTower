@@ -12,6 +12,7 @@ public sealed class ConfigStore(DataPaths paths)
         {
             lastGood = AtomicFile.Read<AppConfig>(paths.Config) ?? lastGood;
             lastGood.Updates ??= new();
+            lastGood.AttachmentEvidenceGraceMinutes = Math.Clamp(lastGood.AttachmentEvidenceGraceMinutes, 1, 1440);
         }
         catch (Exception e) when (e is IOException or JsonException or InvalidDataException)
         {

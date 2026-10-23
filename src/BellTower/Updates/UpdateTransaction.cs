@@ -37,7 +37,7 @@ public static class UpdateTransaction
         { throw new IOException("Keep installation and data directories separate."); }
         using var mutation = new InstallationGate(installation.Root, "update", 0);
         ValidateData(paths);
-        CaptureCompatibility.Ensure(paths.Root, offer.Contract.Capture);
+        CaptureCompatibility.Ensure(paths.Root, offer.Contract.Capture, offer.Contract.AttachmentHealth);
         EnsureNoCoordinator(installation);
         var selected = installation.Selection();
         if (ReleaseContract.Parse(offer.Version) <= ReleaseContract.Parse(selected.Version))
@@ -98,8 +98,8 @@ public static class UpdateTransaction
             paths = new DataPaths(plan.DataDirectory);
             paths.Ensure();
             ValidateData(paths);
-            CaptureCompatibility.Ensure(paths.Root,
-                DistributionJson.Read<ReleaseContract>(Path.Combine(installation.Payload(plan.Target), "release.json")).Capture);
+            var targetContract = DistributionJson.Read<ReleaseContract>(Path.Combine(installation.Payload(plan.Target), "release.json"));
+            CaptureCompatibility.Ensure(paths.Root, targetContract.Capture, targetContract.AttachmentHealth);
             Installation.EnsurePlainPath(paths.Root);
             if (Installation.Hash(Path.Combine(installation.Payload(plan.Target), "release.json")) != plan.ContractHash)
             { throw new InvalidDataException("Staged metadata changed."); }
@@ -161,8 +161,8 @@ public static class UpdateTransaction
                         }
                         using (var launch = new InstallationGate(installation.Root))
                         {
-                            CaptureCompatibility.Ensure(paths!.Root,
-                                DistributionJson.Read<ReleaseContract>(Path.Combine(installation.Payload(plan.Original), "release.json")).Capture);
+                            var originalContract = DistributionJson.Read<ReleaseContract>(Path.Combine(installation.Payload(plan.Original), "release.json"));
+                            CaptureCompatibility.Ensure(paths!.Root, originalContract.Capture, originalContract.AttachmentHealth);
                             DistributionJson.Write(installation.SelectionPath, new VersionSelection(plan.Original, plan.Target, plan.Id));
                         }
                     }

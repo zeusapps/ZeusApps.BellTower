@@ -1,0 +1,19 @@
+{
+  "utc": "2026-10-23T17:50:09.1676724Z",
+  "binary": "D:\\Code\\ZeusApps.BellTower\\artifacts\\development-trial\\trial-1792777572388-w25ah4\\before-fix\\bell-tower-0.1.8-win-x64\\versions\\0.1.8\\bell-tower.exe",
+  "binarySha256": "11f26aefd50f28061d500b2947a74b1c71e7c5d3f9cb53dbde119156c0184dd7",
+  "arguments": [
+    "tray",
+    "--silent",
+    "--data-dir",
+    "D:\\Code\\ZeusApps.BellTower\\artifacts\\development-trial\\trial-1792777572388-w25ah4\\qa-003-startup-1f2069ff16b24811880f23c9c9e45e4e"
+  ],
+  "dataRoot": "D:\\Code\\ZeusApps.BellTower\\artifacts\\development-trial\\trial-1792777572388-w25ah4\\qa-003-startup-1f2069ff16b24811880f23c9c9e45e4e",
+  "exitCode": 1,
+  "stdout": "",
+  "stderr": "bell-tower: Attachment health requires a health-v1 consumer; selection and sessions were preserved. Keep a compatible tray selected.\r\n",
+  "exitedWithin5Seconds": true,
+  "stateUnchanged": true,
+  "sourceDiffMatches": true,
+  "all58FilesMatch": true
+}

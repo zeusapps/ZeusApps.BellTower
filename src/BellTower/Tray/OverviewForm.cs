@@ -53,6 +53,7 @@ public sealed class OverviewForm : Form
             "Session",
             "Agent",
             "Activity",
+            "Health",
             "Attention",
             "Git",
             "Navigation"
@@ -142,7 +143,7 @@ public sealed class OverviewForm : Form
 
             var attention = value.State.Reason is not null
                 ? AlertPolicy.ReasonText(value.State.Reason) + (value.State.RequiresAttention(now) ? "" : " (pending/dismissed)") : "";
-            row.SetValues(value.Identity.Name, value.State.Provider, value.State.Activity, attention, value.Git.ToString(), value.Navigation);
+            row.SetValues(value.Identity.Name, value.State.Provider, value.State.Activity, value.State.AttachmentHealth, attention, value.Git.ToString(), value.Navigation);
             row.Cells[0].Style.BackColor = ColorTranslator.FromHtml(value.Identity.Palette.Accent);
             row.Cells[0].Style.ForeColor = ColorTranslator.FromHtml(value.Identity.Palette.Foreground);
         }

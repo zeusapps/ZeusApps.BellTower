@@ -7,6 +7,24 @@ namespace BellTower.IO;
 
 public static class ProcessProbe
 {
+    public static ProcessLiveness Inspect(ProcessIdentity identity)
+    {
+        try
+        {
+            using var process = Process.GetProcessById(identity.Pid);
+            return !process.HasExited && process.StartTime.ToUniversalTime().Ticks == identity.StartedUtcTicks
+                ? ProcessLiveness.Live : ProcessLiveness.Ended;
+        }
+        catch (Exception exception) when (exception is ArgumentException or InvalidOperationException)
+        {
+            return ProcessLiveness.Ended;
+        }
+        catch (Win32Exception)
+        {
+            return ProcessLiveness.Unverified;
+        }
+    }
+
     public static ProcessIdentity? Identify(int pid)
     {
         try

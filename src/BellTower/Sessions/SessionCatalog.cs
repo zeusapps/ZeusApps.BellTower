@@ -25,6 +25,7 @@ public sealed class SessionCatalog
             return new SessionSummary(session.Key, identity, session.Activity,
                 session.Reason, session.Since, navigator.Precision(attachments.Get(session.AttachmentId)))
             {
+                AttachmentHealth = session.AttachmentHealth,
                 NativePresentationName = session.Provider == "codex" ? SessionPresentation.CodexName(identity.Name, new GitReader().Read(session.Directory)) : null,
                 NativeNameSynchronization = session.Provider == "codex" ? identity.NativeSyncStatus : null
             };

@@ -65,6 +65,9 @@ public static class ReleasePackage
         { process.Kill(); throw new IOException("Release probe timed out."); }
         var contract = System.Text.Json.JsonSerializer.Deserialize<ReleaseContract>(output.GetAwaiter().GetResult(), DistributionJson.Options) ?? throw new InvalidDataException("Invalid release probe.");
         contract.Validate();
+        var expected = DistributionJson.Read<ReleaseContract>(Path.Combine(payload, "release.json"));
+        if (contract.Capture != expected.Capture || contract.AttachmentHealth != expected.AttachmentHealth)
+        { throw new InvalidDataException("Release probe consumer capability mismatch."); }
         if (process.ExitCode != 0 || contract.Version != version)
         { throw new InvalidDataException("Release probe version mismatch: " + error.GetAwaiter().GetResult()); }
     }

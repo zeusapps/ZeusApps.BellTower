@@ -27,13 +27,8 @@ public sealed class HookIngestor(DataPaths paths)
         }
 
         var attachments = new AttachmentStore(paths);
-        var attachment = attachments.Get(captured.Id) ?? captured;
-        if (attachment.Process is null && captured.Process is not null)
-        {
-            attachment = captured;
-        }
-
-        attachments.Save(attachment);
+        var attachment = attachments.Adopt(captured with { Ownership = dedicated ? captured.Ownership : "shared-runtime" }, DateTimeOffset.UtcNow,
+            HookInput.Text(input, "source") == "resume");
         var observation = HookAdapter.Parse(provider, input, attachment);
         if (observation is null)
         {

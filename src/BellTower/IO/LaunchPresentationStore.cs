@@ -14,11 +14,23 @@ public sealed class LaunchPresentationStore(DataPaths paths)
         return presentation;
     }
 
-    public Palette? Consume(string id, ProcessIdentity? shell)
+    public Palette? Consume(string id, ProcessIdentity? shell, DateTimeOffset? observedAt = null, bool requireLive = true)
     {
-        var palette = Read(id, shell);
-        Remove(id);
+        using var gate = new DataLock(paths, "launch");
+        var palette = Read(id, shell, observedAt, requireLive);
+        var presentation = AtomicFile.Read<LaunchPresentation>(FilePath(id));
+        if (palette is not null && presentation is not null)
+        {
+            AtomicFile.Write(FilePath(id), Json.Encode(presentation with { PaletteConsumed = true }));
+        }
         return palette;
+    }
+
+    public ProcessIdentity? Shell(string id)
+    {
+        using var gate = new DataLock(paths, "launch");
+        var presentation = AtomicFile.Read<LaunchPresentation>(FilePath(id));
+        return presentation?.AttachmentId == id ? presentation.Shell : null;
     }
 
     public Palette? Read(string id, ProcessIdentity? shell, DateTimeOffset? observedAt = null, bool requireLive = true)
@@ -30,7 +42,7 @@ public sealed class LaunchPresentationStore(DataPaths paths)
         {
             return null;
         }
-        return presentation.AttachmentId == id && presentation.Shell == shell && shell is not null &&
+        return !presentation.PaletteConsumed && presentation.AttachmentId == id && presentation.Shell == shell && shell is not null &&
             (!requireLive || ProcessProbe.Identify(shell.Pid) == shell) &&
             (observedAt ?? DateTimeOffset.UtcNow) >= presentation.CreatedAt &&
             (observedAt ?? DateTimeOffset.UtcNow) - presentation.CreatedAt < TimeSpan.FromHours(24) &&

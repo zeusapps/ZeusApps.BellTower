@@ -4,8 +4,9 @@ namespace BellTower.Distribution;
 
 public static class CaptureCompatibility
 {
-    public static void Ensure(string dataDirectory, int consumer)
+    public static void Ensure(string dataDirectory, int consumer, int attachmentHealth = 0)
     {
+        AttachmentHealthCompatibility.Ensure(dataDirectory, attachmentHealth);
         var marker = Path.Combine(dataDirectory, "capture-protocol.json");
         if (!File.Exists(marker))
         {
@@ -19,7 +20,7 @@ public static class CaptureCompatibility
         }
     }
 
-    public static void EnsureTrayInvocation(string[] args, int consumer)
+    public static void EnsureTrayInvocation(string[] args, int consumer, int attachmentHealth = 0)
     {
         if (!StartsTray(args))
         {
@@ -29,7 +30,7 @@ public static class CaptureCompatibility
         var inline = args.FirstOrDefault(arg => arg.StartsWith("--data-dir=", StringComparison.Ordinal));
         var directory = index >= 0 && index + 1 < args.Length ? args[index + 1] : inline is not null ? inline[11..] : Environment.GetEnvironmentVariable("BELLTOWER_DATA_DIR") ??
             Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "ZeusApps.BellTower");
-        Ensure(directory, consumer);
+        Ensure(directory, consumer, attachmentHealth);
     }
 
     private static bool StartsTray(string[] args)

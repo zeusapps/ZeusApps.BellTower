@@ -9,4 +9,5 @@ public sealed class AppConfig
     public bool Muted { get; set; }
     public string? ToneFile { get; set; }
     public string? ToneName { get; set; }
+    public int AttachmentEvidenceGraceMinutes { get; set; } = 10;
 }

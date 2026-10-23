@@ -16,7 +16,7 @@ internal static class Program
             {
                 var selected = installation.Selection();
                 var contract = DistributionJson.Read<ReleaseContract>(Path.Combine(installation.Payload(selected.Version), "release.json"));
-                CaptureCompatibility.EnsureTrayInvocation(args, contract.Capture);
+                CaptureCompatibility.EnsureTrayInvocation(args, contract.Capture, contract.AttachmentHealth);
                 lease = installation.Lease(selected.Version);
                 try
                 {

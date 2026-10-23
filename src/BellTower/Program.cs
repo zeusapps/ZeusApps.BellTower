@@ -13,14 +13,14 @@ public static class Program
         Console.InputEncoding = new UTF8Encoding(false);
         try
         {
-            CaptureCompatibility.EnsureTrayInvocation(args, 1);
+            CaptureCompatibility.EnsureTrayInvocation(args, 1, attachmentHealth: 1);
             var installation = Installation.ForPayload(Environment.ProcessPath!);
             using var lifetime = installation?.Lease(Path.GetFileName(Path.GetDirectoryName(Environment.ProcessPath!))!);
             if (args is ["__apply-update", var plan, var token])
             { return Updates.UpdateTransaction.Apply(plan, token); }
             if (args is ["--distribution-info"])
             {
-                Console.WriteLine(System.Text.Json.JsonSerializer.Serialize(new ReleaseContract(ApplicationInfo.Version, Capture: 1), DistributionJson.Options));
+                Console.WriteLine(System.Text.Json.JsonSerializer.Serialize(new ReleaseContract(ApplicationInfo.Version, Capture: 1, AttachmentHealth: 1), DistributionJson.Options));
                 return 0;
             }
             return CliApplication.Run(args);

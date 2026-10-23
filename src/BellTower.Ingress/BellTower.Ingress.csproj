@@ -10,6 +10,7 @@
   <ItemGroup>
     <ProjectReference Include="../BellTower.Protocol/BellTower.Protocol.csproj" />
     <Compile Include="../BellTower/IO/ProcessProbe.cs" Link="ProcessProbe.cs" />
+    <Compile Include="../BellTower/IO/ProcessLiveness.cs" Link="ProcessLiveness.cs" />
     <Compile Include="../BellTower/Hosts/WindowProbe.cs" Link="WindowProbe.cs" />
     <Compile Include="../BellTower/Hosts/AttachmentCapture.cs" Link="AttachmentCapture.cs" />
   </ItemGroup>

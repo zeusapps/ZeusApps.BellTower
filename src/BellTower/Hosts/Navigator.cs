@@ -15,7 +15,8 @@ public sealed class Navigator
 
     public Task<FocusResult> FocusAsync(Attachment? attachment)
     {
-        if (attachment is null || attachment.Process is not { } registered || ProcessProbe.Identify(registered.Pid) != registered)
+        if (attachment is null || attachment.EndedAt is not null || attachment.Health == "unavailable" ||
+            attachment.Process is not { } registered || ProcessProbe.Identify(registered.Pid) != registered)
         {
             return Task.FromResult(new FocusResult(false, "unavailable", "The session process cannot be verified."));
         }
@@ -25,6 +26,7 @@ public sealed class Navigator
             : Task.FromResult(new FocusResult(false, "unavailable", "No verified terminal destination is registered."));
     }
 
-    public string Precision(Attachment? attachment) => attachment is not null && hosts.TryGetValue(attachment.Host.Kind, out var host)
+    public string Precision(Attachment? attachment) => attachment is { EndedAt: null } && attachment.Health != "unavailable" &&
+        attachment.Process is { } process && ProcessProbe.Identify(process.Pid) == process && hosts.TryGetValue(attachment.Host.Kind, out var host)
         ? host.Precision(attachment) : "unavailable";
 }

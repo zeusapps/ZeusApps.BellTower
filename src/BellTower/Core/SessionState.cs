@@ -16,6 +16,8 @@ public sealed class SessionState
     public SessionState? CausalCheckpoint { get; set; }
     public Observation? CausalFloor { get; set; }
     public bool Ended { get; set; }
+    public string AttachmentHealth { get; set; } = "unverified";
+    public DateTimeOffset? AttachmentUnverifiedSince { get; set; }
     public bool ForegroundStopped { get; set; }
     public bool CompletionPending { get; set; }
     public List<BackgroundTask> Background { get; set; } = [];
@@ -60,6 +62,6 @@ public sealed class SessionState
         }
     }
 
-    public bool RequiresAttention(DateTimeOffset now) => !Ended && Episode != AcknowledgedEpisode && Due is { } due && due <= now;
-    public string Activity => Ended ? "ended" : Background.Count != 0 ? "background work" : ForegroundStopped ? "idle" : "working";
+    public bool RequiresAttention(DateTimeOffset now) => !Ended && AttachmentHealth != "unavailable" && Episode != AcknowledgedEpisode && Due is { } due && due <= now;
+    public string Activity => Ended ? "ended" : AttachmentHealth == "unavailable" ? "unavailable" : Background.Count != 0 ? "background work" : ForegroundStopped ? "idle" : "working";
 }

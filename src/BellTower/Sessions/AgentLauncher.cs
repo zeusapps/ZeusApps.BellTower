@@ -14,7 +14,8 @@ public sealed class AgentLauncher(DataPaths paths)
         var attachment = AttachmentCapture.Capture(options.Provider, Environment.CurrentDirectory) with
         {
             Id = Guid.NewGuid().ToString("N"),
-            Process = null
+            Process = null,
+            Ownership = "managed"
         };
         attachments.Save(attachment);
         new TrayController(paths).Start(options.Silent);

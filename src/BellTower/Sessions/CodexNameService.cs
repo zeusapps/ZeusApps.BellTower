@@ -8,9 +8,9 @@ namespace BellTower.Sessions;
 
 public sealed class CodexNameService(DataPaths paths, Func<ICodexNameClient>? createClient = null)
 {
-    public void Sync(SessionState session)
+    public void Sync(SessionState session, GitContext? context = null)
     {
-        if (session.Provider != "codex" || session.Ended)
+        if (session.Provider != "codex" || session.Ended || session.AttachmentHealth == "unavailable")
         {
             return;
         }
@@ -33,7 +33,7 @@ public sealed class CodexNameService(DataPaths paths, Func<ICodexNameClient>? cr
                 SetStatus(identities, session, "unavailable: no verified dedicated runtime");
                 return;
             }
-            var desired = SessionPresentation.CodexName(identity.Name, new GitReader().Read(session.Directory));
+            var desired = SessionPresentation.CodexName(identity.Name, context ?? new GitReader().Read(session.Directory));
             var token = File.ReadAllText(runtimes.TokenPath(runtime.Attachment));
             using var client = createClient?.Invoke() ?? new CodexConnection();
             using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(3));

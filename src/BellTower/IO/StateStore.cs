@@ -29,6 +29,10 @@ public sealed class StateStore
         var changed = ReconcileAttachments(state);
         if (accepted.Count != 0 || changed || !File.Exists(paths.State))
         {
+            if (state.Sessions.Count > 0)
+            {
+                state.AttachmentHealthVersion = 1;
+            }
             RetainPendingReceipts(state);
             PruneEndedSessions(state);
             snapshots.Save(state);
@@ -100,10 +104,36 @@ public sealed class StateStore
     private bool ReconcileAttachments(AppState state)
     {
         var changed = false;
-        foreach (var session in state.Sessions.Values.Where(session => !session.Ended))
+        var now = DateTimeOffset.UtcNow;
+        var grace = TimeSpan.FromMinutes(new ConfigStore(paths).Read().AttachmentEvidenceGraceMinutes);
+        foreach (var session in state.Sessions.Values)
         {
+            if (session.Ended)
+            {
+                if (session.AttachmentHealth != "confirmed-ended")
+                {
+                    session.AttachmentHealth = "confirmed-ended";
+                    changed = true;
+                }
+                continue;
+            }
+            using var presentation = new DataLock(paths, "presentation");
             var attachment = attachments.Get(session.AttachmentId);
-            if (attachment?.EndedAt is null && !(attachment?.Process is { } process && !ProcessProbe.IsAlive(process)))
+            var evaluated = attachment is null ? null : new AttachmentHealth().Evaluate(attachment, now, grace);
+            if (evaluated is not null && evaluated != attachment)
+            {
+                attachments.Save(evaluated);
+            }
+            var since = evaluated?.UnverifiedSince ?? session.AttachmentUnverifiedSince ?? now;
+            var health = evaluated?.Health ?? (now - since >= grace ? "unavailable" : "unverified");
+            var effectiveSince = health == "verified-live" ? (DateTimeOffset?)null : since;
+            if (session.AttachmentHealth != health || session.AttachmentUnverifiedSince != effectiveSince)
+            {
+                session.AttachmentHealth = health;
+                session.AttachmentUnverifiedSince = effectiveSince;
+                changed = true;
+            }
+            if (health != "confirmed-ended")
             {
                 continue;
             }

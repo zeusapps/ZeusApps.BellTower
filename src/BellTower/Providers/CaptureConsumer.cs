@@ -40,18 +40,12 @@ public sealed class CaptureConsumer(DataPaths paths)
             {
                 var observation = envelope.Observation with { ProcessedAt = DateTimeOffset.UtcNow };
                 var attachments = new AttachmentStore(paths);
-                var previous = attachments.Get(envelope.Attachment.Id);
-                var attachment = previous is null ? envelope.Attachment : previous.Process is null && envelope.Attachment.Process is not null
-                    ? previous with { Process = envelope.Attachment.Process, Host = envelope.Attachment.Host } : previous;
-                attachments.Save(attachment);
+                var attachment = attachments.Adopt(envelope.Attachment with { Ownership = envelope.Dedicated ? envelope.Attachment.Ownership : "shared-runtime" },
+                    observation.At, observation.Kind == EventKind.Register && observation.RegistrationSource == "resume");
                 var launches = new LaunchPresentationStore(paths);
-                var palette = envelope.Dedicated ? launches.Read(attachment.Id, attachment.Host.Shell, envelope.IngressAt, requireLive: false) : null;
+                var palette = envelope.Dedicated ? launches.Consume(attachment.Id, attachment.Host.Shell, envelope.IngressAt, requireLive: false) : null;
                 new IdentityStore(paths).Get(observation.Key, observation.Directory,
                     IdentityText.Optional(envelope.Name), IdentityText.Optional(envelope.Change), IdentityText.Optional(envelope.Role), palette);
-                if (palette is not null)
-                {
-                    launches.Remove(attachment.Id);
-                }
                 new OpenSpecSelectionObserver(paths).Observe(envelope);
                 SessionReducer.Apply(state, observation);
                 AtomicFile.Write(Path.Combine(paths.Root, observation.Provider + "-observed.json"), IO.Json.Encode(new

@@ -54,6 +54,31 @@ public sealed class CodexNameTests
     }
 
     [Fact]
+    public async Task SharedCheckoutProjectionAvoidsNewGitReadsAndPreservesNativeRenameOwnership()
+    {
+        using var workspace = new TestWorkspace();
+        var session = Prepare(workspace, "one", "Managed");
+        var names = new Names();
+        var service = new CodexNameService(workspace.Paths, () => new Client(names));
+        var reads = 0;
+        var now = DateTimeOffset.UtcNow;
+        var cache = new CheckoutCache(_ => { reads++; return new("feature", "linked-checkout"); }, () => now);
+        for (var tick = 0; tick < 50; tick++)
+        {
+            var context = await cache.ReadAsync(workspace.Root);
+            service.Sync(session, context);
+            Assert.Equal(context, await cache.ReadAsync(workspace.Root));
+        }
+        Assert.Equal(1, reads);
+        Assert.Equal(1, names.Writes);
+        Assert.Equal("Managed | worktree: linked-checkout", names.Values[("ws://127.0.0.1:12345", "one")]);
+        names.Values[("ws://127.0.0.1:12345", "one")] = "User rename";
+        service.Sync(session, await cache.ReadAsync(workspace.Root));
+        Assert.Equal(1, names.Writes);
+        Assert.False(new IdentityStore(workspace.Paths).Get(session.Key, workspace.Root).NativeSyncEnabled);
+    }
+
+    [Fact]
     public void NativeNamesFollowIdentityAndDuplicateWritesAreSuppressed()
     {
         using var workspace = new TestWorkspace();

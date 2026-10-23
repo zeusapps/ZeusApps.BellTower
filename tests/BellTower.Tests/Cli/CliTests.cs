@@ -217,6 +217,34 @@ public sealed class CliTests
         Assert.Single(new StateStore(w.Paths).Read().Sessions);
     }
 
+    [Theory]
+    [InlineData("claude")]
+    [InlineData("codex")]
+    public void ActualConsumerStartsAndRestartsWithCommittedHealthCapability(string provider)
+    {
+        using var workspace = new TestWorkspace();
+        new ConfigStore(workspace.Paths).Update(config => { config.Muted = true; config.Voice = false; config.Updates.Enabled = false; });
+        var process = ProcessProbe.Identify(Environment.ProcessId)!;
+        new AttachmentStore(workspace.Paths).Save(new("attachment-1", provider, process, new("unknown", process), workspace.Root, DateTimeOffset.UtcNow));
+        var observation = TestWorkspace.Event(EventKind.Permission) with { Provider = provider, Directory = workspace.Root };
+        new EventStore(workspace.Paths).Publish(observation);
+        var before = new StateStore(workspace.Paths).Drain().Sessions[observation.Key];
+        var palette = new IdentityStore(workspace.Paths).Get(observation.Key, workspace.Root).Palette;
+        Assert.Equal(1, new StateStore(workspace.Paths).Read().AttachmentHealthVersion);
+        for (var restart = 0; restart < 2; restart++)
+        {
+            var result = Run(workspace, null, "tray", "--silent", "--duration-ms", "700");
+            Assert.Equal(0, result.Code);
+            Assert.Empty(result.Error);
+            var state = new StateStore(workspace.Paths).Read();
+            Assert.Equal(1, state.AttachmentHealthVersion);
+            Assert.Equal("verified-live", state.Sessions[observation.Key].AttachmentHealth);
+            Assert.Equal(before.Episode, state.Sessions[observation.Key].Episode);
+            Assert.Equal(before.Since, state.Sessions[observation.Key].Since);
+            Assert.Equal(palette, new IdentityStore(workspace.Paths).Get(observation.Key, workspace.Root).Palette);
+        }
+    }
+
     [Fact]
     public void DetachedTraySurvivesStartingProcessAndManagementIsScoped()
     {

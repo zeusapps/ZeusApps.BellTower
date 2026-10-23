@@ -60,6 +60,9 @@ public static class CausalSessionReducer
             result.ViewedEpisode = previous.ViewedEpisode;
             result.NativePermissionPending = previous.NativePermissionPending;
             result.NativePermissionSince = previous.NativePermissionSince;
+            result.AttachmentHealth = previous.AttachmentId == result.AttachmentId ? previous.AttachmentHealth : "unverified";
+            result.AttachmentUnverifiedSince = previous.AttachmentId == result.AttachmentId ? previous.AttachmentUnverifiedSince : null;
+            result.AdditionalData = previous.AdditionalData;
             foreach (var wait in previous.Waits.Where(w => w.Acknowledged || w.Viewed))
             {
                 for (var i = 0; i < result.Waits.Count; i++)
@@ -96,6 +99,8 @@ public static class CausalSessionReducer
         TurnStarted = source.TurnStarted,
         LastObserved = source.LastObserved,
         Ended = source.Ended,
+        AttachmentHealth = source.AttachmentHealth,
+        AttachmentUnverifiedSince = source.AttachmentUnverifiedSince,
         ForegroundStopped = source.ForegroundStopped,
         CompletionPending = source.CompletionPending,
         Background = [.. source.Background],

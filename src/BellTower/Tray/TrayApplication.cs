@@ -23,7 +23,7 @@ public sealed class TrayApplication : ApplicationContext
     private readonly AttachmentStore attachments;
     private readonly IdentityStore identities;
     private readonly ConfigStore configuration;
-    private readonly GitReader git = new();
+    private readonly CheckoutCache checkout = new();
     private readonly Navigator navigation;
     private readonly SessionViewFactory views;
     private readonly TerminalTitlePump titles;
@@ -50,8 +50,8 @@ public sealed class TrayApplication : ApplicationContext
         configuration = new(paths);
         navigation = new(paths);
         views = new(identities, attachments, navigation);
-        titles = new(paths);
-        nativeNames = new(paths);
+        titles = new(paths, checkout);
+        nativeNames = new(paths, checkout);
         permissions = new(paths);
         config = configuration.Read();
         updates = new(paths, new ReleaseClient(updateHttp));
@@ -256,7 +256,11 @@ public sealed class TrayApplication : ApplicationContext
         refreshing = true;
         try
         {
-            var details = await Task.Run(() => live.Select(s => (s.Key, Git: git.Read(s.Directory))).ToArray());
+            var details = new List<(string Key, GitContext Git)>();
+            foreach (var session in live)
+            {
+                details.Add((session.Key, await checkout.ReadAsync(session.Directory, updateCancellation.Token)));
+            }
             if (disposed)
             {
                 return;
@@ -269,6 +273,7 @@ public sealed class TrayApplication : ApplicationContext
 
             overview.RefreshRows(views.Overview(live, contexts), DateTimeOffset.UtcNow);
         }
+        catch (OperationCanceledException) when (updateCancellation.IsCancellationRequested) { }
         catch (Exception e) when (e is IOException or InvalidOperationException)
         {
             new LocalLog(paths).Write("overview-refresh-failed");

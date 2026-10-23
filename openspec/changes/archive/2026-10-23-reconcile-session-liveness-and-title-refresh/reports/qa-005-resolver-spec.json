@@ -1,0 +1,47 @@
+{
+  "syntaxPassed": true,
+  "boundedResolverOnly": true,
+  "dllLoaded": false,
+  "operationalFunctionsExecuted": false,
+  "layouts": [
+    {
+      "ownRoot": true,
+      "nearbyMarker": true,
+      "layout": "active"
+    },
+    {
+      "ownRoot": true,
+      "nearbyMarker": true,
+      "layout": "dated-archive"
+    },
+    {
+      "ownRoot": true,
+      "nearbyMarker": true,
+      "layout": "mirrored-private"
+    },
+    {
+      "ownRoot": true,
+      "nearbyMarker": true,
+      "layout": "mirrored-private-archive"
+    }
+  ],
+  "unsupportedRejected": true,
+  "specs": [
+    {
+      "deltaExact": true,
+      "unrelatedPreserved": true,
+      "deltaBlocks": 2,
+      "capability": "session-identity",
+      "originalBlocks": 5,
+      "currentBlocks": 7
+    },
+    {
+      "deltaExact": true,
+      "unrelatedPreserved": true,
+      "deltaBlocks": 3,
+      "capability": "session-tracking",
+      "originalBlocks": 11,
+      "currentBlocks": 13
+    }
+  ]
+}
