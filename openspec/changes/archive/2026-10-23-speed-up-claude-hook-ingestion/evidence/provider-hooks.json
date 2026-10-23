@@ -1,0 +1,158 @@
+{
+  "provenance": "synthetic; field shapes checked against current official contracts on 2026-10-23; no authenticated captures",
+  "cases": [
+    {
+      "name": "claude-main-pre",
+      "provider": "claude",
+      "source": "https://code.claude.com/docs/en/hooks#pretooluse-input",
+      "input": {
+        "session_id": "fixture-claude",
+        "transcript_path": "D:/fixture/transcript.jsonl",
+        "cwd": "D:/fixture",
+        "permission_mode": "default",
+        "hook_event_name": "PreToolUse",
+        "tool_name": "Bash",
+        "tool_use_id": "fixture-operation",
+        "tool_input": { "command": "openspec status --change fixture-change --json" }
+      }
+    },
+    {
+      "name": "claude-custom-main-pre",
+      "provider": "claude",
+      "source": "https://code.claude.com/docs/en/hooks#common-input-fields",
+      "input": {
+        "session_id": "fixture-claude-custom",
+        "transcript_path": "D:/fixture/transcript.jsonl",
+        "cwd": "D:/fixture",
+        "permission_mode": "default",
+        "hook_event_name": "PreToolUse",
+        "agent_type": "pm",
+        "tool_name": "Bash",
+        "tool_use_id": "fixture-operation",
+        "tool_input": { "command": "openspec status --change fixture-change --json" }
+      }
+    },
+    {
+      "name": "claude-subagent-pre",
+      "provider": "claude",
+      "source": "https://code.claude.com/docs/en/hooks#common-input-fields",
+      "input": {
+        "session_id": "fixture-claude",
+        "transcript_path": "D:/fixture/transcript.jsonl",
+        "cwd": "D:/fixture",
+        "permission_mode": "default",
+        "hook_event_name": "PreToolUse",
+        "agent_id": "fixture-subagent",
+        "agent_type": "Explore",
+        "tool_name": "Bash",
+        "tool_use_id": "fixture-subagent-operation",
+        "tool_input": { "command": "openspec status --change fixture-change --json" }
+      }
+    },
+    {
+      "name": "claude-successful-post",
+      "provider": "claude",
+      "source": "https://code.claude.com/docs/en/hooks#posttooluse-input",
+      "input": {
+        "session_id": "fixture-claude",
+        "transcript_path": "D:/fixture/transcript.jsonl",
+        "cwd": "D:/fixture",
+        "permission_mode": "default",
+        "hook_event_name": "PostToolUse",
+        "tool_name": "Write",
+        "tool_use_id": "fixture-operation",
+        "tool_input": { "file_path": "D:\\fixture\\example.txt", "content": "Synthetic content" },
+        "tool_response": { "filePath": "D:\\fixture\\example.txt", "type": "create" }
+      }
+    },
+    {
+      "name": "claude-failed-post",
+      "provider": "claude",
+      "source": "https://code.claude.com/docs/en/hooks#posttoolusefailure-input",
+      "input": {
+        "session_id": "fixture-claude",
+        "transcript_path": "D:/fixture/transcript.jsonl",
+        "cwd": "D:/fixture",
+        "permission_mode": "default",
+        "hook_event_name": "PostToolUseFailure",
+        "tool_name": "Bash",
+        "tool_use_id": "fixture-failed-operation",
+        "tool_input": { "command": "openspec status --change absent-change --json" },
+        "error": "Exit code 1\nSynthetic failure",
+        "is_interrupt": false
+      }
+    },
+    {
+      "name": "codex-main-pre",
+      "provider": "codex",
+      "source": "https://learn.chatgpt.com/docs/hooks#pretooluse",
+      "input": {
+        "session_id": "00000000-0000-4000-8000-000000000001",
+        "turn_id": "fixture-turn",
+        "transcript_path": null,
+        "cwd": "D:/fixture",
+        "model": "fixture-model",
+        "permission_mode": "default",
+        "hook_event_name": "PreToolUse",
+        "tool_name": "Bash",
+        "tool_use_id": "fixture-operation",
+        "tool_input": { "command": "openspec status --change fixture-change --json" }
+      }
+    },
+    {
+      "name": "codex-subagent-pre",
+      "provider": "codex",
+      "source": "https://github.com/openai/codex/blob/main/codex-rs/hooks/src/events/pre_tool_use.rs",
+      "input": {
+        "session_id": "00000000-0000-4000-8000-000000000001",
+        "turn_id": "fixture-turn",
+        "transcript_path": null,
+        "cwd": "D:/fixture",
+        "model": "fixture-model",
+        "permission_mode": "default",
+        "hook_event_name": "PreToolUse",
+        "agent_id": "00000000-0000-4000-8000-000000000002",
+        "agent_type": "explorer",
+        "tool_name": "Bash",
+        "tool_use_id": "fixture-subagent-operation",
+        "tool_input": { "command": "openspec status --change fixture-change --json" }
+      }
+    },
+    {
+      "name": "codex-successful-post",
+      "provider": "codex",
+      "source": "https://learn.chatgpt.com/docs/hooks#posttooluse",
+      "input": {
+        "session_id": "00000000-0000-4000-8000-000000000001",
+        "turn_id": "fixture-turn",
+        "transcript_path": null,
+        "cwd": "D:/fixture",
+        "model": "fixture-model",
+        "permission_mode": "default",
+        "hook_event_name": "PostToolUse",
+        "tool_name": "Bash",
+        "tool_use_id": "fixture-operation",
+        "tool_input": { "command": "openspec status --change fixture-change --json" },
+        "tool_response": "{\"changeName\":\"fixture-change\",\"schemaName\":\"spec-driven\",\"root\":{\"path\":\"D:/fixture\"}}"
+      }
+    },
+    {
+      "name": "codex-failed-post",
+      "provider": "codex",
+      "source": "https://learn.chatgpt.com/docs/hooks#posttooluse",
+      "input": {
+        "session_id": "00000000-0000-4000-8000-000000000001",
+        "turn_id": "fixture-turn",
+        "transcript_path": null,
+        "cwd": "D:/fixture",
+        "model": "fixture-model",
+        "permission_mode": "default",
+        "hook_event_name": "PostToolUse",
+        "tool_name": "Bash",
+        "tool_use_id": "fixture-failed-operation",
+        "tool_input": { "command": "openspec status --change absent-change --json" },
+        "tool_response": "{\"error\":\"Synthetic failure\"}"
+      }
+    }
+  ]
+}

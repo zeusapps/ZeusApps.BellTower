@@ -192,7 +192,7 @@ public sealed class TrayApplication : ApplicationContext
             if (!ready)
             {
                 DistributionJson.Write(UpdateTransaction.Presence(paths), new TrayPresence(ProcessProbe.Identify(Environment.ProcessId)!, ApplicationInfo.Version,
-                    paths.Root, Environment.GetEnvironmentVariable("BELLTOWER_UPDATE_ACTIVATION")));
+                    paths.Root, Environment.GetEnvironmentVariable("BELLTOWER_UPDATE_ACTIVATION"), Capture: 1));
                 ready = true;
             }
             var now = DateTimeOffset.UtcNow;

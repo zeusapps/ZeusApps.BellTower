@@ -5,10 +5,12 @@ namespace BellTower.Diagnostics;
 
 public sealed class DiagnosticsReporter(DataPaths paths)
 {
-    public object Report() => new
+    public object Report(string? transcript = null, string transcriptProvider = "claude") => new
     {
         DataDirectory = paths.Root,
         TrayRunning = new TrayController(paths).IsRunning(),
+        Capture = new CaptureHealthReporter(paths).Report(),
+        TranscriptTimeouts = transcript is null ? null : new TranscriptTimeoutReader().Read(transcriptProvider, transcript),
         Claude = new
         {
             HookStatus = Observed("claude") ? "observed; see timestamp" : "not observed; check setup/trust",
@@ -38,7 +40,7 @@ public sealed class DiagnosticsReporter(DataPaths paths)
             Titles = "opt-in role-function console title synchronization; verified process creation times; live host acceptance pending",
             Background = "new local managed launches apply colors before agent startup; resets configured colors on exit; -NoBackground opts out",
             Naming = "manual Name > session-selected OpenSpec change > directory; successful literal OpenSpec CLI operations observed through main-session Bash hooks",
-            SelectionCoverage = "new change, status --change and instructions --change; paired PreToolUse/PostToolUse with operation IDs; JSON success or verified local scaffold; shell programs and hidden nested orchestration are ignored",
+            SelectionCoverage = "new change, status --change and instructions --change; bounded causal receipts; sufficient successful post-only evidence is accepted; JSON success or verified local scaffold; shell programs and hidden nested orchestration are ignored",
             Tone = new ConfigStore(paths).Read().ToneName ?? "bundled event tones"
         },
         CapabilitiesFile = "docs/compatibility.md"

@@ -3,11 +3,14 @@
     <Project Path="src/BellTower/BellTower.csproj" />
     <Project Path="src/BellTower.Distribution/BellTower.Distribution.csproj" />
     <Project Path="src/BellTower.Launcher/BellTower.Launcher.csproj" />
+    <Project Path="src/BellTower.Protocol/BellTower.Protocol.csproj" />
+    <Project Path="src/BellTower.Ingress/BellTower.Ingress.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/BellTower.Tests/BellTower.Tests.csproj" />
   </Folder>
   <Folder Name="/tools/">
     <Project Path="tools/BellTower.Smoke/BellTower.Smoke.csproj" />
+    <Project Path="tools/BellTower.Ingress.Bench/BellTower.Ingress.Bench.csproj" />
   </Folder>
 </Solution>

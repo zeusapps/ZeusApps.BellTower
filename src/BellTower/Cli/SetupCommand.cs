@@ -32,6 +32,10 @@ internal sealed class SetupCommand : Command
         {
             Description = "Set up session functions, detected terminal profiles, Claude badge, and bundled VS Code focus bridge."
         };
+        var migrate = new Option<bool>("--migrate-edited-hooks")
+        {
+            Description = "Explicitly replace edited Bell Tower hook handlers after preview; --apply writes backups."
+        };
         Options.Add(clients);
         Options.Add(home);
         Options.Add(project);
@@ -39,11 +43,13 @@ internal sealed class SetupCommand : Command
         Options.Add(remove);
         Options.Add(apply);
         Options.Add(desktop);
+        Options.Add(migrate);
         SetAction(result =>
         {
             var paths = CommonOptions.Paths(result, dataDirectory);
             var setup = new IntegrationSetup(paths, BellTower.Distribution.Installation.StableExecutable(Environment.ProcessPath!), result.GetValue(home));
-            var plan = setup.Plan(result.GetValue(clients)!, result.GetValue(remove), result.GetValue(statusLine), result.GetValue(desktop), result.GetValue(project));
+            var plan = setup.Plan(result.GetValue(clients)!, result.GetValue(remove), result.GetValue(statusLine), result.GetValue(desktop), result.GetValue(project),
+                result.GetValue(migrate));
             var output = result.InvocationConfiguration.Output;
             foreach (var file in plan.Changes)
             {

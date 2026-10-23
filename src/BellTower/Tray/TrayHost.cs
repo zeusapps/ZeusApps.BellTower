@@ -15,7 +15,7 @@ public sealed class TrayHost(DataPaths paths)
         }
         BellTower.Distribution.DistributionJson.Write(BellTower.Updates.UpdateTransaction.Presence(paths) + ".starting",
             new BellTower.Updates.TrayPresence(BellTower.IO.ProcessProbe.Identify(Environment.ProcessId)!, BellTower.Cli.ApplicationInfo.Version,
-                paths.Root, Environment.GetEnvironmentVariable("BELLTOWER_UPDATE_ACTIVATION")));
+                paths.Root, Environment.GetEnvironmentVariable("BELLTOWER_UPDATE_ACTIVATION"), Capture: 1));
 
         File.Delete(Path.Combine(paths.Root, "exit.request"));
         File.Delete(Path.Combine(paths.Root, "sound.request"));

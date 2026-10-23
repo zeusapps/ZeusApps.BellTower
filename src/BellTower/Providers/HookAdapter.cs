@@ -71,6 +71,7 @@ public static class HookAdapter
             AttachmentId = attachment.Id,
             Kind = kind.Value,
             At = at ?? DateTimeOffset.UtcNow,
+            RegistrationSource = hook == "SessionStart" ? HookInput.Text(input, "source") : null,
             Directory = HookInput.Text(input, "cwd") ?? attachment.Directory,
             TurnId = HookInput.Text(input, "turn_id"),
             OperationId = HookInput.Text(input, "tool_use_id"),
@@ -85,7 +86,7 @@ public static class HookAdapter
     private static string Canonical(JsonElement value) => value.ValueKind switch
     {
         JsonValueKind.Object => "{" + string.Join(",", value.EnumerateObject().OrderBy(property => property.Name, StringComparer.Ordinal)
-            .Select(property => JsonSerializer.Serialize(property.Name) + ":" + Canonical(property.Value))) + "}",
+            .Select(property => "\"" + JsonEncodedText.Encode(property.Name) + "\":" + Canonical(property.Value))) + "}",
         JsonValueKind.Array => "[" + string.Join(",", value.EnumerateArray().Select(Canonical)) + "]",
         _ => value.GetRawText()
     };

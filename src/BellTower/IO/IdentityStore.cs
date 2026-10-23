@@ -32,6 +32,7 @@ public sealed class IdentityStore(DataPaths paths)
             }
 
             if (identity is not null && identity.Key == key && identity.DefaultName is not null &&
+                identity.SelectionEvidence is not null && identity.SelectionEvidence.Count <= 128 &&
                 identity.Palette is { } palette && palette.Background is not null && palette.Accent is not null &&
                 palette.Foreground is not null && Palette.IsHex(palette.Background) &&
                 Palette.IsHex(palette.Accent) && Palette.IsHex(palette.Foreground))

@@ -1,0 +1,2 @@
+{"type":"attachment","timestamp":"2026-10-23T11:09:48.914Z","version":"2.1.306","attachment":{"type":"hook_cancelled","hookEvent":"SessionStart","durationMs":3790,"timedOut":true,"timeoutMs":1000}}
+{"type":"attachment","timestamp":"2026-10-23T11:09:52.770Z","version":"2.1.306","attachment":{"type":"hook_cancelled","hookEvent":"UserPromptSubmit","durationMs":3781,"timedOut":true,"timeoutMs":1000}}

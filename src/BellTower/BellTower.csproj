@@ -10,6 +10,8 @@
     <ApplicationIcon>Assets/bell-tower.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
+    <ProjectReference Include="../BellTower.Protocol/BellTower.Protocol.csproj" />
+    <Compile Remove="Core/Observation.cs;Core/EventKind.cs;Core/BackgroundTask.cs;Core/Attachment.cs;Core/HostTarget.cs;Core/ProcessIdentity.cs;IO/ContentHash.cs;Providers/HookInput.cs;Providers/HookAdapter.cs;Providers/OpenSpecSelection.cs;Providers/OpenSpecSelectionReader.cs" />
     <ProjectReference Include="../BellTower.Distribution/BellTower.Distribution.csproj" />
     <FrameworkReference Include="Microsoft.WindowsDesktop.App.WPF" />
     <PackageReference Include="System.CommandLine" Version="2.0.13" />

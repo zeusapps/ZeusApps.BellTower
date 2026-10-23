@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <AssemblyName>bell-tower-ingress</AssemblyName>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <PublishAot>true</PublishAot>
+    <InvariantGlobalization>true</InvariantGlobalization>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../BellTower.Protocol/BellTower.Protocol.csproj" />
+    <Compile Include="../BellTower/IO/ProcessProbe.cs" Link="ProcessProbe.cs" />
+    <Compile Include="../BellTower/Hosts/WindowProbe.cs" Link="WindowProbe.cs" />
+    <Compile Include="../BellTower/Hosts/AttachmentCapture.cs" Link="AttachmentCapture.cs" />
+  </ItemGroup>
+</Project>

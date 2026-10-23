@@ -95,7 +95,7 @@ public static partial class OpenSpecSelectionReader
             ? new(change, store, ContentHash.Compute(operation), verb) : null;
     }
 
-    public static string? SuccessfulRoot(JsonElement input, OpenSpecSelection selection)
+    public static string? SuccessfulRoot(JsonElement input, OpenSpecSelection selection, bool checkScaffold = true)
     {
         if (HookInput.Text(input, "hook_event_name") != "PostToolUse" ||
             !input.TryGetProperty("tool_response", out var response))
@@ -142,7 +142,7 @@ public static partial class OpenSpecSelectionReader
 
         // `new change` has no JSON success output. Require both its exact success marker
         // and a local scaffold; a failed create against an existing folder is not selection.
-        if (selection.Verb == "new" && selection.Store is null &&
+        if (checkScaffold && selection.Verb == "new" && selection.Store is null &&
             output.Contains("Created change '" + selection.Change + "' at ", StringComparison.Ordinal) &&
             HookInput.Text(input, "cwd") is { } directory)
         {

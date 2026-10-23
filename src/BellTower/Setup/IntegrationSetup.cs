@@ -6,7 +6,8 @@ public sealed class IntegrationSetup(DataPaths paths, string executable, string?
 {
     private string ManifestPath => Path.Combine(paths.Root, "integration.json");
 
-    public SetupPlan Plan(string clients, bool remove = false, bool statusLine = false, bool desktop = false, string? project = null)
+    public SetupPlan Plan(string clients, bool remove = false, bool statusLine = false, bool desktop = false, string? project = null,
+        bool migrateEditedHooks = false)
     {
         if (project is not null)
         {
@@ -33,12 +34,19 @@ public sealed class IntegrationSetup(DataPaths paths, string executable, string?
         }
         var ownership = new IntegrationOwnership(new(previous.Commands), new(previous.StatusLines))
         {
-            CodexFooters = new(previous.CodexFooters)
+            CodexFooters = new(previous.CodexFooters),
+            Handlers = new(previous.Handlers),
+            AdditionalData = previous.AdditionalData
         };
-        var editor = new ProviderSettingsEditor(new HookCommandBuilder(executable, paths));
+        var ingress = remove || removeProject ? null : IngressProvision.Plan(executable, paths);
+        var editor = new ProviderSettingsEditor(new HookCommandBuilder(executable, paths, ingress?.Target));
         var changes = new List<FileChange>();
         var actions = new List<SetupAction>();
         var notes = new List<string>();
+        if (ingress is not null)
+        {
+            notes.Add("Provision verified immutable ingress: " + ingress.Target);
+        }
         foreach (var provider in selected)
         {
             if (removeProject)
@@ -47,7 +55,8 @@ public sealed class IntegrationSetup(DataPaths paths, string executable, string?
             }
             var path = SettingsPath(provider);
             var before = File.Exists(path) ? File.ReadAllText(path) : null;
-            var after = editor.Edit(provider, path, before, previous, ownership, remove && !removeProject, (statusLine || desktop) && !removeProject);
+            var after = editor.Edit(provider, path, before, previous, ownership, remove && !removeProject, (statusLine || desktop) && !removeProject,
+                migrateEditedHooks, notes);
             if (before != after && (!remove || before is not null))
             {
                 changes.Add(new(path, before, after));
@@ -88,7 +97,7 @@ public sealed class IntegrationSetup(DataPaths paths, string executable, string?
             changes.Insert(0, manifestChange);
         }
 
-        return new(changes, actions, notes, remove ? manifestChange : null);
+        return new(changes, actions, notes, remove ? manifestChange : null, ingress);
     }
 
     private string SettingsPath(string provider)

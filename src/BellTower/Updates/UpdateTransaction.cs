@@ -37,6 +37,7 @@ public static class UpdateTransaction
         { throw new IOException("Keep installation and data directories separate."); }
         using var mutation = new InstallationGate(installation.Root, "update", 0);
         ValidateData(paths);
+        CaptureCompatibility.Ensure(paths.Root, offer.Contract.Capture);
         EnsureNoCoordinator(installation);
         var selected = installation.Selection();
         if (ReleaseContract.Parse(offer.Version) <= ReleaseContract.Parse(selected.Version))
@@ -97,6 +98,8 @@ public static class UpdateTransaction
             paths = new DataPaths(plan.DataDirectory);
             paths.Ensure();
             ValidateData(paths);
+            CaptureCompatibility.Ensure(paths.Root,
+                DistributionJson.Read<ReleaseContract>(Path.Combine(installation.Payload(plan.Target), "release.json")).Capture);
             Installation.EnsurePlainPath(paths.Root);
             if (Installation.Hash(Path.Combine(installation.Payload(plan.Target), "release.json")) != plan.ContractHash)
             { throw new InvalidDataException("Staged metadata changed."); }
@@ -157,7 +160,11 @@ public static class UpdateTransaction
                             WaitUntil(() => !new TrayController(paths).IsRunning(), "Candidate tray could not exit for recovery.");
                         }
                         using (var launch = new InstallationGate(installation.Root))
-                        { DistributionJson.Write(installation.SelectionPath, new VersionSelection(plan.Original, plan.Target, plan.Id)); }
+                        {
+                            CaptureCompatibility.Ensure(paths!.Root,
+                                DistributionJson.Read<ReleaseContract>(Path.Combine(installation.Payload(plan.Original), "release.json")).Capture);
+                            DistributionJson.Write(installation.SelectionPath, new VersionSelection(plan.Original, plan.Target, plan.Id));
+                        }
                     }
                     if (plan.HadTray && paths is not null && !new TrayController(paths).IsRunning())
                     { StartTray(installation, paths, plan.Id); }

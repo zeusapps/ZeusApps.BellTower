@@ -1,5 +1,11 @@
 # Compatibility and evidence
 
+Fast hook follow-up (2026-10-23): both packaged providers now use a shared NativeAOT capture protocol and bounded background consumer. The [capture contract and measured evidence](hook-ingress.md) distinguish generated-shell trials from authenticated provider captures. Installed local versions were Claude 2.1.306, Codex 0.164.0 and Git Bash 5.2.37. At eight concurrent invocations, the first valid native trial measured medians of 115 ms for Claude and 83 ms for Codex; all 242 captures persisted and all completed below three seconds.
+
+An isolated Claude 2.1.306 SDK CLI with an unreachable loopback model endpoint produced actual `attachment/hook_cancelled` timeout records and custom-main-agent input (`agent_type: pm`, no `agent_id`). The optional bounded timeout reader uses that retained schema. Codex 0.164.0 local exec and no-daemon terminal probes verified SessionStart timeout execution and a successful control, but the complete chat transcripts lack structured hook-result records. Doctor reports complete historical counts as unavailable for those verified version/source pairs, with the shared capture-health/native-status fallback. This narrow restriction, retained evidence and regression coverage are documented in the [probe record](../openspec/changes/archive/2026-10-23-speed-up-claude-hook-ingestion/evidence/provider-timeout-probes.md); other modes/versions remain unverified.
+
+The packaged lifecycle trial under `artifacts/update-acceptance/run-5422462fc6d943a3b06c8e6437082182` passed mixed fast capture during tray restart, version selection, immutable helper refresh, stopped-tray ingestion and compatible rollback. Its 0.1.7 baseline is current source compiled with a fixture version, not the original released 0.1.7. It used a disposable agent/backend and authenticated loopback runtime, with no real model connection or production configuration writes.
+
 Recorded on 2026-10-21. An installed version is not a claim that all interactive scenarios have been acceptance-tested.
 
 The user's testing in this conversation supplies live acceptance evidence; see [the reconciled record](live-acceptance.md). Missing formal fixtures or unchecked broad tasks do not erase confirmed startup, completion, badge/background, flicker and tab-navigation results.

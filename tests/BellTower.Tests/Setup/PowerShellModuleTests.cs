@@ -83,12 +83,27 @@ public sealed class PowerShellModuleTests
         try
         {
             var deadline = DateTime.UtcNow.AddSeconds(10);
-            while (!File.Exists(snapshot) && !process.HasExited && DateTime.UtcNow < deadline)
+            string? snapshotText = null;
+            while (snapshotText is null && !process.HasExited && DateTime.UtcNow < deadline)
             {
-                await Task.Delay(50);
+                try
+                {
+                    if (File.Exists(snapshot))
+                    {
+                        snapshotText = File.ReadAllText(snapshot);
+                    }
+                }
+                catch (IOException)
+                {
+                    // Windows can briefly lock the renamed fixture before it is readable.
+                }
+                if (snapshotText is null)
+                {
+                    await Task.Delay(50);
+                }
             }
-            Assert.True(File.Exists(snapshot), process.HasExited ? await error : "The disposable agent did not report startup.");
-            using var agent = JsonDocument.Parse(File.ReadAllText(snapshot));
+            Assert.True(snapshotText is not null, process.HasExited ? await error : "The disposable agent did not report a readable startup snapshot.");
+            using var agent = JsonDocument.Parse(snapshotText);
             var ancestors = ProcessProbe.Ancestors(agent.RootElement.GetProperty("pid").GetInt32());
             Assert.Contains(ancestors, ancestor => ancestor.Pid == process.Id);
             Assert.DoesNotContain(ancestors.TakeWhile(ancestor => ancestor.Pid != process.Id),

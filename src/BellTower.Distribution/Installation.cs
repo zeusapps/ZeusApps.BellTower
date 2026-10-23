@@ -76,7 +76,8 @@ public sealed class Installation
     public static void VerifyFiles(string directory, ReleaseContract contract)
     {
         contract.Validate();
-        if (contract.Files is not { Count: > 0 and < 512 } files || !files.ContainsKey("bell-tower.exe") || !files.ContainsKey($"bell-tower-focus-{contract.Version}.vsix"))
+        if (contract.Files is not { Count: > 0 and < 512 } files || !files.ContainsKey("bell-tower.exe") || !files.ContainsKey($"bell-tower-focus-{contract.Version}.vsix") ||
+            contract.Capture == 1 && !files.ContainsKey("bell-tower-ingress.exe"))
         { throw new InvalidDataException("Missing payload file inventory."); }
         foreach (var item in files)
         {

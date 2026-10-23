@@ -1,0 +1,10 @@
+{
+  "session_id": "fixture-session",
+  "transcript_path": "D:/fixture/transcript.jsonl",
+  "cwd": "D:/fixture",
+  "prompt_id": "fixture-prompt",
+  "permission_mode": "dontAsk",
+  "agent_type": "pm",
+  "hook_event_name": "UserPromptSubmit",
+  "prompt": "synthetic timeout fixture"
+}

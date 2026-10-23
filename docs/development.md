@@ -18,7 +18,7 @@ For `launch`, only Bell Tower's prefix is parsed. Strings after `--` pass direct
 - `Sessions`: agent launch/lifecycle and session queries/metadata actions, shared by the command layer.
 - `Hosts`: attachment capture and terminal navigation. `Navigator` validates process identity and delegates to `ITerminalNavigator`; each host implementation owns its protocol or native window calls.
 - `Tray`: UI lifetime, controls, view projection, and audio. `SessionViewFactory` creates presentation records. `AudioQueue` depends on `IAudioSink`; physical playback and silent/test substitutes remain separate.
-- `Setup`: plan construction, owned settings edits, encoded hook commands, application of file changes, and explicit legacy import. Keep these separate from ordinary startup.
+- `Setup`: plan construction, verified immutable ingress provisioning, direct provider hook commands, structural handler ownership and edited-entry migration, application of file changes, and explicit legacy import. Keep these separate from ordinary startup. Development-only normalized event checks retain the encoded legacy command.
 - `Integration/BellTower.psm1`: embedded PowerShell support for native session launches. Setup supplies stable executable/data paths and exports the selected provider functions plus legacy aliases. Directory selection, optional background ownership and restoration belong here. Do not replace the direct native invocation with a call to the executable launcher.
 - `Diagnostics`: read-only reports of observations and capability limitations.
 

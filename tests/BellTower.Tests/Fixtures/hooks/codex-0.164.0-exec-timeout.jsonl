@@ -1,0 +1,2 @@
+{"timestamp":"2026-10-23T11:37:02.484Z","type":"session_meta","payload":{"cli_version":"0.164.0","source":"exec"}}
+{"timestamp":"2026-10-23T11:37:03.565Z","type":"event_msg","payload":{"type":"task_complete"}}

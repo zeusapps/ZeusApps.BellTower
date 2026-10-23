@@ -1,5 +1,11 @@
 # Release operations and updates
 
+## Native ingress prerequisite
+
+Build packages with PowerShell 7, .NET 10, MSVC x64/x86 build tools and the Windows SDK. NativeAOT publication is mandatory; packaging fails rather than substituting the desktop event executable. The native ingress is included in the payload inventory and the release advertises `capture: 1`.
+
+Setup copies verified helper bytes to a content-addressed path under the data root. Retain referenced images across version selection and cleanup. Enabled capture-v1 requires a compatible consumer on rollback; legacy normalized helpers remain supported. [Contract and acceptance evidence](hook-ingress.md) includes isolated benchmarks and lifecycle trials. Unverified provider transcript schemas and authenticated field acceptance remain explicitly open.
+
 Bell Tower is distributed from [zeusapps/ZeusApps.BellTower](https://github.com/zeusapps/ZeusApps.BellTower). The primary branch is main. Ordinary pushes and pull requests run Windows validation. A matching immutable vMAJOR.MINOR.PATCH tag calls the same validation before publishing its exact checked ZIP, SHA-256 file, and small release-metadata JSON sidecar. Automatic application checks never publish source or install an update.
 
 ## Install a versioned release

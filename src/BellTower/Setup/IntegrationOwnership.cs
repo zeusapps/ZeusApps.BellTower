@@ -4,4 +4,7 @@ public sealed record IntegrationOwnership(Dictionary<string, List<string>> Comma
 {
     public DesktopOwnership Desktop { get; init; } = new();
     public Dictionary<string, OwnedValue> CodexFooters { get; init; } = [];
+    public Dictionary<string, List<OwnedHook>> Handlers { get; init; } = [];
+    [System.Text.Json.Serialization.JsonExtensionData]
+    public Dictionary<string, System.Text.Json.JsonElement>? AdditionalData { get; set; }
 }

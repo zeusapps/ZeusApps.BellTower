@@ -16,11 +16,15 @@
         "type": "Project",
         "dependencies": {
           "BellTower.Distribution": "[0.1.8, )",
+          "BellTower.Protocol": "[0.1.8, )",
           "System.CommandLine": "[2.0.13, )",
           "Tomlyn": "[2.10.1, )"
         }
       },
       "belltower.distribution": {
+        "type": "Project"
+      },
+      "belltower.protocol": {
         "type": "Project"
       }
     }

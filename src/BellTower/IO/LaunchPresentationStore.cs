@@ -16,6 +16,13 @@ public sealed class LaunchPresentationStore(DataPaths paths)
 
     public Palette? Consume(string id, ProcessIdentity? shell)
     {
+        var palette = Read(id, shell);
+        Remove(id);
+        return palette;
+    }
+
+    public Palette? Read(string id, ProcessIdentity? shell, DateTimeOffset? observedAt = null, bool requireLive = true)
+    {
         using var gate = new DataLock(paths, "launch");
         var path = FilePath(id);
         var presentation = AtomicFile.Read<LaunchPresentation>(path);
@@ -23,9 +30,10 @@ public sealed class LaunchPresentationStore(DataPaths paths)
         {
             return null;
         }
-        File.Delete(path);
         return presentation.AttachmentId == id && presentation.Shell == shell && shell is not null &&
-            ProcessProbe.Identify(shell.Pid) == shell && DateTimeOffset.UtcNow - presentation.CreatedAt < TimeSpan.FromHours(24) &&
+            (!requireLive || ProcessProbe.Identify(shell.Pid) == shell) &&
+            (observedAt ?? DateTimeOffset.UtcNow) >= presentation.CreatedAt &&
+            (observedAt ?? DateTimeOffset.UtcNow) - presentation.CreatedAt < TimeSpan.FromHours(24) &&
             Palette.IsHex(presentation.Palette.Background) && Palette.IsHex(presentation.Palette.Accent) && Palette.IsHex(presentation.Palette.Foreground)
             ? presentation.Palette : null;
     }

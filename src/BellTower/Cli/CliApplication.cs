@@ -80,7 +80,7 @@ internal static class CliApplication
         {
             try
             {
-                new LocalLog(new DataPaths(parsed.GetValue(dataDirectory))).Write("hook-rejected");
+                new LocalLog(new DataPaths(parsed.GetValue(dataDirectory))).Write("hook-rejected-" + BellTower.Protocol.CaptureSpool.FailureCategory(exception));
             }
             catch (Exception logError) when (logError is IOException or UnauthorizedAccessException or ArgumentException)
             {

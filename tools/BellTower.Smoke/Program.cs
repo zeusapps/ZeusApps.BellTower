@@ -5,6 +5,7 @@ using BellTower.Core;
 using BellTower.Distribution;
 using BellTower.Hosts;
 using BellTower.IO;
+using BellTower.Setup;
 using BellTower.Updates;
 
 namespace BellTower.Smoke;
@@ -50,6 +51,7 @@ internal static class Program
         Assert(original != offer.Version, "Acceptance requires distinct compiled versions.");
         var paths = new DataPaths(Path.Combine(root, "custom-data"));
         paths.Ensure();
+        var fastIngress = ProvisionIngress(installation, paths, Path.Combine(root, "home"));
         new ConfigStore(paths).Update(c => { c.Muted = true; c.Updates.Enabled = false; });
         var own = Environment.ProcessPath!;
         using var shell = Start(own, ["--fixture-shell", root]);
@@ -99,6 +101,7 @@ internal static class Program
             var launchReport = DistributionJson.Read<System.Text.Json.JsonElement>(agentFinish + ".start.json");
             Assert(launchReport.GetProperty("directory").GetString() == root && launchReport.GetProperty("marker").GetString() == "inherited-fixture-value", "Bootstrap did not preserve working directory/environment.");
             var plan = UpdateTransaction.Stage(installation, paths, candidate, offer);
+            var fastDelivery = Task.Run(() => CaptureBurst(fastIngress.Target, paths, "update-capture", 32));
             UpdateTransaction.Start(plan);
             Wait(() => File.Exists(UpdateTransaction.Marker(paths)) && !new BellTower.Tray.TrayController(paths).IsRunning());
             events.Publish(new Observation { Provider = "claude", SessionId = "during-gap", AttachmentId = "fixture", Kind = EventKind.Question, Directory = root });
@@ -125,6 +128,14 @@ internal static class Program
             var outcome = DistributionJson.Read<UpdateOutcome>(UpdateTransaction.OutcomePath(installation));
             Assert(outcome.State == "monitoring-restored", outcome.Message);
             Assert(installation.Selection().Version == offer.Version, "New version not selected.");
+            var capturedKeys = fastDelivery.GetAwaiter().GetResult();
+            Wait(() => capturedKeys.All(key => new StateStore(paths).Read().Sessions.ContainsKey(key)));
+            var refreshDelivery = Task.Run(() => CaptureBurst(fastIngress.Target, paths, "refresh-capture", 12));
+            var refreshedIngress = ProvisionIngress(installation, paths, Path.Combine(root, "home"));
+            var refreshKeys = refreshDelivery.GetAwaiter().GetResult();
+            Wait(() => refreshKeys.All(key => new StateStore(paths).Read().Sessions.ContainsKey(key)));
+            Assert(File.Exists(fastIngress.Target) && Installation.Hash(fastIngress.Target) == fastIngress.Hash &&
+                Installation.Hash(refreshedIngress.Target) == refreshedIngress.Hash, "Referenced ingress was overwritten or removed.");
             Assert(!manager.HasExited && !launched.HasExited && runtimes.Get("fixture") == runtime, "Existing manager/agent/runtime identity changed.");
             Assert(RunCommand(installation.Launcher, ["--version"]).Trim() == offer.Version, "New invocations use wrong version.");
             Wait(() => Directory.GetFiles(root, "read-*").Length > beforeReads);
@@ -153,12 +164,24 @@ internal static class Program
             var stopped = new Installation(stoppedRoot);
             var stoppedPaths = new DataPaths(Path.Combine(root, "stopped-data"));
             stoppedPaths.Ensure();
+            var stoppedIngress = ProvisionIngress(stopped, stoppedPaths, Path.Combine(root, "stopped-home"));
+            var stoppedKeys = CaptureBurst(stoppedIngress.Target, stoppedPaths, "stopped-capture", 12);
             var stoppedPlan = UpdateTransaction.Stage(stopped, stoppedPaths, candidate, offer);
             UpdateTransaction.Start(stoppedPlan);
             Wait(() => File.Exists(UpdateTransaction.OutcomePath(stopped)) && DistributionJson.Read<UpdateOutcome>(UpdateTransaction.OutcomePath(stopped)).State is "activated" or "failed", 60000);
             Assert(stopped.Selection().Version == offer.Version && !new BellTower.Tray.TrayController(stoppedPaths).IsRunning(), "Stopped tray activation started a tray or failed.");
+            RunCommand(stopped.Launcher, ["start", "--silent", "--data-dir", stoppedPaths.Root]);
+            try
+            {
+                Wait(() => stoppedKeys.All(key => new StateStore(stoppedPaths).Read().Sessions.ContainsKey(key)));
+            }
+            finally
+            {
+                new BellTower.Tray.TrayController(stoppedPaths).RequestExit();
+                Wait(() => !new BellTower.Tray.TrayController(stoppedPaths).IsRunning());
+            }
             VerifyRollback(root, baseline, candidate, offer);
-            Console.WriteLine("PACKAGED UPDATE PASSED: old " + original + " -> new " + offer.Version + "; real dedicated manager/backend, live agent/launch, authenticated reconnect, hook delivery, viewed state, custom data, stopped tray. Evidence: " + root);
+            Console.WriteLine("PACKAGED UPDATE PASSED: old " + original + " -> new " + offer.Version + "; real dedicated manager/backend, live fixture agent/launch, authenticated loopback reconnect, fast mixed-provider captures, immutable ingress refresh, viewed state, custom data, stopped tray. Evidence: " + root);
             File.WriteAllText(Path.Combine(root, "agent.finish"), "done");
             Assert(launched.WaitForExit(10000) && launched.ExitCode == 7, "Launcher did not preserve agent exit status.");
         }
@@ -187,6 +210,7 @@ internal static class Program
         var old = installation.Selection().Version;
         var paths = new DataPaths(Path.Combine(root, "rollback-data"));
         paths.Ensure();
+        var ingress = ProvisionIngress(installation, paths, Path.Combine(root, "rollback-home"));
         new ConfigStore(paths).Update(c => { c.Muted = true; c.Updates.Enabled = false; });
         RunCommand(installation.Launcher, ["start", "--silent", "--data-dir", paths.Root]);
         Wait(() => File.Exists(UpdateTransaction.Presence(paths)));
@@ -194,6 +218,7 @@ internal static class Program
         {
             var sentinel = File.ReadAllText(paths.Config);
             var plan = UpdateTransaction.Stage(installation, paths, candidate, offer);
+            var captures = Task.Run(() => CaptureBurst(ingress.Target, paths, "rollback-capture", 24));
             var sabotage = Task.Run(() =>
             {
                 var watch = Stopwatch.StartNew();
@@ -214,6 +239,8 @@ internal static class Program
             var outcome = DistributionJson.Read<UpdateOutcome>(UpdateTransaction.OutcomePath(installation));
             Assert(outcome.State == "rolled-back", "Readiness rollback failed: " + outcome.Message);
             Assert(installation.Selection().Version == old && File.ReadAllText(paths.Config) == sentinel && new BellTower.Tray.TrayController(paths).IsRunning(), "Rollback changed data or failed to recover old monitoring.");
+            var keys = captures.GetAwaiter().GetResult();
+            Wait(() => keys.All(key => new StateStore(paths).Read().Sessions.ContainsKey(key)));
             Console.WriteLine("PACKAGED ROLLBACK PASSED: candidate metadata/readiness failure restored prior selection and tray; data preserved.");
         }
         finally
@@ -222,6 +249,44 @@ internal static class Program
             if (controller.IsRunning())
             { controller.RequestExit(); Wait(() => !controller.IsRunning()); }
         }
+    }
+    private static IngressProvision ProvisionIngress(Installation installation, DataPaths paths, string home)
+    {
+        new IntegrationSetup(paths, installation.Launcher, home).Plan("both").Apply(paths);
+        var provision = IngressProvision.Plan(installation.Launcher, paths)!;
+        provision.Apply(paths);
+        return provision;
+    }
+
+    private static List<string> CaptureBurst(string executable, DataPaths paths, string prefix, int count)
+    {
+        var keys = new List<string>();
+        for (var i = 0; i < count; i++)
+        {
+            var provider = i % 2 == 0 ? "claude" : "codex";
+            var session = prefix + "-" + i;
+            keys.Add(provider + ":" + session);
+            var start = Info(executable, ["--provider", provider, "--data-dir", paths.Root]);
+            start.RedirectStandardInput = true;
+            start.RedirectStandardOutput = true;
+            start.RedirectStandardError = true;
+            start.Environment["BELLTOWER_ATTACHMENT"] = "fixture-" + session;
+            start.Environment["BELLTOWER_DEDICATED"] = "1";
+            using var process = Process.Start(start)!;
+            var output = process.StandardOutput.ReadToEndAsync();
+            var error = process.StandardError.ReadToEndAsync();
+            process.StandardInput.Write(System.Text.Json.JsonSerializer.Serialize(new
+            {
+                session_id = session,
+                hook_event_name = "SessionStart",
+                cwd = paths.Root
+            }));
+            process.StandardInput.Close();
+            Assert(process.WaitForExit(3000) && process.ExitCode == 0 && output.GetAwaiter().GetResult().Trim() == "{}" &&
+                error.GetAwaiter().GetResult().Length == 0, "Fast capture failed in lifecycle trial.");
+            Thread.Sleep(50);
+        }
+        return keys;
     }
     private static ProcessStartInfo Info(string exe, string[] args)
     {

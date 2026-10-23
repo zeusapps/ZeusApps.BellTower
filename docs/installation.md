@@ -1,5 +1,13 @@
 # Installation and operation
 
+## Fast hook setup
+
+New versioned packages include a dedicated native ingress for both providers. Setup provisions verified immutable bytes under the selected data directory and previews direct hooks. Regular hooks use async capture; SessionEnd uses fast synchronous capture. Restart an older monitoring tray with the selected version before enabling capture-v1. Agent sessions can remain open.
+
+Ordinary setup preserves edits to owned handlers, including `timeout: 3` / `async: true`. Preview with `setup --migrate-edited-hooks`, then add `--apply` when ready to replace edited entries with backups. Unrelated hooks remain, and repeated migration does not duplicate handlers.
+
+Use `doctor` for backlog, consumption lag and sanitized failure categories. Optional `doctor --transcript <file> --transcript-provider claude` reads a bounded tail without recording conversation content. The Codex control reports unavailable complete counts for verified 0.164.0 CLI modes, whose chat transcripts omit the tested timeout status; it keeps the common health fallback. Other version/mode pairs remain unverified. See [the protocol and evidence](hook-ingress.md).
+
 ## Install and enable
 
 For normal desktop use, place the package in a stable directory and run one setup command from that directory:

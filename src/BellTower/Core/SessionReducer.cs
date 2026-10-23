@@ -4,6 +4,18 @@ public static class SessionReducer
 {
     public static void Apply(AppState state, Observation observation)
     {
+        if (observation.IngressAt is not null || state.Sessions.TryGetValue(observation.Key, out var existing) && existing.CausalEvents.Count > 0)
+        {
+            CausalSessionReducer.Apply(state, observation);
+        }
+        else
+        {
+            ApplyUnordered(state, observation);
+        }
+    }
+
+    internal static void ApplyUnordered(AppState state, Observation observation)
+    {
         if (!state.AppliedEvents.Add(observation.Id))
         {
             return;
@@ -40,7 +52,8 @@ public static class SessionReducer
             session.CompletionPending = false;
         }
 
-        if (session.Ended && observation.Kind != EventKind.Register)
+        if (session.Ended && (observation.Kind != EventKind.Register || observation.At <= session.LastObserved ||
+            observation.IngressAt is not null && observation.RegistrationSource != "resume"))
         {
             return;
         }
@@ -79,8 +92,11 @@ public static class SessionReducer
         var hadAttention = session.Waits.Count != 0;
         if (observation.OperationId is not null && observation.Kind is EventKind.ToolStart or EventKind.Question)
         {
+            if (session.CompletedOperations.Contains(observation.OperationId))
+            {
+                return;
+            }
             session.Operations[observation.OperationId] = new(observation.At, observation.OperationFingerprint);
-            session.CompletedOperations.Remove(observation.OperationId);
         }
 
         switch (observation.Kind)

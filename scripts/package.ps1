@@ -23,9 +23,16 @@ try {
     if ($LASTEXITCODE -ne 0) { throw 'Locked restore failed.' }
     dotnet restore src/BellTower.Launcher/BellTower.Launcher.csproj @restoreOptions
     if ($LASTEXITCODE -ne 0) { throw 'Launcher locked restore failed.' }
+    dotnet restore src/BellTower.Ingress/BellTower.Ingress.csproj @restoreOptions
+    if ($LASTEXITCODE -ne 0) { throw 'Ingress locked restore failed.' }
     dotnet publish src/BellTower/BellTower.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true "-p:Version=$version" -o $publishRoot --no-restore
     if ($LASTEXITCODE -ne 0) { throw 'Publish failed. Stop a running copy in the target directory before packaging.' }
     $executable = Join-Path $publishRoot 'bell-tower.exe'
+    dotnet publish src/BellTower.Ingress/BellTower.Ingress.csproj -c Release -r win-x64 --self-contained true "-p:Version=$version" -o (Join-Path $installationRoot 'ingress-publish') --no-restore
+    if ($LASTEXITCODE -ne 0) { throw 'NativeAOT ingress publish failed; install the Windows C++ toolchain. No managed fallback is packaged.' }
+    Copy-Item -LiteralPath (Join-Path $installationRoot 'ingress-publish/bell-tower-ingress.exe') -Destination $publishRoot
+    $probe = & (Join-Path $publishRoot 'bell-tower-ingress.exe') --protocol-info
+    if ($LASTEXITCODE -ne 0 -or $probe.Trim() -cne '{"protocol":1,"minimumConsumer":1,"maximumConsumer":1}') { throw 'Ingress protocol probe failed.' }
     dotnet publish src/BellTower.Launcher/BellTower.Launcher.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true "-p:Version=$version" -o $installationRoot --no-restore
     if ($LASTEXITCODE -ne 0) { throw 'Launcher publish failed.' }
     New-Item -ItemType Directory -Path (Join-Path $publishRoot 'helpers') -Force | Out-Null
@@ -44,6 +51,7 @@ try {
 </PackageManifest>
 "@
     $types = '<?xml version="1.0" encoding="utf-8"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="json" ContentType="application/json" /><Default Extension="js" ContentType="application/javascript" /><Default Extension="vsixmanifest" ContentType="text/xml" /></Types>'
+    Add-Type -AssemblyName System.IO.Compression
     Add-Type -AssemblyName System.IO.Compression.FileSystem
     if (Test-Path -LiteralPath $vsix) { Remove-Item -LiteralPath $vsix }
     $zip = [System.IO.Compression.ZipFile]::Open($vsix, [System.IO.Compression.ZipArchiveMode]::Create)
@@ -59,10 +67,10 @@ try {
         }
     } finally { $zip.Dispose() }
     $inventory = [ordered]@{}
-    $ownedNames = @('bell-tower.exe', 'README.md', "bell-tower-focus-$version.vsix", 'helpers/Invoke-BellTower.ps1')
+    $ownedNames = @('bell-tower.exe', 'bell-tower-ingress.exe', 'README.md', "bell-tower-focus-$version.vsix", 'helpers/Invoke-BellTower.ps1')
     $ownedNames += Get-ChildItem -LiteralPath docs -File -Recurse | ForEach-Object { 'docs/' + [System.IO.Path]::GetRelativePath((Join-Path $projectRoot 'docs'), $_.FullName).Replace('\', '/') }
     foreach ($name in $ownedNames) { $inventory[$name] = (Get-FileHash -LiteralPath (Join-Path $publishRoot $name) -Algorithm SHA256).Hash.ToLowerInvariant() }
-    $contract = [ordered]@{ version = $version; runtime = 'win-x64'; selfContained = $true; layout = 1; bootstrap = 1; state = 1; runtimeRecords = 1; shell = 1; bridge = 1; files = $inventory }
+    $contract = [ordered]@{ version = $version; runtime = 'win-x64'; selfContained = $true; layout = 1; bootstrap = 1; state = 1; runtimeRecords = 1; shell = 1; bridge = 1; capture = 1; files = $inventory }
     $contract | ConvertTo-Json -Depth 20 | Set-Content -LiteralPath (Join-Path $publishRoot 'release.json') -Encoding utf8
     @{ layout = 1; bootstrap = 1 } | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $installationRoot 'installation.json') -Encoding utf8
     @{ version = $version } | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $installationRoot 'current.json') -Encoding utf8

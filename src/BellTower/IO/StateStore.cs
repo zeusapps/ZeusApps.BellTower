@@ -1,5 +1,7 @@
 using System.Text.Json;
 using BellTower.Core;
+using BellTower.Protocol;
+using BellTower.Providers;
 
 namespace BellTower.IO;
 
@@ -22,7 +24,8 @@ public sealed class StateStore
     {
         using var gate = new DataLock(paths, "state");
         var state = snapshots.Read();
-        var accepted = ReplayInbox(state);
+        var accepted = new CaptureConsumer(paths).Prepare(state);
+        accepted.AddRange(ReplayInbox(state));
         var changed = ReconcileAttachments(state);
         if (accepted.Count != 0 || changed || !File.Exists(paths.State))
         {
@@ -117,9 +120,18 @@ public sealed class StateStore
     private void RetainPendingReceipts(AppState state)
     {
         // Include committed batches awaiting deletion after a crash.
+        var captures = Path.Combine(paths.Root, CaptureProtocol.InboxName);
+        foreach (var receipt in state.CaptureReceipts.ToArray())
+        {
+            if (Path.GetFileName(receipt.Value) != receipt.Value || !File.Exists(Path.Combine(captures, receipt.Value)))
+            {
+                state.CaptureReceipts.Remove(receipt.Key);
+            }
+        }
         var inboxIds = Directory.EnumerateFiles(paths.Inbox, "*.json")
             .Select(path => Path.GetFileNameWithoutExtension(path) ?? "")
             .Select(name => name[(name.LastIndexOf('-') + 1)..]).ToHashSet(StringComparer.Ordinal);
+        inboxIds.UnionWith(state.CaptureReceipts.Keys);
         state.AppliedEvents.IntersectWith(inboxIds);
     }
 

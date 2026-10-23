@@ -3,7 +3,7 @@ using BellTower.IO;
 namespace BellTower.Setup;
 
 public sealed class SetupPlan(List<FileChange> changes, List<SetupAction>? actions = null, List<string>? notes = null,
-    FileChange? commitAfterActions = null)
+    FileChange? commitAfterActions = null, IngressProvision? ingress = null)
 {
     public IReadOnlyList<FileChange> Changes => changes;
     public IReadOnlyList<SetupAction> Actions => actions ?? [];
@@ -20,6 +20,7 @@ public sealed class SetupPlan(List<FileChange> changes, List<SetupAction>? actio
             }
         }
 
+        ingress?.Apply(paths);
         var backupRoot = Path.Combine(paths.Root, "integration-backups", DateTimeOffset.UtcNow.ToString("yyyyMMdd-HHmmss") + "-" + Guid.NewGuid().ToString("N")[..8]);
         Directory.CreateDirectory(backupRoot);
         for (var i = 0; i < changes.Count; i++)

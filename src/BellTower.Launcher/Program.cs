@@ -15,6 +15,8 @@ internal static class Program
             using (var gate = new InstallationGate(installation.Root))
             {
                 var selected = installation.Selection();
+                var contract = DistributionJson.Read<ReleaseContract>(Path.Combine(installation.Payload(selected.Version), "release.json"));
+                CaptureCompatibility.EnsureTrayInvocation(args, contract.Capture);
                 lease = installation.Lease(selected.Version);
                 try
                 {

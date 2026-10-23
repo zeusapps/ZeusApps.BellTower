@@ -10,7 +10,11 @@ public sealed record SessionIdentity
     public string? Change { get; set; }
     public string? Role { get; set; }
     public string? SelectionOperation { get; set; }
+    public DateTimeOffset? SelectionAt { get; set; }
+    public string? SelectionEvent { get; set; }
     public List<string> SelectionReceipts { get; init; } = [];
+    public List<SelectionEvidence> SelectionEvidence { get; set; } = [];
+    public DateTimeOffset? SelectionFloorAt { get; set; }
     public string? SelectionRoot { get; set; }
     public string? SelectionStore { get; set; }
     public bool NativeSyncEnabled { get; set; } = true;

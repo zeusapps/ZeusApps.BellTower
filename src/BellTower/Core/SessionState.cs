@@ -12,6 +12,9 @@ public sealed class SessionState
     public string? TurnId { get; set; }
     public DateTimeOffset TurnStarted { get; set; }
     public DateTimeOffset LastObserved { get; set; }
+    public List<Observation> CausalEvents { get; set; } = [];
+    public SessionState? CausalCheckpoint { get; set; }
+    public Observation? CausalFloor { get; set; }
     public bool Ended { get; set; }
     public bool ForegroundStopped { get; set; }
     public bool CompletionPending { get; set; }
