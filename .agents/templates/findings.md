@@ -2,13 +2,22 @@
 
 Orchestrator-owned ledger. Reviewers write their assigned reports; developers write implementation. Preserve entries and dated history across rechecks, resumption, and archive.
 
+## Current orchestrator
+
+Advisory marker; resume and hand-off rules are in the [workflow](../workflows/openspec-delegation.md#mixed-client-operation).
+
+- Client / version: <client and version>
+- Session identity: <session ID or name>
+- Since (UTC): <timestamp>
+- Previous owner: <client / session identity, or none>
+
 ## Assignments and reservations
 
-| Assignment | Role / owner | Task IDs / target | Report / evidence paths | Reserved new finding IDs | State |
-| --- | --- | --- | --- | --- | --- |
-| <assignment> | <role/owner> | <IDs/identity> | <qa-001.md or analysis-001.md; optional screenshot names> | <unused QA or ANALYSIS range> | <reserved / running / returned> |
+| Assignment | Role / owner | Client / model | Model override rationale | Task IDs / target | Report / evidence paths | Reserved new finding IDs | State |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| <assignment> | <role/owner> | <client and resolved model ID> | <reason, or none: role default> | <IDs/identity> | <qa-001.md or analysis-001.md; optional screenshot names> | <unused QA or ANALYSIS range> | <reserved / running / returned> |
 
-Allocate the next unused report number per role and change. Rechecks keep existing finding IDs and use a new report. Do not reuse an allocation after interruption. Reserve disjoint outputs before concurrent work. Record the one ledger owner when multiple sessions share a change.
+Allocation, reservation, and ownership rules are in the [orchestrator workflow](../workflows/openspec-delegation.md); this table records them.
 
 ## Summary
 
@@ -35,7 +44,7 @@ If there are no findings, say so after reviewing both reports. Do not use the pl
 | --- | --- | --- | --- | --- |
 | <timestamp> | <previous state> | <new state> | <owner> | <report, developer handoff, rationale, or user decision> |
 
-States: `reported`, `assigned`, `awaiting-verification`, `verified`, `awaiting-user-decision`, `dismissed`, `duplicate`, `deferred`. Severity does not decide blocking status automatically. Developer fixes enter awaiting-verification; independent success permits verified; failed checks reopen as reported. Keep unsuccessful history. Required acceptance cannot be deferred without explicit user agreement.
+Statuses, severity and blocking rules, and verification flow are defined in the [orchestrator workflow](../workflows/openspec-delegation.md#finding-triage-and-fix-routing); record them here without restating them. Keep unsuccessful history.
 
 ## Completion assessment
 
@@ -44,4 +53,5 @@ States: `reported`, `assigned`, `awaiting-verification`, `verified`, `awaiting-u
 - Findings: <counts by blocking state; all findings accounted for>
 - Nonblocking follow-ups: <IDs, rationale, destination>
 - Evidence gaps / provider restrictions: <exact version/mode, operation, proof/fallback where established; unverified otherwise>
+- Commit: <SHA and branch of the orchestrator commit with the scoped paths, or not yet committed; pushes need separate authorization>
 - OpenSpec task reconciliation: <verified tasks and remaining work; report existence alone is insufficient>

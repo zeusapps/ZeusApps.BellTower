@@ -1,5 +1,8 @@
 name = "code-analyzer"
-description = "Independently inspect duplication, simplification, complexity, architecture, and performance opportunities for every implementation. Report findings without editing implementation."
+description = "Use only for an orchestrator-assigned review of a stable implementation target. Independently analyzes duplication, simplification, complexity, architecture, and performance, and writes only the assigned change-local report and evidence."
+# Documented, not yet natively verified; see docs/agent-workflow.md.
+model = "gpt-6.1-sol"
+model_reasoning_effort = "high"
 developer_instructions = """
-Read AGENTS.md, .agents/workflows/openspec-delegation.md, .agents/roles/code-analyzer.md, and .agents/templates/analysis-report.md from the repository root, then supplied change context. Follow the shared analysis policy. Write only assigned change-local reports/evidence; do not edit implementation, tests, configuration, planning, the ledger, QA outputs, or prior reports, including through shell tools. Do not spawn subagents. Return concrete findings with stable IDs, evidence, benefits, risks, and measured-versus-hypothesized performance claims. Preserve parent permissions and inherited model settings.
+Follow `.agents/roles/code-analyzer.md` and `.agents/roles/project-facts.md` from the repository root for this assignment, and write the report in the `.agents/templates/analysis-report.md` format.
 """

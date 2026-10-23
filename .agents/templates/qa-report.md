@@ -5,14 +5,14 @@ Template only: replace placeholders with observed evidence. Do not describe this
 ## Review target
 
 - Reviewer / role: <identity> / QA
-- Client / version / mode: <observed values or explicitly unavailable>
+- Client / version / mode / model (resolved ID): <observed values, for example client name, version, mode, and the resolved model ID rather than an alias; or explicitly unavailable>
 - Date: <UTC timestamp>
 - Change root / assignment: <resolved root and assignment ID>
 - Task and requirement references: <IDs and change-relative links>
 - Scope: <explicit implementation paths>
 - Baseline commit: <commit>
-- Implementation identity: <scoped diff hash/method, path manifest, relevant untracked file hashes>
-- Before/after identity: <same, or unexpected differences reported below>
+- Implementation identity: <`scripts/review-identity.ps1` output before the review: HEAD, manifest, diff SHA-256, untracked hashes, summary line>
+- Before/after identity: <the same command after the review and the comparison, or unexpected differences reported below>
 - Prior reports / rechecked findings: <relative links and IDs, or none>
 
 ## Checks and coverage
@@ -21,7 +21,7 @@ Template only: replace placeholders with observed evidence. Do not describe this
 | --- | --- | --- | --- | --- |
 | <scenario> | <exact command or manual steps> | <fixture / installed native / live> | <passed / failed / not performed / not applicable> | <relative evidence link or reason> |
 
-Cover the assignment's applicable provider, concurrent-session, and error cases. The repository multiagent rollout currently targets Codex; Claude native/mixed-client workflow checks are explicitly user-deferred. Product changes still follow their applicable Claude Code/Codex parity requirements. Explain unavailable/non-applicable checks. A source inspection is not an executed functional test. Screenshot links use `../screenshots/<reserved-name>.png`; omit them when no useful visual scenario applies.
+Cover the assignment's applicable provider, concurrent-session, and error cases, and state which client (Claude Code, Codex, or both) each check covers. Explain unavailable/non-applicable checks. A source inspection is not an executed functional test. Screenshot links use `../screenshots/<reserved-name>.png`; omit them when no useful visual scenario applies.
 
 ## Findings
 

@@ -5,14 +5,14 @@ Template only: replace placeholders with actual analysis evidence. Write to the 
 ## Review target
 
 - Reviewer / role: <identity> / code-analyzer
-- Client / version / mode: <observed values or explicitly unavailable>
+- Client / version / mode / model (resolved ID): <observed values, for example client name, version, mode, and the resolved model ID rather than an alias; or explicitly unavailable>
 - Date: <UTC timestamp>
 - Change root / assignment: <resolved root and assignment ID>
 - Task and requirement references: <IDs and change-relative links>
 - Scope and relevant neighboring paths: <explicit paths>
 - Baseline commit: <commit>
-- Implementation identity: <scoped diff hash/method, path manifest, relevant untracked file hashes>
-- Before/after identity: <same, or unexpected differences>
+- Implementation identity: <`scripts/review-identity.ps1` output before the analysis: HEAD, manifest, diff SHA-256, untracked hashes, summary line>
+- Before/after identity: <the same command after the analysis and the comparison, or unexpected differences>
 - Prior reports / rechecked findings: <relative links and IDs, or none>
 
 ## Analysis performed
