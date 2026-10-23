@@ -1,0 +1,66 @@
+{
+  "Baseline": "0a7445a506e5306cca515c251e1fadad38fd99de",
+  "Method": "sorted path TAB lowercase exact-file SHA256 LF; UTF8 noBOM; finalLF",
+  "AggregateSHA256": "5d8d14e6fd19e30f1092aee56bcc614e231d6bc7cf45807499f2f42a2334b79d",
+  "Files": [
+    {
+      "Path": ".agents/roles/code-analyzer.md",
+      "SHA256": "e91a640bb3d730f1b7f36b72f5b6e1dc404e70a8e1cbd9619795e051797bb82a"
+    },
+    {
+      "Path": ".agents/roles/developer.md",
+      "SHA256": "b19e0102872379939502321a4a31167bf0796b010383bab7c63abaf046436e4b"
+    },
+    {
+      "Path": ".agents/roles/qa.md",
+      "SHA256": "d5db94371527951b1e0b321132aaf209f63475053465ee9178f9f455191be904"
+    },
+    {
+      "Path": ".agents/templates/analysis-report.md",
+      "SHA256": "f535c6363f7e3f4a86f59bda9384395dc1539678883e0267f12130d7024deea4"
+    },
+    {
+      "Path": ".agents/templates/findings.md",
+      "SHA256": "cf6ca977cf660acd4bc9cc420608c418da1d0a327cf00c657ea5958fd8627dbc"
+    },
+    {
+      "Path": ".agents/templates/qa-report.md",
+      "SHA256": "7f5efdb2f70b1e12258e24925d3af23faa51a47eee18103d783465b29bc42e4f"
+    },
+    {
+      "Path": ".agents/workflows/openspec-delegation.md",
+      "SHA256": "d654f4107c0be94befbcf440f0a8216354d6e42db44f9a855e9a54b9b27ef499"
+    },
+    {
+      "Path": ".codex/agents/code-analyzer.toml",
+      "SHA256": "d468a86cf7d10641045e22dc01039b653cb90047b5503b770bc08d6ffa51cacc"
+    },
+    {
+      "Path": ".codex/agents/developer.toml",
+      "SHA256": "42d68bc741bdc424f53ecda904c4ab30c88b4c90c2f7070974eecf621a35a1e2"
+    },
+    {
+      "Path": ".codex/agents/qa.toml",
+      "SHA256": "dd6b1ff503fba501fb665723896693a32771a889270345d0fc8e7d6974985cb8"
+    },
+    {
+      "Path": "AGENTS.md",
+      "SHA256": "237d9e5514fb8ce91206f0f34fe92bfa1bbbf803d36b7bd42a6ac8e815b7180e"
+    },
+    {
+      "Path": "docs/agent-workflow.md",
+      "SHA256": "282628b3ed16fd3fb5199acf5de4d52eb67b244c01298ca08776426e1b99faa3"
+    },
+    {
+      "Path": "docs/development.md",
+      "SHA256": "818345087fdfdcc147a611e30142bb93b66a3b51790351c5f88bad5b125ef37d"
+    }
+  ],
+  "RemovedInitialFiles": [
+    "CLAUDE.md",
+    ".claude/agents/developer.md",
+    ".claude/agents/qa.md",
+    ".claude/agents/code-analyzer.md"
+  ],
+  "FixtureSHA256": "4512abd6e6c562b2405101f05b8ec8b790e6f8cc6ee54abe633a60d6c0bc0596"
+}

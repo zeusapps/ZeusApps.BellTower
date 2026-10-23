@@ -1,0 +1,86 @@
+{
+  "baseline": "0a7445a506e5306cca515c251e1fadad38fd99de",
+  "method": "SHA256 exact file bytes; tracked diff reconstructed with LF terminators and UTF8 without BOM",
+  "diffSha256": "aba26d2b7b74a330174a9f9d9bad6cdda0742cc000a14a321b6784f6aa8f2a38",
+  "files": [
+    {
+      "path": ".agents/roles/code-analyzer.md",
+      "sha256": "e91a640bb3d730f1b7f36b72f5b6e1dc404e70a8e1cbd9619795e051797bb82a"
+    },
+    {
+      "path": ".agents/roles/developer.md",
+      "sha256": "b19e0102872379939502321a4a31167bf0796b010383bab7c63abaf046436e4b"
+    },
+    {
+      "path": ".agents/roles/qa.md",
+      "sha256": "d5db94371527951b1e0b321132aaf209f63475053465ee9178f9f455191be904"
+    },
+    {
+      "path": ".agents/templates/analysis-report.md",
+      "sha256": "f535c6363f7e3f4a86f59bda9384395dc1539678883e0267f12130d7024deea4"
+    },
+    {
+      "path": ".agents/templates/findings.md",
+      "sha256": "cf6ca977cf660acd4bc9cc420608c418da1d0a327cf00c657ea5958fd8627dbc"
+    },
+    {
+      "path": ".agents/templates/qa-report.md",
+      "sha256": "347a3f15e8a60a294a8f4e57b857d5fafe94a78aeca94206ed2d6a36bfd0367f"
+    },
+    {
+      "path": ".agents/workflows/openspec-delegation.md",
+      "sha256": "ab6c8fef36cd386583c90a49a91999feaa284f476496c9b10384ba372ac6c64b"
+    },
+    {
+      "path": ".claude/agents/code-analyzer.md",
+      "sha256": "38cd896eb9f800f344469daa1a1652bda0cfefae917bda7552ec744186a7d9bd"
+    },
+    {
+      "path": ".claude/agents/developer.md",
+      "sha256": "9dcde085b244816a10a70be0fcc9dc521907f6ef61b895883b61503aca7c8acc"
+    },
+    {
+      "path": ".claude/agents/qa.md",
+      "sha256": "df6733392a8bff850481af96800de7bf8d01838a05cd0abf33f764bb394d74ec"
+    },
+    {
+      "path": ".codex/agents/code-analyzer.toml",
+      "sha256": "d468a86cf7d10641045e22dc01039b653cb90047b5503b770bc08d6ffa51cacc"
+    },
+    {
+      "path": ".codex/agents/developer.toml",
+      "sha256": "42d68bc741bdc424f53ecda904c4ab30c88b4c90c2f7070974eecf621a35a1e2"
+    },
+    {
+      "path": ".codex/agents/qa.toml",
+      "sha256": "dd6b1ff503fba501fb665723896693a32771a889270345d0fc8e7d6974985cb8"
+    },
+    {
+      "path": "AGENTS.md",
+      "sha256": "89a9b6e9fbd4db22224eeee046c19c4f2cba3525dd8f4119252379ccfb71d89a"
+    },
+    {
+      "path": "CLAUDE.md",
+      "sha256": "af2e922f5b573d2b6391c909e8273fc3b9584a14b983ab7c3adbf4d5b8b039c1"
+    },
+    {
+      "path": "docs/agent-workflow.md",
+      "sha256": "74b14d217e2b39c3aa230f198713805b7f4f292b8a0c8b8ce59ae5b332ce3a11"
+    },
+    {
+      "path": "docs/development.md",
+      "sha256": "818345087fdfdcc147a611e30142bb93b66a3b51790351c5f88bad5b125ef37d"
+    }
+  ],
+  "fixtureFiles": [
+    {
+      "path": "artifacts/agent-workflow-acceptance/case-001/labels.cjs",
+      "sha256": "6defcf2c75ea086d3b290ee39c1151e19a857136d1f85a6cdb53b1070bffea15"
+    },
+    {
+      "path": "artifacts/agent-workflow-acceptance/case-001/README.md",
+      "sha256": "e6484e5b2b112c8d4b424ed4c67a980fb51811c897d62fa827211615d4b3d38a"
+    }
+  ],
+  "manifestSha256": "1bd6a5d558e4bd07d252056d0b875bda0e249edf7e94b9ef6b36aff911388af8"
+}

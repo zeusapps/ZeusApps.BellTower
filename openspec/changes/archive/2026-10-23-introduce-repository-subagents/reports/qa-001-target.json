@@ -1,0 +1,76 @@
+{
+  "Baseline": "0a7445a506e5306cca515c251e1fadad38fd99de",
+  "Method": "SHA256 of exact implementation file bytes; tracked diff SHA256 of PowerShell Out-String UTF8 without BOM",
+  "TrackedDiffSHA256": "091D5565FC82496B95C709834B979DBF00C5D46347754C65C8F62CFD3F6AE5C9",
+  "Files": [
+    {
+      "Path": ".agents/roles/code-analyzer.md",
+      "SHA256": "E91A640BB3D730F1B7F36B72F5B6E1DC404E70A8E1CBD9619795E051797BB82A"
+    },
+    {
+      "Path": ".agents/roles/developer.md",
+      "SHA256": "B19E0102872379939502321A4A31167BF0796B010383BAB7C63ABAF046436E4B"
+    },
+    {
+      "Path": ".agents/roles/qa.md",
+      "SHA256": "D5DB94371527951B1E0B321132AAF209F63475053465EE9178F9F455191BE904"
+    },
+    {
+      "Path": ".agents/templates/analysis-report.md",
+      "SHA256": "F535C6363F7E3F4A86F59BDA9384395DC1539678883E0267F12130D7024DEEA4"
+    },
+    {
+      "Path": ".agents/templates/findings.md",
+      "SHA256": "CF6CA977CF660ACD4BC9CC420608C418DA1D0A327CF00C657EA5958FD8627DBC"
+    },
+    {
+      "Path": ".agents/templates/qa-report.md",
+      "SHA256": "347A3F15E8A60A294A8F4E57B857D5FAFE94A78AECA94206ED2D6A36BFD0367F"
+    },
+    {
+      "Path": ".agents/workflows/openspec-delegation.md",
+      "SHA256": "AB6C8FEF36CD386583C90A49A91999FEAA284F476496C9B10384BA372AC6C64B"
+    },
+    {
+      "Path": ".claude/agents/code-analyzer.md",
+      "SHA256": "38CD896EB9F800F344469DAA1A1652BDA0CFEFAE917BDA7552EC744186A7D9BD"
+    },
+    {
+      "Path": ".claude/agents/developer.md",
+      "SHA256": "9DCDE085B244816A10A70BE0FCC9DC521907F6EF61B895883B61503ACA7C8ACC"
+    },
+    {
+      "Path": ".claude/agents/qa.md",
+      "SHA256": "DF6733392A8BFF850481AF96800DE7BF8D01838A05CD0ABF33F764BB394D74EC"
+    },
+    {
+      "Path": ".codex/agents/code-analyzer.toml",
+      "SHA256": "D468A86CF7D10641045E22DC01039B653CB90047B5503B770BC08D6FFA51CACC"
+    },
+    {
+      "Path": ".codex/agents/developer.toml",
+      "SHA256": "42D68BC741BDC424F53ECDA904C4AB30C88B4C90C2F7070974EECF621A35A1E2"
+    },
+    {
+      "Path": ".codex/agents/qa.toml",
+      "SHA256": "DD6B1FF503FBA501FB665723896693A32771A889270345D0FC8E7D6974985CB8"
+    },
+    {
+      "Path": "AGENTS.md",
+      "SHA256": "89A9B6E9FBD4DB22224EEEE046C19C4F2CBA3525DD8F4119252379CCFB71D89A"
+    },
+    {
+      "Path": "CLAUDE.md",
+      "SHA256": "AF2E922F5B573D2B6391C909E8273FC3B9584A14B983AB7C3ADBF4D5B8B039C1"
+    },
+    {
+      "Path": "docs/agent-workflow.md",
+      "SHA256": "74B14D217E2B39C3AA230F198713805B7F4F292B8A0C8B8CE59AE5B332CE3A11"
+    },
+    {
+      "Path": "docs/development.md",
+      "SHA256": "818345087FDFDCC147A611E30142BB93B66A3B51790351C5F88BAD5B125EF37D"
+    }
+  ],
+  "FixtureSHA256": "6DEFCF2C75EA086D3B290EE39C1151E19A857136D1F85A6CDB53B1070BFFEA15"
+}

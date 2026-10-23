@@ -1,0 +1,118 @@
+{
+  "dateUtc": "2026-10-23T15:37:08.1750183Z",
+  "baseline": "0a7445a506e5306cca515c251e1fadad38fd99de",
+  "workflowManifestSha256": "1bd6a5d558e4bd07d252056d0b875bda0e249edf7e94b9ef6b36aff911388af8",
+  "workflowFiles": [
+    {
+      "path": ".agents/roles/code-analyzer.md",
+      "sha256": "e91a640bb3d730f1b7f36b72f5b6e1dc404e70a8e1cbd9619795e051797bb82a",
+      "matchesInitial": true
+    },
+    {
+      "path": ".agents/roles/developer.md",
+      "sha256": "b19e0102872379939502321a4a31167bf0796b010383bab7c63abaf046436e4b",
+      "matchesInitial": true
+    },
+    {
+      "path": ".agents/roles/qa.md",
+      "sha256": "d5db94371527951b1e0b321132aaf209f63475053465ee9178f9f455191be904",
+      "matchesInitial": true
+    },
+    {
+      "path": ".agents/templates/analysis-report.md",
+      "sha256": "f535c6363f7e3f4a86f59bda9384395dc1539678883e0267f12130d7024deea4",
+      "matchesInitial": true
+    },
+    {
+      "path": ".agents/templates/findings.md",
+      "sha256": "cf6ca977cf660acd4bc9cc420608c418da1d0a327cf00c657ea5958fd8627dbc",
+      "matchesInitial": true
+    },
+    {
+      "path": ".agents/templates/qa-report.md",
+      "sha256": "347a3f15e8a60a294a8f4e57b857d5fafe94a78aeca94206ed2d6a36bfd0367f",
+      "matchesInitial": true
+    },
+    {
+      "path": ".agents/workflows/openspec-delegation.md",
+      "sha256": "ab6c8fef36cd386583c90a49a91999feaa284f476496c9b10384ba372ac6c64b",
+      "matchesInitial": true
+    },
+    {
+      "path": ".claude/agents/code-analyzer.md",
+      "sha256": "38cd896eb9f800f344469daa1a1652bda0cfefae917bda7552ec744186a7d9bd",
+      "matchesInitial": true
+    },
+    {
+      "path": ".claude/agents/developer.md",
+      "sha256": "9dcde085b244816a10a70be0fcc9dc521907f6ef61b895883b61503aca7c8acc",
+      "matchesInitial": true
+    },
+    {
+      "path": ".claude/agents/qa.md",
+      "sha256": "df6733392a8bff850481af96800de7bf8d01838a05cd0abf33f764bb394d74ec",
+      "matchesInitial": true
+    },
+    {
+      "path": ".codex/agents/code-analyzer.toml",
+      "sha256": "d468a86cf7d10641045e22dc01039b653cb90047b5503b770bc08d6ffa51cacc",
+      "matchesInitial": true
+    },
+    {
+      "path": ".codex/agents/developer.toml",
+      "sha256": "42d68bc741bdc424f53ecda904c4ab30c88b4c90c2f7070974eecf621a35a1e2",
+      "matchesInitial": true
+    },
+    {
+      "path": ".codex/agents/qa.toml",
+      "sha256": "dd6b1ff503fba501fb665723896693a32771a889270345d0fc8e7d6974985cb8",
+      "matchesInitial": true
+    },
+    {
+      "path": "AGENTS.md",
+      "sha256": "89a9b6e9fbd4db22224eeee046c19c4f2cba3525dd8f4119252379ccfb71d89a",
+      "matchesInitial": true
+    },
+    {
+      "path": "CLAUDE.md",
+      "sha256": "af2e922f5b573d2b6391c909e8273fc3b9584a14b983ab7c3adbf4d5b8b039c1",
+      "matchesInitial": true
+    },
+    {
+      "path": "docs/agent-workflow.md",
+      "sha256": "74b14d217e2b39c3aa230f198713805b7f4f292b8a0c8b8ce59ae5b332ce3a11",
+      "matchesInitial": true
+    },
+    {
+      "path": "docs/development.md",
+      "sha256": "818345087fdfdcc147a611e30142bb93b66a3b51790351c5f88bad5b125ef37d",
+      "matchesInitial": true
+    }
+  ],
+  "priorReports": [
+    {
+      "path": "analysis-001.md",
+      "sha256": "2d7b435231241082f8dfc4a9313e04c999597e27cbb1e1831aabf26d323ce2f8"
+    },
+    {
+      "path": "analysis-001-identity.json",
+      "sha256": "04f5ba949c09796893b4706e2e75e07a86fd1a45e2604c7bcd509586ce078923"
+    },
+    {
+      "path": "analysis-001-fixture.json",
+      "sha256": "9b68eb8ecf339d378f13dac13c95dd56494c8b17f2586c2b65cfe919f22adc1b"
+    }
+  ],
+  "fixture": {
+    "path": "artifacts/agent-workflow-acceptance/case-001/labels.cjs",
+    "sha256": "4512abd6e6c562b2405101f05b8ec8b790e6f8cc6ee54abe633a60d6c0bc0596",
+    "source": "'use strict';\n\nfunction normalizeLabel(value) {\n  if (typeof value !== 'string') {\n    return 'unknown';\n  }\n  return value.trim() || 'unknown';\n}\n\nfunction claudeLabel(value) {\n  return normalizeLabel(value);\n}\n\nfunction codexLabel(value) {\n  return normalizeLabel(value);\n}\n\nmodule.exports = { claudeLabel, codexLabel };\n"
+  },
+  "checks": {
+    "inputCases": 11,
+    "providerAssertions": 22,
+    "equivalenceAssertions": 11,
+    "exportShape": "preserved",
+    "result": "passed"
+  }
+}

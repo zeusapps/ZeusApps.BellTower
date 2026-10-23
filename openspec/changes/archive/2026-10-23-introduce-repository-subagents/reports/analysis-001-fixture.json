@@ -1,0 +1,11 @@
+{
+  "requirement": "# Disposable workflow acceptance fixture\n\nThis ignored, deliberately defective JavaScript fixture exercises review/fix/recheck handoffs. It is not Bell Tower product code or native-client acceptance evidence. Keep it separate from actual implementation findings.\n\nBoth exported label functions must return a trimmed string for nonempty string input and `unknown` for non-string input or a string empty after trimming. Expected examples: `\"  bell  \"` becomes `\"bell\"`; `\"   \"`, `\"\"`, `null`, and `undefined` become `\"unknown\"`. Both providers must have equivalent behavior.\n\nThe initial fixture intentionally omits trimming and repeats the provider logic. QA may run inline Node assertions without editing this file. The analyzer may report the duplication and bounded simplification recommendation. The developer must wait for orchestrator assignment before correcting the fixture. All review evidence must clearly identify this as a seeded disposable trial.\n",
+  "code": "'use strict';\n\nfunction claudeLabel(value) {\n  if (typeof value !== 'string' || value.length === 0) {\n    return 'unknown';\n  }\n  return value;\n}\n\nfunction codexLabel(value) {\n  if (typeof value !== 'string' || value.length === 0) {\n    return 'unknown';\n  }\n  return value;\n}\n\nmodule.exports = { claudeLabel, codexLabel };\n",
+  "observation": [
+    "bell => bell (both)",
+    "two-space bell two-space => unchanged surrounding spaces (both)",
+    "three spaces => three spaces (both)",
+    "empty => unknown (both)",
+    "null => unknown (both)"
+  ]
+}

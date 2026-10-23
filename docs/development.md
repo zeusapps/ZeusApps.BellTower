@@ -2,6 +2,8 @@
 
 Bell Tower follows WorkLog's small-helper structure: application folders by responsibility, one top-level type per file, and a command class per CLI verb. A small stable launcher and shared distribution-contract library support immutable versioned payloads; xUnit and packaged acceptance projects verify their behavior. WorkLog is a style reference, with no project or runtime dependency.
 
+Repository implementation uses the shared [agent workflow](agent-workflow.md): the main agent plans and orchestrates through OpenSpec, the developer changes implementation, and QA plus the code analyzer independently review and report inside the corresponding change.
+
 ## CLI commands
 
 Use `System.CommandLine` 2.0.13, matching WorkLog. `CliApplication` registers commands; command classes declare typed options, validation, and their action. `CommonOptions` owns shared option definitions. The library generates help and handles invalid commands, required options, and typed values. See Microsoft's [parsing and invocation documentation](https://learn.microsoft.com/en-us/dotnet/standard/commandline/how-to-parse-and-invoke).

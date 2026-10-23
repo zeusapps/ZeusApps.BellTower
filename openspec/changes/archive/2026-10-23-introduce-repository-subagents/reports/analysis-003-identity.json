@@ -1,0 +1,223 @@
+{
+  "dateUtc": "2026-10-23T15:42:52.9914125Z",
+  "baseline": "0a7445a506e5306cca515c251e1fadad38fd99de",
+  "method": "SHA256 exact file bytes; tracked diff reconstructed LF/UTF8 no BOM; manifest sorted path space sha256 LF",
+  "diffSha256": "aba26d2b7b74a330174a9f9d9bad6cdda0742cc000a14a321b6784f6aa8f2a38",
+  "manifestSha256": "5b911fc6d82288156424a624241fbb0893152051abdf8d24b05b788d0c51ce1a",
+  "files": [
+    {
+      "path": ".agents/roles/code-analyzer.md",
+      "sha256": "e91a640bb3d730f1b7f36b72f5b6e1dc404e70a8e1cbd9619795e051797bb82a",
+      "changedSinceRound001": false
+    },
+    {
+      "path": ".agents/roles/developer.md",
+      "sha256": "b19e0102872379939502321a4a31167bf0796b010383bab7c63abaf046436e4b",
+      "changedSinceRound001": false
+    },
+    {
+      "path": ".agents/roles/qa.md",
+      "sha256": "d5db94371527951b1e0b321132aaf209f63475053465ee9178f9f455191be904",
+      "changedSinceRound001": false
+    },
+    {
+      "path": ".agents/templates/analysis-report.md",
+      "sha256": "f535c6363f7e3f4a86f59bda9384395dc1539678883e0267f12130d7024deea4",
+      "changedSinceRound001": false
+    },
+    {
+      "path": ".agents/templates/findings.md",
+      "sha256": "cf6ca977cf660acd4bc9cc420608c418da1d0a327cf00c657ea5958fd8627dbc",
+      "changedSinceRound001": false
+    },
+    {
+      "path": ".agents/templates/qa-report.md",
+      "sha256": "7f5efdb2f70b1e12258e24925d3af23faa51a47eee18103d783465b29bc42e4f",
+      "changedSinceRound001": true
+    },
+    {
+      "path": ".agents/workflows/openspec-delegation.md",
+      "sha256": "d654f4107c0be94befbcf440f0a8216354d6e42db44f9a855e9a54b9b27ef499",
+      "changedSinceRound001": true
+    },
+    {
+      "path": ".codex/agents/code-analyzer.toml",
+      "sha256": "d468a86cf7d10641045e22dc01039b653cb90047b5503b770bc08d6ffa51cacc",
+      "changedSinceRound001": false
+    },
+    {
+      "path": ".codex/agents/developer.toml",
+      "sha256": "42d68bc741bdc424f53ecda904c4ab30c88b4c90c2f7070974eecf621a35a1e2",
+      "changedSinceRound001": false
+    },
+    {
+      "path": ".codex/agents/qa.toml",
+      "sha256": "dd6b1ff503fba501fb665723896693a32771a889270345d0fc8e7d6974985cb8",
+      "changedSinceRound001": false
+    },
+    {
+      "path": "AGENTS.md",
+      "sha256": "237d9e5514fb8ce91206f0f34fe92bfa1bbbf803d36b7bd42a6ac8e815b7180e",
+      "changedSinceRound001": true
+    },
+    {
+      "path": "docs/agent-workflow.md",
+      "sha256": "282628b3ed16fd3fb5199acf5de4d52eb67b244c01298ca08776426e1b99faa3",
+      "changedSinceRound001": true
+    },
+    {
+      "path": "docs/development.md",
+      "sha256": "818345087fdfdcc147a611e30142bb93b66a3b51790351c5f88bad5b125ef37d",
+      "changedSinceRound001": false
+    }
+  ],
+  "removedPaths": [
+    {
+      "path": "CLAUDE.md",
+      "exists": false
+    },
+    {
+      "path": ".claude/agents/developer.md",
+      "exists": false
+    },
+    {
+      "path": ".claude/agents/qa.md",
+      "exists": false
+    },
+    {
+      "path": ".claude/agents/code-analyzer.md",
+      "exists": false
+    }
+  ],
+  "priorAnalysisOutputs": [
+    {
+      "path": "analysis-001.md",
+      "sha256": "2d7b435231241082f8dfc4a9313e04c999597e27cbb1e1831aabf26d323ce2f8"
+    },
+    {
+      "path": "analysis-001-identity.json",
+      "sha256": "04f5ba949c09796893b4706e2e75e07a86fd1a45e2604c7bcd509586ce078923"
+    },
+    {
+      "path": "analysis-001-fixture.json",
+      "sha256": "9b68eb8ecf339d378f13dac13c95dd56494c8b17f2586c2b65cfe919f22adc1b"
+    },
+    {
+      "path": "analysis-002.md",
+      "sha256": "c4158b04a41685b6b2dfdd0263821f660d6345aa23a52ef31427ffc007762dc4"
+    },
+    {
+      "path": "analysis-002-evidence.json",
+      "sha256": "aebbca5ec287357f37547448fe711aab741e0c70c92033a4a0bd5c6be886ba1e"
+    }
+  ],
+  "fixtureSha256": "4512abd6e6c562b2405101f05b8ec8b790e6f8cc6ee54abe633a60d6c0bc0596",
+  "preservedProductParityBullets": [
+    "- Every feature, fix, workflow, configuration option and user control must support both clients unless a verified hard provider or platform restriction prevents it. A report originating from one client does not limit the implementation scope to that client.",
+    "- Keep identity, checkout resolution, lifecycle, attention, notification and configuration policies shared. Use thin provider adapters for different native events, APIs, history formats and presentation capabilities. Avoid separate product flows or duplicated policy implementations.",
+    "- Preserve user data, explicit overrides, safe runtime ownership and active sessions while extending both integrations. Compatibility does not mean freezing one client's feature set.",
+    "- Accept an exception only with evidence of a hard restriction. Document the exact operation, provider version and mode, supporting primary documentation or reproducible probe, supported fallback and regression coverage. Missing implementation, fixtures, credentials or investigation is unfinished work, not proof of a restriction.",
+    "- Limit exceptions to the affected capability or surface. For example, a native footer styling restriction must not remove shared identity, color controls or worktree association from the rest of the product.",
+    "- Include both providers in proposals, specs, designs, tasks and acceptance criteria. Verify matched scenarios for each client and mixed simultaneous sessions; regressions alone are insufficient when adding a feature to the other integration.",
+    "- Keep the capability matrix and diagnostics honest about supported, proven-restricted and unfinished or unverified behavior. Treat unexplained parity gaps as incomplete release work."
+  ],
+  "existingClaudeCommandSkillFiles": [
+    {
+      "path": ".claude/commands/opsx/apply.md",
+      "sha256": "edbc3eb123db1de1421c72ca117378b9aaac9b866276b33cefba7af110f1fdd3"
+    },
+    {
+      "path": ".claude/commands/opsx/archive.md",
+      "sha256": "7fc851f11ec9120889b34ec74ad3afe3af1da56a9a375957ffbc076e2b83c4b4"
+    },
+    {
+      "path": ".claude/commands/opsx/bulk-archive.md",
+      "sha256": "4a71faec7173b915a5a6a07271c51fa365303a1957cebb8afb47afc9e1769048"
+    },
+    {
+      "path": ".claude/commands/opsx/continue.md",
+      "sha256": "48e9b539c11ebf1eb01b9e170a18c78b95c9103d5282a0f158a4a86f08d47754"
+    },
+    {
+      "path": ".claude/commands/opsx/explore.md",
+      "sha256": "00430ea52c82ba535ec111eef1e8e96bb442d75ea34b4e032e5f0cf467dc16c1"
+    },
+    {
+      "path": ".claude/commands/opsx/ff.md",
+      "sha256": "e469bdf50846fa9c89cbf48f93980ae53ac2c2764a600db220ce34fca2dcd83b"
+    },
+    {
+      "path": ".claude/commands/opsx/new.md",
+      "sha256": "c62afc397efe319eec0432dd8c3fd22502ce543d181e45c1baa8ab6f11cde6d7"
+    },
+    {
+      "path": ".claude/commands/opsx/onboard.md",
+      "sha256": "e85c203168fe6b7ff2dd6b05dce376b7b51a4bb5ad341fd8d61619de052a8798"
+    },
+    {
+      "path": ".claude/commands/opsx/propose.md",
+      "sha256": "6cb69de2ff28d549ca6a49b0783dcf8013fc33ee42b8962b89f61c65d01ff027"
+    },
+    {
+      "path": ".claude/commands/opsx/sync.md",
+      "sha256": "a946e1a29b7421e1a6fd1fe1008f23c8b3739b8345f8487bbe1ffcf934fd0bec"
+    },
+    {
+      "path": ".claude/commands/opsx/update.md",
+      "sha256": "ab2066155d0156d96d04563242a92896672b71e422d5935c1003043f821a6f2d"
+    },
+    {
+      "path": ".claude/commands/opsx/verify.md",
+      "sha256": "9436ac3cab2ccfbe469d01d59215e715ef7f28d4187d8901a40c2ee01344223c"
+    },
+    {
+      "path": ".claude/skills/openspec-apply-change/SKILL.md",
+      "sha256": "f35768125764ed64c428cd7c2cf8b94a3137d7b951cc71141d17e43f2d231219"
+    },
+    {
+      "path": ".claude/skills/openspec-archive-change/SKILL.md",
+      "sha256": "9bd2d9f51514cbc4dc92afeae0e6e42f4d9743a115914c7210d1ce237a1e6846"
+    },
+    {
+      "path": ".claude/skills/openspec-bulk-archive-change/SKILL.md",
+      "sha256": "a7ca5de5fdd259c12e6e3a1f889182bc666be5c8e3d4b77c3baa3d88c6abddbb"
+    },
+    {
+      "path": ".claude/skills/openspec-continue-change/SKILL.md",
+      "sha256": "7a87ea57e2d65998ebd8e618d7721a9e48a07de24db4abb793192657a63051c4"
+    },
+    {
+      "path": ".claude/skills/openspec-explore/SKILL.md",
+      "sha256": "4ad21330349c035f13e665fc1debcece02282c869a54ea7f28bdc6b6e11a6319"
+    },
+    {
+      "path": ".claude/skills/openspec-ff-change/SKILL.md",
+      "sha256": "a91e27ac52623c70500d6d810137922c4263233b3f2f329b0f4928d7dd816099"
+    },
+    {
+      "path": ".claude/skills/openspec-new-change/SKILL.md",
+      "sha256": "52382f0e22c21f718bec40bafa0896e8a92ae3cdf7a9740349c65c74e3f2da8f"
+    },
+    {
+      "path": ".claude/skills/openspec-onboard/SKILL.md",
+      "sha256": "1bd725a290ac36eb3cb4a8a5e9121314d09d13ed54967c621e42e5ef337a3cf1"
+    },
+    {
+      "path": ".claude/skills/openspec-propose/SKILL.md",
+      "sha256": "73274cc31b0a1f39cf0a819d74cf05ef3fb76cf59b52582bde253db626d5996e"
+    },
+    {
+      "path": ".claude/skills/openspec-sync-specs/SKILL.md",
+      "sha256": "f5d42f3103f06df44d214a207f88a1c550c6a98d47b45a063d10e4bda947e287"
+    },
+    {
+      "path": ".claude/skills/openspec-update-change/SKILL.md",
+      "sha256": "778e1ab7dc1fb6660693d08a1ed731c09a61e7cb1584a8252d4f5a0ed6dfb55f"
+    },
+    {
+      "path": ".claude/skills/openspec-verify-change/SKILL.md",
+      "sha256": "0344e5451150c57b1dca7f083e9dff0a2f035b64276ae28890c0684e36777616"
+    }
+  ],
+  "trackedClaudeCommandSkillDiff": []
+}
