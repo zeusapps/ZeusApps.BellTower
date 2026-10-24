@@ -6,6 +6,7 @@ namespace BellTower.Hosts;
 public sealed class TerminalTitlePump : IDisposable
 {
     private readonly TerminalPresentationResolver resolver;
+    private readonly IdentityStore identities;
     private readonly CheckoutCache checkout;
     private readonly ITerminalPresentationWriter writer;
     private readonly Func<DateTimeOffset> clock;
@@ -30,6 +31,7 @@ public sealed class TerminalTitlePump : IDisposable
         Func<DateTimeOffset>? clock = null, Action<string>? log = null)
     {
         resolver = new(paths);
+        identities = new(paths);
         this.checkout = checkout ?? new();
         this.writer = writer ?? new IsolatedTerminalPresentationWriter(paths);
         this.clock = clock ?? (() => DateTimeOffset.UtcNow);
@@ -67,7 +69,8 @@ public sealed class TerminalTitlePump : IDisposable
                 {
                     continue;
                 }
-                var git = await checkout.ReadAsync(session.Directory, cancellation.Token).ConfigureAwait(false);
+                var identity = identities.Get(session.Key, session.Directory);
+                var git = await checkout.ReadAsync(identity.Checkout(session.Directory), cancellation.Token).ConfigureAwait(false);
                 var desired = basis with { Title = SessionPresentation.Title(basis.Title, git) };
                 if (!destinations.TryGetValue(desired.AttachmentId, out var target))
                 {

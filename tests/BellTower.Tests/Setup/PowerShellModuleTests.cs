@@ -112,7 +112,8 @@ public sealed class PowerShellModuleTests
             Assert.Equal("Task Ω", agent.RootElement.GetProperty("name").GetString());
             Assert.Equal(projectDirectory, agent.RootElement.GetProperty("cwd").GetString());
             var role = agent.RootElement.GetProperty("role").GetString();
-            Assert.True(legacyRole ? role == "PM" : string.IsNullOrEmpty(role));
+            // The legacy Start-*PM shortcut still launches normally but no longer hands a role to the agent environment.
+            Assert.True(string.IsNullOrEmpty(role));
             string[] expectedArguments = provider == "codex" ? ["--no-daemon", "two words", "--flag"] : ["two words", "--flag"];
             Assert.Equal(expectedArguments, agent.RootElement.GetProperty("arguments").EnumerateArray().Select(value => value.GetString()));
             File.WriteAllText(release, "exit");

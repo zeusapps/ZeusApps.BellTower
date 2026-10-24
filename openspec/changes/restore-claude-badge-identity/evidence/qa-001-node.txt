@@ -1,0 +1,24 @@
+✔ read reports no native title and writes nothing (126.8153ms)
+✔ rename appends the SDK custom-title record, preserves existing bytes and is idempotent (352.872ms)
+✔ an expected-name mismatch is a conflict and never writes (229.4276ms)
+✔ only the named session, directory and config directory are targeted (628.9231ms)
+✔ invalid requests are refused before any SDK work (601.1412ms)
+✔ input is bounded (40.1324ms)
+✔ a missing SDK is reported as unavailable, not a crash (587.0475ms)
+✔ a provider-generated title is indistinguishable from a user title through getSessionInfo (documented limit) (158.8554ms)
+✔ window foreground and terminal focus are requested in the owning bridge (1.0634ms)
+✔ terminal reveal alone is not considered foreground success (0.1489ms)
+✔ focus goes to the registered terminal and acknowledges (14.5894ms)
+✔ another window does not consume the request (1.9508ms)
+✔ expired and reused PID destinations do not focus (6.9213ms)
+✔ invalid JSON cannot break valid requests (2.3679ms)
+✔ foreground failure is acknowledged without claiming success (1.9337ms)
+✔ focus command failures produce a receipt and do not strand requests (1.7677ms)
+ℹ tests 16
+ℹ suites 0
+ℹ pass 16
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2799.96

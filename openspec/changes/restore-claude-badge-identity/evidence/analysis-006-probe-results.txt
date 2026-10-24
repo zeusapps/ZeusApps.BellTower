@@ -1,0 +1,210 @@
+# Analysis 006 probe results (restore-claude-badge-identity), reviewed build bell-tower.dll 2026-10-24T20:54:11 (copied to D:\Temp\bt-a6\bin, byte-identical to the test-bin copy).
+# Target: head=d307c34 baseline=d307c34 files=96 diff=69c7b4fc67e6 untracked=51/a216cafdd3d1
+## 1. probe-fork-boundary.ps1
+---- claude / orphan
+provider=claude case=orphan (synthetic clock: t=N is 12:00:00+N s)
+ticks=1
+fork child, parent unknown               WorkFloorAt= ActiveWork=change-a WorkSource=history:edit WorkBranch=feature ForkInheritedFrom= ForkBoundaryOffset=-1 Subject=change-a
+---- codex / orphan
+provider=codex case=orphan (synthetic clock: t=N is 12:00:00+N s)
+ticks=1
+fork child, parent unknown               WorkFloorAt= ActiveWork=change-a WorkSource=history:edit WorkBranch=feature ForkInheritedFrom= ForkBoundaryOffset=894 Subject=change-a
+---- claude / unread-parent
+provider=claude case=unread-parent (synthetic clock: t=N is 12:00:00+N s)
+parent known, history not yet read       WorkFloorAt= ActiveWork= WorkSource= WorkBranch= ForkInheritedFrom= ForkBoundaryOffset=-1 Subject=repo
+ticks=1
+fork child first read                    WorkFloorAt= ActiveWork=change-a WorkSource=history:edit WorkBranch=main ForkInheritedFrom=parent ForkBoundaryOffset=-1 Subject=change-a
+parent after its own read                WorkFloorAt= ActiveWork=change-a WorkSource=history:edit WorkBranch=main ForkInheritedFrom= ForkBoundaryOffset=-1 Subject=change-a
+fork child after parent read             WorkFloorAt= ActiveWork=change-a WorkSource=history:edit WorkBranch=main ForkInheritedFrom=parent ForkBoundaryOffset=-1 Subject=change-a
+---- codex / unread-parent
+provider=codex case=unread-parent (synthetic clock: t=N is 12:00:00+N s)
+parent known, history not yet read       WorkFloorAt= ActiveWork= WorkSource= WorkBranch= ForkInheritedFrom= ForkBoundaryOffset=-1 Subject=repo
+ticks=1
+fork child first read                    WorkFloorAt= ActiveWork=change-a WorkSource=history:edit WorkBranch=main ForkInheritedFrom=parent ForkBoundaryOffset=894 Subject=change-a
+parent after its own read                WorkFloorAt= ActiveWork=change-a WorkSource=history:edit WorkBranch=main ForkInheritedFrom= ForkBoundaryOffset=182 Subject=change-a
+fork child after parent read             WorkFloorAt= ActiveWork=change-a WorkSource=history:edit WorkBranch=main ForkInheritedFrom=parent ForkBoundaryOffset=894 Subject=change-a
+---- claude / split
+provider=claude case=split (synthetic clock: t=N is 12:00:00+N s)
+parent after read                        WorkFloorAt= ActiveWork=change-a WorkSource=history:edit WorkBranch=main ForkInheritedFrom= ForkBoundaryOffset=-1 Subject=change-a
+parent after switch (t=20)               WorkFloorAt=12:00:20 ActiveWork= WorkSource= WorkBranch= ForkInheritedFrom= ForkBoundaryOffset=-1 Subject=repo
+ticks=1
+child, prefix only (boundary unwritten)  WorkFloorAt=12:00:20 ActiveWork= WorkSource= WorkBranch= ForkInheritedFrom=parent ForkBoundaryOffset=-1 Subject=repo
+ticks=0
+child, boundary appended                 WorkFloorAt=12:00:20 ActiveWork= WorkSource= WorkBranch= ForkInheritedFrom=parent ForkBoundaryOffset=-1 Subject=repo
+---- codex / split
+provider=codex case=split (synthetic clock: t=N is 12:00:00+N s)
+parent after read                        WorkFloorAt= ActiveWork=change-a WorkSource=history:edit WorkBranch=main ForkInheritedFrom= ForkBoundaryOffset=182 Subject=change-a
+parent after switch (t=20)               WorkFloorAt=12:00:20 ActiveWork= WorkSource= WorkBranch= ForkInheritedFrom= ForkBoundaryOffset=182 Subject=repo
+ticks=1
+child, prefix only (boundary unwritten)  WorkFloorAt=12:00:20 ActiveWork=change-a WorkSource=history:edit WorkBranch=feature ForkInheritedFrom=parent ForkBoundaryOffset=-1 Subject=change-a
+ticks=1
+child, boundary appended                 WorkFloorAt=12:00:20 ActiveWork= WorkSource= WorkBranch= ForkInheritedFrom=parent ForkBoundaryOffset=894 Subject=repo
+---- claude / boundary
+provider=claude case=boundary (synthetic clock: t=N is 12:00:00+N s)
+parent after read                        WorkFloorAt= ActiveWork=change-a WorkSource=history:edit WorkBranch=main ForkInheritedFrom= ForkBoundaryOffset=-1 Subject=change-a
+parent after switch (t=20)               WorkFloorAt=12:00:20 ActiveWork= WorkSource= WorkBranch= ForkInheritedFrom= ForkBoundaryOffset=-1 Subject=repo
+ticks=1
+fork child after first read              WorkFloorAt=12:00:20 ActiveWork= WorkSource= WorkBranch= ForkInheritedFrom=parent ForkBoundaryOffset=-1 Subject=repo
+parent (unchanged)                       WorkFloorAt=12:00:20 ActiveWork= WorkSource= WorkBranch= ForkInheritedFrom= ForkBoundaryOffset=-1 Subject=repo
+ticks=1
+child after own work (t=60)              WorkFloorAt=12:00:20 ActiveWork=change-b WorkSource=history:edit WorkBranch=feature ForkInheritedFrom=parent ForkBoundaryOffset=-1 Subject=change-b
+---- codex / boundary
+provider=codex case=boundary (synthetic clock: t=N is 12:00:00+N s)
+parent after read                        WorkFloorAt= ActiveWork=change-a WorkSource=history:edit WorkBranch=main ForkInheritedFrom= ForkBoundaryOffset=182 Subject=change-a
+parent after switch (t=20)               WorkFloorAt=12:00:20 ActiveWork= WorkSource= WorkBranch= ForkInheritedFrom= ForkBoundaryOffset=182 Subject=repo
+ticks=1
+fork child after first read              WorkFloorAt=12:00:20 ActiveWork= WorkSource= WorkBranch= ForkInheritedFrom=parent ForkBoundaryOffset=894 Subject=repo
+parent (unchanged)                       WorkFloorAt=12:00:20 ActiveWork= WorkSource= WorkBranch= ForkInheritedFrom= ForkBoundaryOffset=182 Subject=repo
+ticks=1
+child after own work (t=60)              WorkFloorAt=12:00:20 ActiveWork=change-b WorkSource=history:edit WorkBranch=feature ForkInheritedFrom=parent ForkBoundaryOffset=894 Subject=change-b
+---- claude / big
+provider=claude case=big (synthetic clock: t=N is 12:00:00+N s)
+parent after read                        WorkFloorAt= ActiveWork=change-a WorkSource=history:edit WorkBranch=main ForkInheritedFrom= ForkBoundaryOffset=-1 Subject=change-a
+parent after switch (t=20)               WorkFloorAt=12:00:20 ActiveWork= WorkSource= WorkBranch= ForkInheritedFrom= ForkBoundaryOffset=-1 Subject=repo
+file bytes=1259596
+ticks=5
+fork child after walk                    WorkFloorAt=12:00:20 ActiveWork= WorkSource= WorkBranch= ForkInheritedFrom=parent ForkBoundaryOffset=-1 Subject=repo
+HistoryOffset=0 HistoryLength=1259596
+ticks=1
+child after own work (t=60)              WorkFloorAt=12:00:20 ActiveWork=change-b WorkSource=history:edit WorkBranch=feature ForkInheritedFrom=parent ForkBoundaryOffset=-1 Subject=change-b
+---- codex / big
+provider=codex case=big (synthetic clock: t=N is 12:00:00+N s)
+parent after read                        WorkFloorAt= ActiveWork=change-a WorkSource=history:edit WorkBranch=main ForkInheritedFrom= ForkBoundaryOffset=182 Subject=change-a
+parent after switch (t=20)               WorkFloorAt=12:00:20 ActiveWork= WorkSource= WorkBranch= ForkInheritedFrom= ForkBoundaryOffset=182 Subject=repo
+file bytes=1248184
+ticks=5
+fork child after walk                    WorkFloorAt=12:00:20 ActiveWork= WorkSource= WorkBranch= ForkInheritedFrom=parent ForkBoundaryOffset=624444 Subject=repo
+HistoryOffset=0 HistoryLength=1248184
+ticks=1
+child after own work (t=60)              WorkFloorAt=12:00:20 ActiveWork=change-b WorkSource=history:edit WorkBranch=feature ForkInheritedFrom=parent ForkBoundaryOffset=624444 Subject=change-b
+---- claude / live-parent
+provider=claude case=live-parent (synthetic clock: t=N is 12:00:00+N s)
+parent live identity, history unread     WorkFloorAt= ActiveWork=change-a WorkSource=Write WorkBranch=main ForkInheritedFrom= ForkBoundaryOffset=-1 Subject=change-a
+ticks=1
+fork child first read                    WorkFloorAt= ActiveWork=change-a WorkSource=history:edit WorkBranch=main ForkInheritedFrom=parent ForkBoundaryOffset=-1 Subject=change-a
+ticks=1
+child after own work (t=60)              WorkFloorAt= ActiveWork=change-b WorkSource=history:edit WorkBranch=main ForkInheritedFrom=parent ForkBoundaryOffset=-1 Subject=change-b
+---- codex / live-parent
+provider=codex case=live-parent (synthetic clock: t=N is 12:00:00+N s)
+parent live identity, history unread     WorkFloorAt= ActiveWork=change-a WorkSource=Write WorkBranch=main ForkInheritedFrom= ForkBoundaryOffset=-1 Subject=change-a
+ticks=1
+fork child first read                    WorkFloorAt= ActiveWork=change-a WorkSource=history:edit WorkBranch=main ForkInheritedFrom=parent ForkBoundaryOffset=894 Subject=change-a
+ticks=1
+child after own work (t=60)              WorkFloorAt= ActiveWork=change-b WorkSource=history:edit WorkBranch=main ForkInheritedFrom=parent ForkBoundaryOffset=894 Subject=change-b
+---- claude / stale-parent
+provider=claude case=stale-parent (synthetic clock: t=N is 12:00:00+N s)
+parent live identity, history unread     WorkFloorAt= ActiveWork=change-b WorkSource=Write WorkBranch=main ForkInheritedFrom= ForkBoundaryOffset=-1 Subject=change-b
+ticks=1
+fork child first read                    WorkFloorAt= ActiveWork=change-a WorkSource=history:edit WorkBranch=main ForkInheritedFrom=parent ForkBoundaryOffset=-1 Subject=change-a
+parent after its own read                WorkFloorAt= ActiveWork=change-a WorkSource=history:edit WorkBranch=main ForkInheritedFrom= ForkBoundaryOffset=-1 Subject=change-a
+fork child after parent read             WorkFloorAt= ActiveWork=change-a WorkSource=history:edit WorkBranch=main ForkInheritedFrom=parent ForkBoundaryOffset=-1 Subject=change-a
+---- codex / stale-parent
+provider=codex case=stale-parent (synthetic clock: t=N is 12:00:00+N s)
+parent live identity, history unread     WorkFloorAt= ActiveWork=change-b WorkSource=Write WorkBranch=main ForkInheritedFrom= ForkBoundaryOffset=-1 Subject=change-b
+ticks=1
+fork child first read                    WorkFloorAt= ActiveWork=change-a WorkSource=history:edit WorkBranch=main ForkInheritedFrom=parent ForkBoundaryOffset=894 Subject=change-a
+parent after its own read                WorkFloorAt= ActiveWork=change-a WorkSource=history:edit WorkBranch=main ForkInheritedFrom= ForkBoundaryOffset=182 Subject=change-a
+fork child after parent read             WorkFloorAt= ActiveWork=change-a WorkSource=history:edit WorkBranch=main ForkInheritedFrom=parent ForkBoundaryOffset=894 Subject=change-a
+---- claude / weak-parent
+provider=claude case=weak-parent (synthetic clock: t=N is 12:00:00+N s)
+parent live identity, history unread     WorkFloorAt= ActiveWork=change-b WorkSource=skill WorkBranch=main ForkInheritedFrom= ForkBoundaryOffset=-1 Subject=change-b
+ticks=1
+fork child first read                    WorkFloorAt= ActiveWork=change-a WorkSource=history:edit WorkBranch=main ForkInheritedFrom=parent ForkBoundaryOffset=-1 Subject=change-a
+parent after its own read                WorkFloorAt= ActiveWork=change-a WorkSource=history:edit WorkBranch=main ForkInheritedFrom= ForkBoundaryOffset=-1 Subject=change-a
+fork child after parent read             WorkFloorAt= ActiveWork=change-a WorkSource=history:edit WorkBranch=main ForkInheritedFrom=parent ForkBoundaryOffset=-1 Subject=change-a
+---- codex / weak-parent
+provider=codex case=weak-parent (synthetic clock: t=N is 12:00:00+N s)
+parent live identity, history unread     WorkFloorAt= ActiveWork=change-b WorkSource=skill WorkBranch=main ForkInheritedFrom= ForkBoundaryOffset=-1 Subject=change-b
+ticks=1
+fork child first read                    WorkFloorAt= ActiveWork=change-a WorkSource=history:edit WorkBranch=main ForkInheritedFrom=parent ForkBoundaryOffset=894 Subject=change-a
+parent after its own read                WorkFloorAt= ActiveWork=change-a WorkSource=history:edit WorkBranch=main ForkInheritedFrom= ForkBoundaryOffset=182 Subject=change-a
+fork child after parent read             WorkFloorAt= ActiveWork=change-a WorkSource=history:edit WorkBranch=main ForkInheritedFrom=parent ForkBoundaryOffset=894 Subject=change-a
+---- claude / split-live
+provider=claude case=split-live (synthetic clock: t=N is 12:00:00+N s)
+parent live identity, history unread     WorkFloorAt= ActiveWork=change-a WorkSource=Write WorkBranch=main ForkInheritedFrom= ForkBoundaryOffset=-1 Subject=change-a
+ticks=1
+child, prefix only (boundary unwritten)  WorkFloorAt= ActiveWork=change-a WorkSource=history:edit WorkBranch=main ForkInheritedFrom=parent ForkBoundaryOffset=-1 Subject=change-a
+ticks=0
+child, boundary appended                 WorkFloorAt= ActiveWork=change-a WorkSource=history:edit WorkBranch=main ForkInheritedFrom=parent ForkBoundaryOffset=-1 Subject=change-a
+---- codex / split-live
+provider=codex case=split-live (synthetic clock: t=N is 12:00:00+N s)
+parent live identity, history unread     WorkFloorAt= ActiveWork=change-a WorkSource=Write WorkBranch=main ForkInheritedFrom= ForkBoundaryOffset=-1 Subject=change-a
+ticks=1
+child, prefix only (boundary unwritten)  WorkFloorAt= ActiveWork=change-a WorkSource=history:edit WorkBranch=main ForkInheritedFrom=parent ForkBoundaryOffset=-1 Subject=change-a
+ticks=1
+child, boundary appended                 WorkFloorAt= ActiveWork=change-a WorkSource=history:edit WorkBranch=main ForkInheritedFrom=parent ForkBoundaryOffset=894 Subject=change-a
+---- claude / gap-parent
+provider=claude case=gap-parent (synthetic clock: t=N is 12:00:00+N s)
+parent live identity, history unread     WorkFloorAt= ActiveWork=change-b WorkSource=Write WorkBranch=main ForkInheritedFrom= ForkBoundaryOffset=-1 Subject=change-b
+ticks=1
+fork child first read                    WorkFloorAt= ActiveWork=change-b WorkSource=fork:Write WorkBranch=main ForkInheritedFrom=parent ForkBoundaryOffset=-1 Subject=change-b
+parent after its own read                WorkFloorAt= ActiveWork=change-b WorkSource=Write WorkBranch=main ForkInheritedFrom= ForkBoundaryOffset=-1 Subject=change-b
+fork child after parent read             WorkFloorAt= ActiveWork=change-b WorkSource=fork:Write WorkBranch=main ForkInheritedFrom=parent ForkBoundaryOffset=-1 Subject=change-b
+ticks=1
+child after own work (t=80)              WorkFloorAt= ActiveWork=change-b WorkSource=history:edit WorkBranch=main ForkInheritedFrom=parent ForkBoundaryOffset=-1 Subject=change-b
+---- codex / gap-parent
+provider=codex case=gap-parent (synthetic clock: t=N is 12:00:00+N s)
+parent live identity, history unread     WorkFloorAt= ActiveWork=change-b WorkSource=Write WorkBranch=main ForkInheritedFrom= ForkBoundaryOffset=-1 Subject=change-b
+ticks=1
+fork child first read                    WorkFloorAt= ActiveWork=change-a WorkSource=history:edit WorkBranch=main ForkInheritedFrom=parent ForkBoundaryOffset=894 Subject=change-a
+parent after its own read                WorkFloorAt= ActiveWork=change-b WorkSource=Write WorkBranch=main ForkInheritedFrom= ForkBoundaryOffset=182 Subject=change-b
+fork child after parent read             WorkFloorAt= ActiveWork=change-a WorkSource=history:edit WorkBranch=main ForkInheritedFrom=parent ForkBoundaryOffset=894 Subject=change-a
+ticks=1
+child after own work (t=80)              WorkFloorAt= ActiveWork=change-b WorkSource=history:edit WorkBranch=main ForkInheritedFrom=parent ForkBoundaryOffset=894 Subject=change-b
+---- claude / split-gap
+provider=claude case=split-gap (synthetic clock: t=N is 12:00:00+N s)
+parent live identity, history unread     WorkFloorAt= ActiveWork=change-b WorkSource=Write WorkBranch=main ForkInheritedFrom= ForkBoundaryOffset=-1 Subject=change-b
+ticks=1
+child, prefix only (boundary unwritten)  WorkFloorAt= ActiveWork=change-b WorkSource=fork:Write WorkBranch=main ForkInheritedFrom=parent ForkBoundaryOffset=-1 Subject=change-b
+ticks=0
+child, boundary appended                 WorkFloorAt= ActiveWork=change-b WorkSource=fork:Write WorkBranch=main ForkInheritedFrom=parent ForkBoundaryOffset=-1 Subject=change-b
+---- codex / split-gap
+provider=codex case=split-gap (synthetic clock: t=N is 12:00:00+N s)
+parent live identity, history unread     WorkFloorAt= ActiveWork=change-b WorkSource=Write WorkBranch=main ForkInheritedFrom= ForkBoundaryOffset=-1 Subject=change-b
+ticks=1
+child, prefix only (boundary unwritten)  WorkFloorAt= ActiveWork=change-a WorkSource=history:edit WorkBranch=main ForkInheritedFrom=parent ForkBoundaryOffset=-1 Subject=change-a
+ticks=1
+child, boundary appended                 WorkFloorAt= ActiveWork=change-a WorkSource=history:edit WorkBranch=main ForkInheritedFrom=parent ForkBoundaryOffset=894 Subject=change-a
+---- claude / newer-parent
+provider=claude case=newer-parent (synthetic clock: t=N is 12:00:00+N s)
+parent live identity, history unread     WorkFloorAt= ActiveWork=change-b WorkSource=Write WorkBranch=main ForkInheritedFrom= ForkBoundaryOffset=-1 Subject=change-b
+ticks=1
+fork child first read                    WorkFloorAt= ActiveWork=change-b WorkSource=fork:Write WorkBranch=main ForkInheritedFrom=parent ForkBoundaryOffset=-1 Subject=change-b
+---- codex / newer-parent
+provider=codex case=newer-parent (synthetic clock: t=N is 12:00:00+N s)
+parent live identity, history unread     WorkFloorAt= ActiveWork=change-b WorkSource=Write WorkBranch=main ForkInheritedFrom= ForkBoundaryOffset=-1 Subject=change-b
+ticks=1
+fork child first read                    WorkFloorAt= ActiveWork=change-b WorkSource=fork:Write WorkBranch=main ForkInheritedFrom=parent ForkBoundaryOffset=894 Subject=change-b
+---- both / mixed
+provider=claude case=mixed (synthetic clock: t=N is 12:00:00+N s)
+mixed claude orphan final                WorkFloorAt= ActiveWork=change-a WorkSource=history:edit WorkBranch=main ForkInheritedFrom= ForkBoundaryOffset=-1 Subject=change-a
+mixed codex orphan final                 WorkFloorAt= ActiveWork=change-a WorkSource=history:edit WorkBranch=main ForkInheritedFrom= ForkBoundaryOffset=915 Subject=change-a
+mixed claude unread final                WorkFloorAt= ActiveWork=change-a WorkSource=history:edit WorkBranch=main ForkInheritedFrom=parent-unread ForkBoundaryOffset=-1 Subject=change-a
+mixed codex unread final                 WorkFloorAt= ActiveWork=change-a WorkSource=history:edit WorkBranch=main ForkInheritedFrom=parent-unread ForkBoundaryOffset=915 Subject=change-a
+mixed claude split final                 WorkFloorAt=12:00:20 ActiveWork= WorkSource= WorkBranch= ForkInheritedFrom=parent-split ForkBoundaryOffset=-1 Subject=repo
+mixed codex split final                  WorkFloorAt=12:00:20 ActiveWork= WorkSource= WorkBranch= ForkInheritedFrom=parent-split ForkBoundaryOffset=912 Subject=repo
+---- both / mixed-gap
+provider=claude case=mixed-gap (synthetic clock: t=N is 12:00:00+N s)
+mixed-gap claude first read              WorkFloorAt= ActiveWork=change-b WorkSource=fork:Write WorkBranch=main ForkInheritedFrom=parent-claude ForkBoundaryOffset=-1 Subject=change-b
+mixed-gap codex first read               WorkFloorAt= ActiveWork=change-a WorkSource=history:edit WorkBranch=main ForkInheritedFrom=parent-codex ForkBoundaryOffset=912 Subject=change-a
+---- claude / gap-twin
+provider=claude case=gap-twin (synthetic clock: t=N is 12:00:00+N s)
+parent live identity, history unread     WorkFloorAt= ActiveWork=change-b WorkSource=Write WorkBranch=main ForkInheritedFrom= ForkBoundaryOffset=-1 Subject=change-b
+ticks=1
+fork child first read                    WorkFloorAt= ActiveWork=change-b WorkSource=fork:Write WorkBranch=main ForkInheritedFrom=parent ForkBoundaryOffset=-1 Subject=change-b
+---- codex / gap-twin
+provider=codex case=gap-twin (synthetic clock: t=N is 12:00:00+N s)
+parent live identity, history unread     WorkFloorAt= ActiveWork=change-b WorkSource=Write WorkBranch=main ForkInheritedFrom= ForkBoundaryOffset=-1 Subject=change-b
+ticks=1
+fork child first read                    WorkFloorAt= ActiveWork=change-b WorkSource=history:edit WorkBranch=main ForkInheritedFrom=parent ForkBoundaryOffset=1390 Subject=change-b
+
+## 2. Regression markers (ANALYSIS-102, ANALYSIS-151)
+grep "PendingForkTitle|NativeTitleAt" over src, tests (*.cs, *.json, *.psm1; bin/obj excluded): 0 hits
+src/BellTower/Core/AlertPolicy.cs:51        var subject = identity.Name;
+src/BellTower/Core/SessionIdentity.cs:73    public string Name => ManualName ?? NativeTitle ?? Subject;
+IdentityInheritance.FromParent callers in src: src\BellTower\Sessions\IdentityHistoryReader.cs:128 (only)
+
+## 3. Targeted tests (TEMP, results and BELLTOWER_DATA_DIR under D:\Temp\bt-a6)
+dotnet test tests\BellTower.Tests -c Release --no-build --no-restore --filter "FullyQualifiedName~IdentityRecoveryPolicyTests|FullyQualifiedName~SpeechTests|FullyQualifiedName~PresentationAgreementTests|FullyQualifiedName~WorkPolicyTests|FullyQualifiedName~IdentityHistoryTests|FullyQualifiedName~IdentityPrecedenceTests|FullyQualifiedName~LegacyImportTests"
+Passed!  - Failed:     0, Passed:   140, Skipped:     0, Total:   140, Duration: 1 s - BellTower.Tests.dll (net10.0)
+(BellTower.Tests.dll 2026-10-24T20:56:31 is newer than IdentityRecoveryPolicyTests.cs 20:56:18.)

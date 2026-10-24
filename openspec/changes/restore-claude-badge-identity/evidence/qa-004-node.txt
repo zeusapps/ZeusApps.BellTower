@@ -1,0 +1,16 @@
+✔ window foreground and terminal focus are requested in the owning bridge (0.989ms)
+✔ terminal reveal alone is not considered foreground success (0.1523ms)
+✔ focus goes to the registered terminal and acknowledges (4.9144ms)
+✔ another window does not consume the request (1.7944ms)
+✔ expired and reused PID destinations do not focus (6.0962ms)
+✔ invalid JSON cannot break valid requests (2.1748ms)
+✔ foreground failure is acknowledged without claiming success (1.8848ms)
+✔ focus command failures produce a receipt and do not strand requests (1.8225ms)
+ℹ tests 8
+ℹ suites 0
+ℹ pass 8
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 97.4031

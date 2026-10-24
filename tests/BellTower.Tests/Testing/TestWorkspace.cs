@@ -32,6 +32,12 @@ public sealed class TestWorkspace : IDisposable
             throw new InvalidOperationException("Unsafe test cleanup.");
         }
 
+        // Git marks object files read-only; clear that so repositories created by tests can be removed.
+        foreach (var file in new DirectoryInfo(Root).EnumerateFiles("*", SearchOption.AllDirectories).Where(file => file.IsReadOnly))
+        {
+            file.IsReadOnly = false;
+        }
+
         Directory.Delete(Root, true);
     }
 

@@ -1,0 +1,334 @@
+# Analysis 004 probe results (restore-claude-badge-identity). Build: src/BellTower/bin/Release/net10.0-windows/bell-tower.dll
+# written 2026-10-24 09:42:19 local, newer than every src/BellTower source; byte-identical to the test bin copy.
+# Target: head=d307c34 baseline=d307c34 files=96 diff=da976a89606d untracked=51/1c8549ea446a
+
+## 1. Main cases (fork-floor verbatim + fork-boundary cases, both providers)
+== analysis-003 probe-fork-floor.ps1 (verbatim) provider=claude
+provider=claude (synthetic clock: t=N is 12:00:00+N s)
+ticks=1
+parent after read                  WorkFloorAt= ActiveWork=change-a WorkSource=history:edit WorkBranch=main ForkInheritedFrom= Subject=change-a
+ticks=0
+parent after switch (t=20)         WorkFloorAt=12:00:20 ActiveWork= WorkSource= WorkBranch= ForkInheritedFrom= Subject=repo
+ticks=1
+fork child after first read        WorkFloorAt=12:00:20 ActiveWork= WorkSource= WorkBranch= ForkInheritedFrom=parent Subject=repo
+parent (unchanged)                 WorkFloorAt=12:00:20 ActiveWork= WorkSource= WorkBranch= ForkInheritedFrom= Subject=repo
+== analysis-003 probe-fork-floor.ps1 (verbatim) provider=codex
+provider=codex (synthetic clock: t=N is 12:00:00+N s)
+ticks=1
+parent after read                  WorkFloorAt= ActiveWork=change-a WorkSource=history:edit WorkBranch=main ForkInheritedFrom= Subject=change-a
+ticks=0
+parent after switch (t=20)         WorkFloorAt=12:00:20 ActiveWork= WorkSource= WorkBranch= ForkInheritedFrom= Subject=repo
+ticks=1
+fork child after first read        WorkFloorAt=12:00:20 ActiveWork=change-a WorkSource=history:edit WorkBranch=feature ForkInheritedFrom=parent Subject=change-a
+parent (unchanged)                 WorkFloorAt=12:00:20 ActiveWork= WorkSource= WorkBranch= ForkInheritedFrom= Subject=repo
+== probe-fork-boundary.ps1 -Case orig -Provider claude
+provider=claude case=orig (synthetic clock: t=N is 12:00:00+N s)
+parent after read                        WorkFloorAt= ActiveWork=change-a WorkSource=history:edit WorkBranch=main ForkInheritedFrom= ForkBoundaryOffset=-1 Subject=change-a
+parent after switch (t=20)               WorkFloorAt=12:00:20 ActiveWork= WorkSource= WorkBranch= ForkInheritedFrom= ForkBoundaryOffset=-1 Subject=repo
+ticks=1
+fork child after first read              WorkFloorAt=12:00:20 ActiveWork= WorkSource= WorkBranch= ForkInheritedFrom=parent ForkBoundaryOffset=-1 Subject=repo
+parent (unchanged)                       WorkFloorAt=12:00:20 ActiveWork= WorkSource= WorkBranch= ForkInheritedFrom= ForkBoundaryOffset=-1 Subject=repo
+== probe-fork-boundary.ps1 -Case orig -Provider codex
+provider=codex case=orig (synthetic clock: t=N is 12:00:00+N s)
+parent after read                        WorkFloorAt= ActiveWork=change-a WorkSource=history:edit WorkBranch=main ForkInheritedFrom= ForkBoundaryOffset=223 Subject=change-a
+parent after switch (t=20)               WorkFloorAt=12:00:20 ActiveWork= WorkSource= WorkBranch= ForkInheritedFrom= ForkBoundaryOffset=223 Subject=repo
+ticks=1
+fork child after first read              WorkFloorAt=12:00:20 ActiveWork=change-a WorkSource=history:edit WorkBranch=feature ForkInheritedFrom=parent ForkBoundaryOffset=-1 Subject=change-a
+parent (unchanged)                       WorkFloorAt=12:00:20 ActiveWork= WorkSource= WorkBranch= ForkInheritedFrom= ForkBoundaryOffset=223 Subject=repo
+== probe-fork-boundary.ps1 -Case boundary -Provider claude
+provider=claude case=boundary (synthetic clock: t=N is 12:00:00+N s)
+parent after read                        WorkFloorAt= ActiveWork=change-a WorkSource=history:edit WorkBranch=main ForkInheritedFrom= ForkBoundaryOffset=-1 Subject=change-a
+parent after switch (t=20)               WorkFloorAt=12:00:20 ActiveWork= WorkSource= WorkBranch= ForkInheritedFrom= ForkBoundaryOffset=-1 Subject=repo
+ticks=1
+fork child after first read              WorkFloorAt=12:00:20 ActiveWork= WorkSource= WorkBranch= ForkInheritedFrom=parent ForkBoundaryOffset=-1 Subject=repo
+parent (unchanged)                       WorkFloorAt=12:00:20 ActiveWork= WorkSource= WorkBranch= ForkInheritedFrom= ForkBoundaryOffset=-1 Subject=repo
+ticks=1
+child after own work (t=60)              WorkFloorAt=12:00:20 ActiveWork=change-b WorkSource=history:edit WorkBranch=feature ForkInheritedFrom=parent ForkBoundaryOffset=-1 Subject=change-b
+== probe-fork-boundary.ps1 -Case boundary -Provider codex
+provider=codex case=boundary (synthetic clock: t=N is 12:00:00+N s)
+parent after read                        WorkFloorAt= ActiveWork=change-a WorkSource=history:edit WorkBranch=main ForkInheritedFrom= ForkBoundaryOffset=223 Subject=change-a
+parent after switch (t=20)               WorkFloorAt=12:00:20 ActiveWork= WorkSource= WorkBranch= ForkInheritedFrom= ForkBoundaryOffset=223 Subject=repo
+ticks=1
+fork child after first read              WorkFloorAt=12:00:20 ActiveWork= WorkSource= WorkBranch= ForkInheritedFrom=parent ForkBoundaryOffset=976 Subject=repo
+parent (unchanged)                       WorkFloorAt=12:00:20 ActiveWork= WorkSource= WorkBranch= ForkInheritedFrom= ForkBoundaryOffset=223 Subject=repo
+ticks=1
+child after own work (t=60)              WorkFloorAt=12:00:20 ActiveWork=change-b WorkSource=history:edit WorkBranch=feature ForkInheritedFrom=parent ForkBoundaryOffset=976 Subject=change-b
+== probe-fork-boundary.ps1 -Case big -Provider claude
+provider=claude case=big (synthetic clock: t=N is 12:00:00+N s)
+parent after read                        WorkFloorAt= ActiveWork=change-a WorkSource=history:edit WorkBranch=main ForkInheritedFrom= ForkBoundaryOffset=-1 Subject=change-a
+parent after switch (t=20)               WorkFloorAt=12:00:20 ActiveWork= WorkSource= WorkBranch= ForkInheritedFrom= ForkBoundaryOffset=-1 Subject=repo
+file bytes=1259678
+ticks=5
+fork child after walk                    WorkFloorAt=12:00:20 ActiveWork= WorkSource= WorkBranch= ForkInheritedFrom=parent ForkBoundaryOffset=-1 Subject=repo
+HistoryOffset=0 HistoryLength=1259678
+ticks=1
+child after own work (t=60)              WorkFloorAt=12:00:20 ActiveWork=change-b WorkSource=history:edit WorkBranch=feature ForkInheritedFrom=parent ForkBoundaryOffset=-1 Subject=change-b
+== probe-fork-boundary.ps1 -Case big -Provider codex
+provider=codex case=big (synthetic clock: t=N is 12:00:00+N s)
+parent after read                        WorkFloorAt= ActiveWork=change-a WorkSource=history:edit WorkBranch=main ForkInheritedFrom= ForkBoundaryOffset=223 Subject=change-a
+parent after switch (t=20)               WorkFloorAt=12:00:20 ActiveWork= WorkSource= WorkBranch= ForkInheritedFrom= ForkBoundaryOffset=223 Subject=repo
+file bytes=1248266
+ticks=5
+fork child after walk                    WorkFloorAt=12:00:20 ActiveWork= WorkSource= WorkBranch= ForkInheritedFrom=parent ForkBoundaryOffset=624526 Subject=repo
+HistoryOffset=0 HistoryLength=1248266
+ticks=1
+child after own work (t=60)              WorkFloorAt=12:00:20 ActiveWork=change-b WorkSource=history:edit WorkBranch=feature ForkInheritedFrom=parent ForkBoundaryOffset=624526 Subject=change-b
+== probe-fork-boundary.ps1 -Case split -Provider claude
+provider=claude case=split (synthetic clock: t=N is 12:00:00+N s)
+parent after read                        WorkFloorAt= ActiveWork=change-a WorkSource=history:edit WorkBranch=main ForkInheritedFrom= ForkBoundaryOffset=-1 Subject=change-a
+parent after switch (t=20)               WorkFloorAt=12:00:20 ActiveWork= WorkSource= WorkBranch= ForkInheritedFrom= ForkBoundaryOffset=-1 Subject=repo
+ticks=1
+child, prefix only (boundary unwritten)  WorkFloorAt=12:00:20 ActiveWork= WorkSource= WorkBranch= ForkInheritedFrom=parent ForkBoundaryOffset=-1 Subject=repo
+ticks=0
+child, boundary appended                 WorkFloorAt=12:00:20 ActiveWork= WorkSource= WorkBranch= ForkInheritedFrom=parent ForkBoundaryOffset=-1 Subject=repo
+== probe-fork-boundary.ps1 -Case split -Provider codex
+provider=codex case=split (synthetic clock: t=N is 12:00:00+N s)
+parent after read                        WorkFloorAt= ActiveWork=change-a WorkSource=history:edit WorkBranch=main ForkInheritedFrom= ForkBoundaryOffset=223 Subject=change-a
+parent after switch (t=20)               WorkFloorAt=12:00:20 ActiveWork= WorkSource= WorkBranch= ForkInheritedFrom= ForkBoundaryOffset=223 Subject=repo
+ticks=1
+child, prefix only (boundary unwritten)  WorkFloorAt=12:00:20 ActiveWork=change-a WorkSource=history:edit WorkBranch=feature ForkInheritedFrom=parent ForkBoundaryOffset=-1 Subject=change-a
+ticks=1
+child, boundary appended                 WorkFloorAt=12:00:20 ActiveWork=change-a WorkSource=history:edit WorkBranch=feature ForkInheritedFrom=parent ForkBoundaryOffset=976 Subject=change-a
+== probe-fork-boundary.ps1 -Case fresh -Provider claude
+provider=claude case=fresh (synthetic clock: t=N is 12:00:00+N s)
+parent after read                        WorkFloorAt= ActiveWork=change-a WorkSource=history:edit WorkBranch=main ForkInheritedFrom= ForkBoundaryOffset=-1 Subject=change-a
+parent after switch (t=20)               WorkFloorAt=12:00:20 ActiveWork= WorkSource= WorkBranch= ForkInheritedFrom= ForkBoundaryOffset=-1 Subject=repo
+fork child settled                       WorkFloorAt=12:00:20 ActiveWork= WorkSource= WorkBranch= ForkInheritedFrom=parent ForkBoundaryOffset=-1 Subject=repo
+ticks=1
+after recreate (new fingerprint)         WorkFloorAt=12:00:20 ActiveWork= WorkSource= WorkBranch= ForkInheritedFrom=parent ForkBoundaryOffset=-1 Subject=repo
+ticks=1
+after truncation                         WorkFloorAt=12:00:20 ActiveWork= WorkSource= WorkBranch= ForkInheritedFrom=parent ForkBoundaryOffset=-1 Subject=repo
+ticks=1
+after regrow                             WorkFloorAt=12:00:20 ActiveWork= WorkSource= WorkBranch= ForkInheritedFrom=parent ForkBoundaryOffset=-1 Subject=repo
+ticks=1
+child after own work (t=60)              WorkFloorAt=12:00:20 ActiveWork=change-b WorkSource=history:edit WorkBranch=feature ForkInheritedFrom=parent ForkBoundaryOffset=-1 Subject=change-b
+== probe-fork-boundary.ps1 -Case fresh -Provider codex
+provider=codex case=fresh (synthetic clock: t=N is 12:00:00+N s)
+parent after read                        WorkFloorAt= ActiveWork=change-a WorkSource=history:edit WorkBranch=main ForkInheritedFrom= ForkBoundaryOffset=223 Subject=change-a
+parent after switch (t=20)               WorkFloorAt=12:00:20 ActiveWork= WorkSource= WorkBranch= ForkInheritedFrom= ForkBoundaryOffset=223 Subject=repo
+fork child settled                       WorkFloorAt=12:00:20 ActiveWork= WorkSource= WorkBranch= ForkInheritedFrom=parent ForkBoundaryOffset=976 Subject=repo
+ticks=1
+after recreate (new fingerprint)         WorkFloorAt=12:00:20 ActiveWork= WorkSource= WorkBranch= ForkInheritedFrom=parent ForkBoundaryOffset=976 Subject=repo
+ticks=1
+after truncation                         WorkFloorAt=12:00:20 ActiveWork= WorkSource= WorkBranch= ForkInheritedFrom=parent ForkBoundaryOffset=-1 Subject=repo
+ticks=1
+after regrow                             WorkFloorAt=12:00:20 ActiveWork= WorkSource= WorkBranch= ForkInheritedFrom=parent ForkBoundaryOffset=976 Subject=repo
+ticks=1
+child after own work (t=60)              WorkFloorAt=12:00:20 ActiveWork=change-b WorkSource=history:edit WorkBranch=feature ForkInheritedFrom=parent ForkBoundaryOffset=976 Subject=change-b
+== probe-fork-boundary.ps1 -Case resume -Provider claude
+provider=claude case=resume (synthetic clock: t=N is 12:00:00+N s)
+parent after read                        WorkFloorAt= ActiveWork=change-a WorkSource=history:edit WorkBranch=main ForkInheritedFrom= ForkBoundaryOffset=-1 Subject=change-a
+parent after switch (t=20)               WorkFloorAt=12:00:20 ActiveWork= WorkSource= WorkBranch= ForkInheritedFrom= ForkBoundaryOffset=-1 Subject=repo
+fork child settled                       WorkFloorAt=12:00:20 ActiveWork= WorkSource= WorkBranch= ForkInheritedFrom=parent ForkBoundaryOffset=-1 Subject=repo
+ticks=1
+child after own work (t=80)              WorkFloorAt=12:00:20 ActiveWork=change-b WorkSource=history:edit WorkBranch=feature ForkInheritedFrom=parent ForkBoundaryOffset=-1 Subject=change-b
+boundaryUnchanged=True
+== probe-fork-boundary.ps1 -Case resume -Provider codex
+provider=codex case=resume (synthetic clock: t=N is 12:00:00+N s)
+parent after read                        WorkFloorAt= ActiveWork=change-a WorkSource=history:edit WorkBranch=main ForkInheritedFrom= ForkBoundaryOffset=223 Subject=change-a
+parent after switch (t=20)               WorkFloorAt=12:00:20 ActiveWork= WorkSource= WorkBranch= ForkInheritedFrom= ForkBoundaryOffset=223 Subject=repo
+fork child settled                       WorkFloorAt=12:00:20 ActiveWork= WorkSource= WorkBranch= ForkInheritedFrom=parent ForkBoundaryOffset=976 Subject=repo
+ticks=1
+child after own work (t=80)              WorkFloorAt=12:00:20 ActiveWork=change-b WorkSource=history:edit WorkBranch=feature ForkInheritedFrom=parent ForkBoundaryOffset=976 Subject=change-b
+boundaryUnchanged=True
+== probe-fork-boundary.ps1 -Case referenced -Provider claude
+provider=claude case=referenced (synthetic clock: t=N is 12:00:00+N s)
+parent after read                        WorkFloorAt= ActiveWork=change-a WorkSource=history:edit WorkBranch=main ForkInheritedFrom= ForkBoundaryOffset=-1 Subject=change-a
+parent after switch (t=20)               WorkFloorAt=12:00:20 ActiveWork= WorkSource= WorkBranch= ForkInheritedFrom= ForkBoundaryOffset=-1 Subject=repo
+ticks=1
+referenced fork child                    WorkFloorAt=12:00:20 ActiveWork= WorkSource= WorkBranch= ForkInheritedFrom=parent ForkBoundaryOffset=-1 Subject=repo
+ticks=1
+child after own work (t=60)              WorkFloorAt=12:00:20 ActiveWork=change-b WorkSource=history:edit WorkBranch=feature ForkInheritedFrom=parent ForkBoundaryOffset=-1 Subject=change-b
+== probe-fork-boundary.ps1 -Case referenced -Provider codex
+provider=codex case=referenced (synthetic clock: t=N is 12:00:00+N s)
+parent after read                        WorkFloorAt= ActiveWork=change-a WorkSource=history:edit WorkBranch=main ForkInheritedFrom= ForkBoundaryOffset=223 Subject=change-a
+parent after switch (t=20)               WorkFloorAt=12:00:20 ActiveWork= WorkSource= WorkBranch= ForkInheritedFrom= ForkBoundaryOffset=223 Subject=repo
+ticks=1
+referenced fork child                    WorkFloorAt=12:00:20 ActiveWork= WorkSource= WorkBranch= ForkInheritedFrom=parent ForkBoundaryOffset=248 Subject=repo
+ticks=1
+child after own work (t=60)              WorkFloorAt=12:00:20 ActiveWork=change-b WorkSource=history:edit WorkBranch=feature ForkInheritedFrom=parent ForkBoundaryOffset=248 Subject=change-b
+== probe-fork-boundary.ps1 -Case orphan -Provider claude
+provider=claude case=orphan (synthetic clock: t=N is 12:00:00+N s)
+ticks=1
+fork child, parent unknown               WorkFloorAt= ActiveWork=change-a WorkSource=history:edit WorkBranch=feature ForkInheritedFrom= ForkBoundaryOffset=-1 Subject=change-a
+== probe-fork-boundary.ps1 -Case orphan -Provider codex
+provider=codex case=orphan (synthetic clock: t=N is 12:00:00+N s)
+ticks=1
+fork child, parent unknown               WorkFloorAt= ActiveWork= WorkSource= WorkBranch= ForkInheritedFrom= ForkBoundaryOffset=976 Subject=repo
+
+## 2. Window-straddle sweep (fresh window start placed at boundary line start + delta)
+== probe-fork-boundary.ps1 -Case sweep -Provider claude
+provider=claude case=sweep (synthetic clock: t=N is 12:00:00+N s)
+probe-fork-boundary.ps1: times ('-55753') must be a non-negative value. (Parameter 'times')
+Actual value was -55753.
+== probe-fork-boundary.ps1 -Case sweep -Provider codex
+provider=codex case=sweep (synthetic clock: t=N is 12:00:00+N s)
+delta=-200   trackedLine=[312751,312940) straddle=False ticks=3 ActiveWork= ForkBoundaryOffset=312751
+delta=-1     trackedLine=[312751,312940) straddle=False ticks=3 ActiveWork= ForkBoundaryOffset=312751
+delta=0      trackedLine=[312751,312940) straddle=False ticks=3 ActiveWork= ForkBoundaryOffset=312751
+delta=1      trackedLine=[312751,312940) straddle=True ticks=3 ActiveWork= ForkBoundaryOffset=312751
+delta=2      trackedLine=[312751,312940) straddle=True ticks=3 ActiveWork= ForkBoundaryOffset=312751
+delta=60     trackedLine=[312751,312940) straddle=True ticks=3 ActiveWork= ForkBoundaryOffset=312751
+delta=120    trackedLine=[312751,312940) straddle=True ticks=3 ActiveWork= ForkBoundaryOffset=312751
+delta=94     trackedLine=[312751,312940) straddle=True ticks=3 ActiveWork= ForkBoundaryOffset=312751
+delta=188    trackedLine=[312751,312940) straddle=True ticks=3 ActiveWork= ForkBoundaryOffset=312751
+delta=189    trackedLine=[312751,312940) straddle=True ticks=3 ActiveWork= ForkBoundaryOffset=312751
+delta=190    trackedLine=[312751,312940) straddle=False ticks=3 ActiveWork= ForkBoundaryOffset=312751
+delta=400    trackedLine=[312751,312940) straddle=False ticks=3 ActiveWork= ForkBoundaryOffset=312751
+sweep: runs=12 activeWorkLeaks=0 straddledRuns=7
+# Claude sweep is not applicable: Claude has no boundary line and the tracked copied line is at the file head (negative tail size); multi-window Claude coverage is case 'big' in section 1.
+
+## 3. Parent known but its history not yet read (unread-parent)
+== probe-fork-boundary.ps1 -Case unread-parent -Provider claude
+provider=claude case=unread-parent (synthetic clock: t=N is 12:00:00+N s)
+parent known, history not yet read       WorkFloorAt= ActiveWork= WorkSource= WorkBranch= ForkInheritedFrom= ForkBoundaryOffset=-1 Subject=repo
+ticks=1
+fork child first read                    WorkFloorAt= ActiveWork=change-a WorkSource=history:edit WorkBranch=main ForkInheritedFrom=parent ForkBoundaryOffset=-1 Subject=change-a
+parent after its own read                WorkFloorAt= ActiveWork=change-a WorkSource=history:edit WorkBranch=main ForkInheritedFrom= ForkBoundaryOffset=-1 Subject=change-a
+fork child after parent read             WorkFloorAt= ActiveWork=change-a WorkSource=history:edit WorkBranch=main ForkInheritedFrom=parent ForkBoundaryOffset=-1 Subject=change-a
+== probe-fork-boundary.ps1 -Case unread-parent -Provider codex
+provider=codex case=unread-parent (synthetic clock: t=N is 12:00:00+N s)
+parent known, history not yet read       WorkFloorAt= ActiveWork= WorkSource= WorkBranch= ForkInheritedFrom= ForkBoundaryOffset=-1 Subject=repo
+ticks=1
+fork child first read                    WorkFloorAt= ActiveWork= WorkSource= WorkBranch= ForkInheritedFrom=parent ForkBoundaryOffset=976 Subject=repo
+parent after its own read                WorkFloorAt= ActiveWork=change-a WorkSource=history:edit WorkBranch=main ForkInheritedFrom= ForkBoundaryOffset=223 Subject=change-a
+fork child after parent read             WorkFloorAt= ActiveWork= WorkSource= WorkBranch= ForkInheritedFrom=parent ForkBoundaryOffset=976 Subject=repo
+
+## 4. ANALYSIS-102 legacy fields survive read-modify-write (JsonExtensionData)
+keys: activeWork,automaticSubject,change,changeSource,changeSourceValue,checkoutPin,checkoutSource,colorPin,defaultName,forkBoundaryOffset,forkInheritedFrom,forkParent,historyCalls,historyFingerprint,historyLength,historyOffset,historyResults,historyWorkOffset,key,launchDirectory,manualName,name,nativeLastName,nativePendingName,nativeSyncEnabled,nativeSyncStatus,nativeSyncTakeOwnership,nativeTitle,nativeTitleOffset,nativeTitleReleased,nativeTitleSource,observedBranch,palette,providerCwd,role,selectionAt,selectionEvent,selectionEvidence,selectionFloorAt,selectionOperation,selectionReceipts,selectionRoot,selectionStore,subject,transcriptPath,workBranch,workFloorAt,workingCheckout,workSource,workWeak
+provider=claude manualName=after pendingForkTitle=Old (fork) nativeTitleAt=10/23/2026 14:00:00 PascalLeftovers=False
+keys: activeWork,automaticSubject,change,changeSource,changeSourceValue,checkoutPin,checkoutSource,colorPin,defaultName,forkBoundaryOffset,forkInheritedFrom,forkParent,historyCalls,historyFingerprint,historyLength,historyOffset,historyResults,historyWorkOffset,key,launchDirectory,manualName,name,nativeLastName,nativePendingName,nativeSyncEnabled,nativeSyncStatus,nativeSyncTakeOwnership,nativeTitle,nativeTitleOffset,nativeTitleReleased,nativeTitleSource,observedBranch,palette,providerCwd,role,selectionAt,selectionEvent,selectionEvidence,selectionFloorAt,selectionOperation,selectionReceipts,selectionRoot,selectionStore,subject,transcriptPath,workBranch,workFloorAt,workingCheckout,workSource,workWeak
+provider=codex manualName=after pendingForkTitle=Old (fork) nativeTitleAt=10/23/2026 14:00:00 PascalLeftovers=False
+
+## 5. Targeted tests
+Passed!  - Failed:     0, Passed:   118, Skipped:     0, Total:   118, Duration: 2 s - BellTower.Tests.dll (net10.0)
+# filter: IdentityRecoveryPolicyTests|SpeechTests|PresentationAgreementTests|WorkPolicyTests|IdentityHistoryTests|IdentityPrecedenceTests|LegacyImportTests
+
+## 6. Primary sources: openai/codex tag rust-v0.164.0 (raw.githubusercontent.com, fetched 2026-10-24, deleted after review)
+### codex-rs/protocol/src/protocol.rs
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, JsonSchema, TS)]
+pub struct ThreadSettingsAppliedEvent {
+    /// Logical task that owns this snapshot, independent of the physical rollout file.
+    /// Absent in older histories; copied snapshots retain their original owner's ID.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub thread_id: Option<ThreadId>,
+    pub thread_settings: ThreadSettingsSnapshot,
+}
+#[derive(Debug, Clone, Deserialize, Serialize, Display, JsonSchema, TS)]
+#[serde(tag = "type", rename_all = "snake_case")]
+#[ts(tag = "type")]
+#[strum(serialize_all = "snake_case")]
+pub enum EventMsg {
+### codex-rs/core/src/session/thread_settings.rs
+pub(super) async fn applied_event(session: &Session) -> EventMsg {
+    EventMsg::ThreadSettingsApplied(ThreadSettingsAppliedEvent {
+        thread_id: Some(session.thread_id()),
+        thread_settings: session.thread_settings_snapshot().await,
+    })
+}
+### codex-rs/core/src/session/mod.rs (Forked branch of record_initial_history)
+                let thread_settings_applied =
+                    RolloutItem::EventMsg(thread_settings::applied_event(self).await);
+                match &self.fork_persistence {
+                    ForkPersistence::Referenced {
+                        inherited_item_count,
+                        ..
+                    } => {
+                        // Ancestor records remain behind history_base; only effective child
+                        // settings and boundaries synthesized by snapshot processing are local.
+                        rollout_items.drain(..*inherited_item_count);
+                        rollout_items.insert(0, thread_settings_applied);
+                    }
+                    ForkPersistence::Copied | ForkPersistence::CopiedDeferred
+                        if is_paginated_subagent =>
+                    {
+                        // Paginated subagents already persist inherited context when their live
+                        // thread is created.
+                        rollout_items.clear();
+                        rollout_items.push(thread_settings_applied);
+                    }
+                    ForkPersistence::Copied | ForkPersistence::CopiedDeferred => {
+                        // Keep the copied prefix and effective child settings in one append so a
+                        // cold resume cannot observe inherited settings as the latest value.
+                        rollout_items.push(thread_settings_applied);
+                    }
+                }
+                self.persist_rollout_items(&rollout_items).await;
+
+                // Agent spawn owns its final durability barrier so it can overlap the edge write.
+                let persist_context = match self.fork_persistence {
+                    ForkPersistence::CopiedDeferred => PersistContext::SubagentSpawn,
+                    ForkPersistence::Copied | ForkPersistence::Referenced { .. } => {
+                        PersistContext::Standard
+                    }
+                };
+                self.ensure_rollout_materialized(persist_context).await;
+
+                // Flush after seeding history and any persisted rollout copy.
+                if !is_subagent {
+                    let _ = self.flush_rollout().await;
+                }
+### codex-rs/rollout/src/policy.rs
+        | EventMsg::ThreadSettingsApplied(_) => Some(Cow::Borrowed(ev)),
+### codex-rs/rollout/src/recorder.rs (per-line write + flush; pending items drained only as written)
+    async fn write_pending_items_once(&mut self) -> std::io::Result<()> {
+        let Some(writer) = self.writer.as_mut() else {
+            return Err(IoError::other("rollout writer is not open"));
+        };
+
+        let mut written_count = 0usize;
+        let mut write_result = Ok(());
+        for item in &self.pending_items {
+            match self.ordinal_state.current() {
+                Ok(ordinal) => match writer.write_rollout_item(item, ordinal).await {
+                    Ok(()) => self.ordinal_state.advance(),
+                    Err(err) => {
+                        write_result = Err(err);
+                        break;
+                    }
+                },
+                Err(err) => {
+                    write_result = Err(err);
+                    break;
+                }
+            }
+            written_count += 1;
+        }
+
+        if written_count > 0 {
+            self.pending_items.drain(..written_count);
+        }
+    async fn write_rollout_item(
+        &mut self,
+        rollout_item: &RolloutItem,
+        ordinal: Option<u64>,
+    ) -> std::io::Result<()> {
+        let timestamp_format: &[FormatItem] = format_description!(
+            "[year]-[month]-[day]T[hour]:[minute]:[second].[subsecond digits:3]Z"
+        );
+        let timestamp = OffsetDateTime::now_utc()
+            .format(timestamp_format)
+            .map_err(|e| IoError::other(format!("failed to format timestamp: {e}")))?;
+
+        let line = RolloutLineRef {
+            timestamp,
+            ordinal,
+            item: rollout_item,
+        };
+        self.write_line(&line).await
+    }
+    async fn write_line(&mut self, item: &impl serde::Serialize) -> std::io::Result<()> {
+        let mut json = serde_json::to_string(item)?;
+        json.push('\n');
+        self.file.write_all(json.as_bytes()).await?;
+        self.file.flush().await?;
+        Ok(())
+    }
+### codex-rs/core/src/hook_runtime.rs (SessionStart hooks run with a turn context)
+#[instrument(level = "trace", skip_all)]
+pub(crate) async fn run_pending_session_start_hooks(
+    sess: &Arc<Session>,
+    turn_context: &Arc<TurnContext>,
+) -> bool {
+    while let Some(session_start_source) = sess.take_pending_session_start_source().await {

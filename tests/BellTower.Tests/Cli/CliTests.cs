@@ -63,19 +63,21 @@ public sealed class CliTests
         var script = Path.Combine(workspace.Root, "fake-agent.ps1");
         File.WriteAllText(script, """
             [Console]::OutputEncoding = [System.Text.UTF8Encoding]::new($false)
-            @{ arguments = @($args); name = $env:BELLTOWER_NAME; dedicated = $env:BELLTOWER_DEDICATED } | ConvertTo-Json -Compress
+            @{ arguments = @($args); name = $env:BELLTOWER_NAME; role = $env:BELLTOWER_ROLE; dedicated = $env:BELLTOWER_DEDICATED } | ConvertTo-Json -Compress
             """);
         string[] forwarded = ["two words", "--name", "agent name", "--no-daemon", "--help", "@literal.rsp", "--", "last"];
         try
         {
             string[] provider = namedProvider ? ["--provider", "codex"] : ["codex"];
-            var result = Run(workspace, null, ["launch", .. provider, "--executable", "powershell.exe", "--name", "Bell Tower name", "--silent", "--",
+            var result = Run(workspace, null, ["launch", .. provider, "--executable", "powershell.exe", "--name", "Bell Tower name", "--role", "PM", "--silent", "--",
                 "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File", script, .. forwarded]);
             Assert.True(result.Code == 0, result.Error + result.Output);
             Assert.Empty(result.Error);
             using var report = JsonDocument.Parse(result.Output);
             Assert.Equal(forwarded, report.RootElement.GetProperty("arguments").EnumerateArray().Select(value => value.GetString()));
             Assert.Equal("Bell Tower name", report.RootElement.GetProperty("name").GetString());
+            // --role is deprecated: accepted for existing scripts, ignored, and never exported to the agent.
+            Assert.True(string.IsNullOrEmpty(report.RootElement.GetProperty("role").GetString()));
             Assert.Equal("1", report.RootElement.GetProperty("dedicated").GetString());
             var attachment = Directory.GetFiles(workspace.Paths.Attachments).Single();
             Assert.NotNull(AtomicFile.Read<Attachment>(attachment)!.EndedAt);

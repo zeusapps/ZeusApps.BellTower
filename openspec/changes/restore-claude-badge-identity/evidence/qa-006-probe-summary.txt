@@ -1,0 +1,60 @@
+claude small livedif | P=change-b/Write; first=change-b/fork:Write; post=change-b/history:edit
+claude large livedif | P=change-b/Write; first=change-b/fork:Write; post=change-b/history:edit
+claude growth livedif | P=change-b/Write; pre=change-b/fork:Write; bnd=change-b/fork:Write; post=change-b/history:edit
+claude growth-large livedif | P=change-b/Write; prefix=change-b/fork:Write; bnd=change-b/fork:Write; post=change-b/history:edit
+claude noboundary livedif | P=change-b/Write; first=change-b/fork:Write
+claude tailwin livedif | P=change-b/Write; first=change-b/fork:Write
+codex small livedif | P=change-b/Write; first=change-a/history:edit; post=change-b/history:edit
+codex large livedif | P=change-b/Write; first=change-a/history:edit; post=change-b/history:edit
+codex growth livedif | P=change-b/Write; pre=change-a/history:edit; bnd=change-a/history:edit; post=change-b/history:edit
+codex growth-large livedif | P=change-b/Write; prefix=change-a/history:edit; bnd=change-a/history:edit; post=change-b/history:edit
+codex noboundary livedif | P=change-b/Write; first=change-a/history:edit
+codex tailwin livedif | P=change-b/Write; first=change-a/history:edit
+claude small live | P=change-a/Write; first=change-a/fork:Write; post=change-b/history:edit
+claude large live | P=change-a/Write; first=change-a/fork:Write; post=change-b/history:edit
+claude growth live | P=change-a/Write; pre=change-a/fork:Write; bnd=change-a/fork:Write; post=change-b/history:edit
+claude growth-large live | P=change-a/Write; prefix=change-a/fork:Write; bnd=change-a/fork:Write; post=change-b/history:edit
+claude noboundary live | P=change-a/Write; first=change-a/fork:Write
+claude tailwin live | P=change-a/Write; first=change-a/fork:Write
+codex small live | P=change-a/Write; first=change-a/history:edit; post=change-b/history:edit
+codex large live | P=change-a/Write; first=change-a/history:edit; post=change-b/history:edit
+codex growth live | P=change-a/Write; pre=change-a/history:edit; bnd=change-a/history:edit; post=change-b/history:edit
+codex growth-large live | P=change-a/Write; prefix=change-a/history:edit; bnd=change-a/history:edit; post=change-b/history:edit
+codex noboundary live | P=change-a/Write; first=change-a/history:edit
+codex tailwin live | P=change-a/Write; first=change-a/history:edit
+claude small switch | P=/; first=/; post=change-b/history:edit
+claude large switch | P=/; first=/; post=change-b/history:edit
+claude growth switch | P=/; pre=/; bnd=/; post=change-b/history:edit
+claude growth-large switch | P=/; prefix=/; bnd=/; post=change-b/history:edit
+claude noboundary switch | P=/; first=/
+claude tailwin switch | P=/; first=/
+codex small switch | P=/; first=/; post=change-b/history:edit
+codex large switch | P=/; first=/; post=change-b/history:edit
+codex growth switch | P=/; pre=change-a/history:edit; bnd=/; post=change-b/history:edit
+codex growth-large switch | P=/; prefix=change-a/history:edit; bnd=/; post=change-b/history:edit
+codex noboundary switch | P=/; first=change-a/history:edit
+codex tailwin switch | P=/; first=/
+claude small orphan | first=change-a/history:edit; post=change-b/history:edit
+claude large orphan | first=change-a/history:edit; post=change-b/history:edit
+claude growth orphan | pre=change-a/history:edit; bnd=change-a/history:edit; post=change-b/history:edit
+claude growth-large orphan | prefix=change-a/history:edit; bnd=change-a/history:edit; post=change-b/history:edit
+claude noboundary orphan | first=change-a/history:edit
+claude tailwin orphan | first=change-a/history:edit
+codex small orphan | first=change-a/history:edit; post=change-b/history:edit
+codex large orphan | first=change-a/history:edit; post=change-b/history:edit
+codex growth orphan | pre=change-a/history:edit; bnd=change-a/history:edit; post=change-b/history:edit
+codex growth-large orphan | prefix=change-a/history:edit; bnd=change-a/history:edit; post=change-b/history:edit
+codex noboundary orphan | first=change-a/history:edit
+codex tailwin orphan | first=change-a/history:edit
+claude small nofloor | P=change-a/history:edit; first=change-a/fork:history:edit; post=change-b/history:edit
+claude large nofloor | P=change-a/history:edit; first=change-a/fork:history:edit; post=change-b/history:edit
+claude growth nofloor | P=change-a/history:edit; pre=change-a/fork:history:edit; bnd=change-a/fork:history:edit; post=change-b/history:edit
+claude growth-large nofloor | P=change-a/history:edit; prefix=change-a/fork:history:edit; bnd=change-a/fork:history:edit; post=change-b/history:edit
+claude noboundary nofloor | P=change-a/history:edit; first=change-a/fork:history:edit
+claude tailwin nofloor | P=change-a/history:edit; first=change-a/fork:history:edit
+codex small nofloor | P=change-a/history:edit; first=change-a/history:edit; post=change-b/history:edit
+codex large nofloor | P=change-a/history:edit; first=change-a/history:edit; post=change-b/history:edit
+codex growth nofloor | P=change-a/history:edit; pre=change-a/history:edit; bnd=change-a/history:edit; post=change-b/history:edit
+codex growth-large nofloor | P=change-a/history:edit; prefix=change-a/history:edit; bnd=change-a/history:edit; post=change-b/history:edit
+codex noboundary nofloor | P=change-a/history:edit; first=change-a/history:edit
+codex tailwin nofloor | P=change-a/history:edit; first=change-a/history:edit

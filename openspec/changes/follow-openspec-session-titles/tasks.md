@@ -1,5 +1,9 @@
 # Tasks
 
+## Historical task interpretation (2026-10-23)
+
+The checked tasks below record the original shipped implementation. `restore-claude-badge-identity` supersedes the original read-only status/instructions selection behavior and naming precedence for both providers; do not reintroduce it when reconciling or archiving this older change. Its overlapping delta requirements now use the approved current contract. Tasks 1.1 and 5.3 remain unchecked; newer fixtures or planning reconciliation do not retroactively satisfy those live acceptance gaps.
+
 ## 1. Verify provider contracts and live Codex support
 
 - [ ] 1.1 Capture minimal redacted successful/failed OpenSpec tool-hook examples from the installed Claude and Codex versions; verify the command, success, main/background identity, operation ordering, and working-directory fields and record supported direct invocation forms without retaining transcripts or raw private payloads.

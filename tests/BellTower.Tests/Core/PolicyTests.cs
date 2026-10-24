@@ -55,10 +55,9 @@ public sealed class PolicyTests
         {
             Key = "x",
             ManualName = "one two three four five six",
-            Role = "PM",
             Palette = Palette.Create()
         };
-        Assert.Equal("PM, one two three four, needs permission", AlertPolicy.Phrase(Waiting(DateTimeOffset.UtcNow), identity));
+        Assert.Equal("one two three four, needs permission", AlertPolicy.Phrase(Waiting(DateTimeOffset.UtcNow), identity));
     }
 
     [Fact]

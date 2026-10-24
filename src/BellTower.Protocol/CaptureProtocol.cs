@@ -81,13 +81,13 @@ public static class CaptureProtocol
             envelope.IngressAt > DateTimeOffset.UtcNow.AddMinutes(5) || envelope.IngressAt == default ||
             envelope.Ancestors is null || envelope.Ancestors.Count > 32 ||
             envelope.Ancestors.Any(p => p is null || p.Identity is null || p.Identity.Pid <= 0 || p.Identity.StartedUtcTicks <= 0 || !Text(p.Name, 260)) ||
-            envelope.Name?.Length > 200 || envelope.Change?.Length > 200 || envelope.Role?.Length > 200 ||
+            envelope.Name?.Length > 200 || envelope.Change?.Length > 200 ||
             envelope.TranscriptPath?.Length > 32768 || observation.OperationId?.Length > 256 ||
             observation.OperationFingerprint?.Length > 256 || observation.TurnId?.Length > 256 ||
             observation.BackgroundId?.Length > 256 || observation.BackgroundSnapshot?.Count > 128 ||
             observation.BackgroundSnapshot?.Any(t => t is null || !Text(t.Id, 256) || !Text(t.Type, 100)) == true ||
             envelope.Selection is { } selection && (!Text(selection.Change, 200) || !Text(selection.Operation, 64) ||
-                selection.Store?.Length > 128 || selection.Verb is not ("new" or "status" or "instructions")) ||
+                selection.Store?.Length > 128 || selection.WorkRoot?.Length > 32768 || selection.Directory?.Length > 32768 || selection.Verb is not ("new" or "status" or "instructions" or "edit" or "skill")) ||
             envelope.SelectionRoot?.Length > 32768)
         {
             throw new InvalidDataException("envelope-invalid");

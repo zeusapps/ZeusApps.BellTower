@@ -1,0 +1,2 @@
+=== variant orig ===
+Passed!  - Failed:     0, Passed:    47, Skipped:     0, Total:    47, Duration: 821 ms - BellTower.Tests.dll (net10.0)

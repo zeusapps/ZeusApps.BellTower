@@ -1,0 +1,53 @@
+Analysis 001 probe results (code-analyzer, Claude Code 2.1.310, claude-opus-5-5)
+Date: 2026-10-24 (UTC)
+Target: head=d307c34 baseline=d307c34 files=95 diff=4ae6a7eacb50 untracked=56/550306f8303f
+
+Binaries: copy of src/BellTower/bin/Release/net10.0-windows (bell-tower.dll written 2026-10-24 03:46:31; newest
+target source file CapabilityMatrix.cs written 03:46:29, so the build reflects the reviewed sources) placed in the
+session scratchpad and loaded into a separate pwsh 7.6.6 process (.NET 10.0.12). Every probe used a fresh
+disposable data directory under the scratchpad (DataPaths(root) passed explicitly), synthetic transcripts and
+synthetic repositories, and deleted them afterwards. No default data directory, user profile, provider settings,
+transcript, tray, helper process or session was touched. Scripts: analysis-001-probe-scripts.ps1.txt.
+Timings are single-machine wall-clock values on this Windows 11 workstation (identities on C: scratch); they show
+order of magnitude only.
+
+1. Weak evidence ends the backward history walk (ANALYSIS-001)
+   Transcript (Claude shape): Write of change-a + result, 10 x 60 KB chatter (~600 KB total, > one 256 KiB chunk),
+   [optional custom-title "User title"], Skill explain-change change-b + result (newest).
+   pwsh -NoProfile -File probe-weak.ps1 -Name control
+     withTitle=False transcriptBytes=603160 ticks=3 ActiveWork=change-a WorkWeak=False NativeTitle= HistoryOffset=0 HistoryWorkOffset=0 NativeTitleOffset=-1 Name=change-a
+   pwsh -NoProfile -File probe-weak.ps1 -WithTitle -Name title
+     withTitle=True transcriptBytes=603235 ticks=1 ActiveWork=change-b WorkWeak=True NativeTitle=User title HistoryOffset=361838 HistoryWorkOffset=602635 NativeTitleOffset=602554 Name=User title
+   Result: with a custom title present the walk stops after one tick (HistoryOffset=361838, never reaches 0) and the
+   older strong work on change-a is never recovered; the weak explain-change on change-b stays the association.
+   Without the title (the shape covered by WeakHistoricalContextOnlyFillsAnEmptyAssociationRegardlessOfChunkOrder)
+   the walk continues and change-a wins.
+
+2. Persisted identity size and read/allocation cost (ANALYSIS-004, ANALYSIS-005)
+   pwsh -NoProfile -File probe-size.ps1   (200 identities, each with the writer-side maxima: 64 HistoryCalls,
+   64 HistoryResults, 64 SelectionReceipts, 128 SelectionEvidence)
+     identityFileBytes(full lists)=81689 identities=200 populateMs=16367
+     getFullIdentityMsAvg=0.96
+     createIdentityWithAllocateMs(min/avg/max)=54/66.3/77
+   pwsh -NoProfile -File probe-write.ps1  (single small identity)
+     updateNoWriteMsAvg=0.34
+     updateWithWriteMsAvg=10.7
+     smallIdentityBytes=1268
+   Result: a write-through identity save costs ~10 ms; a no-op Update ~0.3 ms; a worst-case identity is ~80 KB and
+   ~1 ms to read; creating an identity without a launch palette (AllocatePalette reading 64 identity files under the
+   global identity lock) took 54-77 ms with 200 full identities present.
+
+3. History reader per-tick cost (recheck of the per-tick budget; no finding)
+   pwsh -NoProfile -File probe-tick.ps1   (6000 Read/Grep/Bash tool_use + 1.5 KB tool_result pairs, no work)
+     transcriptBytes=13077039 ticksToFinish=51 tickMs(min/avg/max)=0.4/16/39.6 idleTickMs=0.3 idleReturned=False
+   Result: a 13 MB first-install transcript is walked in 51 bounded ticks (~100 s at the 2 s cadence), 16 ms average
+   and 40 ms maximum per tick including the checkpoint write; an idle tick costs 0.3 ms and writes nothing.
+
+4. GitHeadReader on a reftable repository (ANALYSIS-007)
+   git version 2.51.0.windows.2
+   git init -q --ref-format=reftable -b feature/DEP-1 <scratch>\reftable-repo
+   .git/HEAD content:                 ref: refs/heads/.invalid
+   git symbolic-ref --short -q HEAD:  feature/DEP-1
+   GitHeadReader.Read(repo):          branch=[.invalid] worktree=[]
+   Result: the process-free status-line fallback reports the placeholder branch ".invalid" for a reftable repository
+   where Git reports feature/DEP-1.

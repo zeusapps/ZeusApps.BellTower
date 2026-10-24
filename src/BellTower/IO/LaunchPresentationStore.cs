@@ -8,8 +8,11 @@ public sealed class LaunchPresentationStore(DataPaths paths)
 
     public LaunchPresentation Prepare(string id, ProcessIdentity shell)
     {
+        // Identity lock first (same order everywhere), so the allocation and the reservation are one atomic step
+        // with respect to identity creation by either provider.
+        using var identityGate = new DataLock(paths, "identity");
         using var gate = new DataLock(paths, "launch");
-        var presentation = new LaunchPresentation(id, shell, Palette.Create(), DateTimeOffset.UtcNow);
+        var presentation = new LaunchPresentation(id, shell, new IdentityStore(paths).AllocatePalette(id), DateTimeOffset.UtcNow);
         AtomicFile.Write(FilePath(id), Json.Encode(presentation));
         return presentation;
     }

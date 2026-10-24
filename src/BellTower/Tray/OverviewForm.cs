@@ -23,10 +23,8 @@ public sealed class OverviewForm : Form
     {
         Width = 210
     };
-    private readonly TextBox role = new()
-    {
-        Width = 90
-    };
+    // Native-name switches act on Codex only: Claude's native title write is unfinished (sync-native-session-titles).
+    private Button[] nativeSwitches = [];
     private readonly Label status = new()
     {
         AutoSize = true,
@@ -37,10 +35,14 @@ public sealed class OverviewForm : Form
     private string? editing;
     private string originalName = "";
     private string originalChange = "";
-    private string originalRole = "";
+    private readonly TextBox checkout = new() { Width = 250 };
+    private readonly TextBox color = new() { Width = 100 };
+    private string originalCheckout = "";
     public event Action<string>? Navigate;
-    public event Action<string, string?, string?, string?>? SaveIdentity;
+    public event Action<string, string?, string?>? SaveIdentity;
     public event Action<string, bool>? SetNativeSync;
+    public event Action<string>? UseBellTowerName;
+    public event Action<string, string?, string?, bool>? ConfigureIdentity;
     public OverviewForm()
     {
         Text = "Bell Tower - sessions";
@@ -66,14 +68,13 @@ public sealed class OverviewForm : Form
         var bottom = new FlowLayoutPanel
         {
             Dock = DockStyle.Bottom,
-            Height = 145,
+            Height = 190,
             Padding = new Padding(10),
             WrapContents = true
         };
         bottom.Controls.AddRange([
             new Label { Text = "Name", AutoSize = true }, name,
-            new Label { Text = "Change", AutoSize = true }, change,
-            new Label { Text = "Role", AutoSize = true }, role
+            new Label { Text = "Change", AutoSize = true }, change
         ]);
         var save = new Button
         {
@@ -93,11 +94,31 @@ public sealed class OverviewForm : Form
                 Navigate?.Invoke(editing);
             }
         };
-        var enableNative = new Button { Text = "Use name in Codex", AutoSize = true };
-        var pauseNative = new Button { Text = "Pause Codex names", AutoSize = true };
+        var enableNative = new Button { Text = "Use name in native chat", AutoSize = true };
+        var pauseNative = new Button { Text = "Pause native names", AutoSize = true };
+        var useBellTower = new Button { Text = "Use Bell Tower name", AutoSize = true };
+        useBellTower.Click += (_, _) =>
+        {
+            if (editing is not null && rows.ContainsKey(editing))
+            {
+                UseBellTowerName?.Invoke(editing);
+                status.Text = "Native title released; Bell Tower name in use";
+            }
+        };
+        nativeSwitches = [enableNative, pauseNative];
         enableNative.Click += (_, _) => SetNative(true);
         pauseNative.Click += (_, _) => SetNative(false);
-        bottom.Controls.AddRange([save, focus, enableNative, pauseNative, status]);
+        var configure = new Button { Text = "Apply checkout/color", AutoSize = true };
+        configure.Click += (_, _) => Configure(false, false);
+        var clearCheckout = new Button { Text = "Clear checkout", AutoSize = true };
+        clearCheckout.Click += (_, _) => { checkout.Clear(); Configure(false, false); };
+        var random = new Button { Text = "Random color", AutoSize = true };
+        random.Click += (_, _) => Configure(false, true);
+        var reset = new Button { Text = "Reset pins", AutoSize = true };
+        reset.Click += (_, _) => Configure(true, true);
+        bottom.Controls.AddRange([new Label { Text = "Checkout", AutoSize = true }, checkout,
+            new Label { Text = "Color", AutoSize = true }, color, configure, clearCheckout, random, reset]);
+        bottom.Controls.AddRange([save, focus, useBellTower, enableNative, pauseNative, status]);
         Controls.Add(bottom);
         grid.SelectionChanged += (_, _) => SelectRow();
         grid.CellDoubleClick += (_, e) =>
@@ -117,6 +138,7 @@ public sealed class OverviewForm : Form
         };
     }
 
+    public string StatusText => status.Text;
     public void SetStatus(string message) => status.Text = message;
     public void RefreshRows(IReadOnlyList<OverviewRow> values, DateTimeOffset now)
     {
@@ -158,6 +180,8 @@ public sealed class OverviewForm : Form
             return;
         }
 
+        foreach (var button in nativeSwitches)
+        { button.Enabled = value.State.Provider == "codex"; }
         var changed = editing != key;
         if (changed || name.Text == originalName)
         {
@@ -166,24 +190,26 @@ public sealed class OverviewForm : Form
         }
         if (changed || change.Text == originalChange)
         {
-            change.Text = value.Identity.Change ?? "";
+            change.Text = value.Identity.PinnedChange ?? "";
             originalChange = change.Text;
         }
-        if (changed || role.Text == originalRole)
+        if (changed || checkout.Text == originalCheckout)
         {
-            role.Text = value.Identity.Role ?? "";
-            originalRole = role.Text;
+            checkout.Text = value.Identity.CheckoutPin ?? "";
+            originalCheckout = checkout.Text;
         }
-        if (value.State.Provider == "codex")
+        if (changed || status.Text.Length == 0 || status.Text.Contains(" native name", StringComparison.Ordinal))
         {
-            status.Text = "Codex names: " + value.Identity.NativeSyncStatus;
-        }
-        else if (changed)
-        {
-            status.Text = "";
+            status.Text = NativeStatus(value);
         }
         editing = key;
     }
+
+    public static string ProviderLabel(string provider) => provider == "codex" ? "Codex" : "Claude Code";
+
+    // Same status and wording for both clients; the checkout provenance explains where the Git context comes from.
+    public static string NativeStatus(OverviewRow row) => ProviderLabel(row.State.Provider) + " native name: " + NativeNamePolicy.StatusFor(row.State.Provider, row.Identity) +
+        " | checkout (" + (row.Identity.CheckoutPin is null ? row.Identity.CheckoutSource : CheckoutPolicy.User) + "): " + row.Identity.Checkout(row.State.Directory);
 
     private void Save()
     {
@@ -193,20 +219,35 @@ public sealed class OverviewForm : Form
         }
 
         SaveIdentity?.Invoke(editing, name.Text == originalName ? null : name.Text,
-            change.Text == originalChange ? null : change.Text, role.Text == originalRole ? null : role.Text);
+            change.Text == originalChange ? null : change.Text);
         originalName = name.Text;
         originalChange = change.Text;
-        originalRole = role.Text;
         status.Text = "Saved";
     }
 
     private void SetNative(bool enabled)
     {
-        if (editing is not null && rows.TryGetValue(editing, out var row) && row.State.Provider == "codex")
+        if (editing is not null && rows.TryGetValue(editing, out var row))
         {
             SetNativeSync?.Invoke(editing, enabled);
-            status.Text = enabled ? "Codex name update requested" : "Codex name updates paused";
+            status.Text = ProviderLabel(row.State.Provider) + (enabled ? " native name update requested" : " native name updates paused");
         }
+    }
+
+    private void Configure(bool reset, bool random)
+    {
+        if (editing is null)
+        { return; }
+        try
+        {
+            ConfigureIdentity?.Invoke(editing, checkout.Text == originalCheckout ? null : checkout.Text,
+                random ? "random" : string.IsNullOrWhiteSpace(color.Text) ? null : color.Text.Trim(), reset);
+            originalCheckout = checkout.Text;
+            color.Clear();
+            status.Text = reset ? "Pins reset" : "Saved";
+        }
+        catch (Exception error) when (error is ArgumentException or IOException or UnauthorizedAccessException)
+        { status.Text = error.Message; }
     }
 
 }

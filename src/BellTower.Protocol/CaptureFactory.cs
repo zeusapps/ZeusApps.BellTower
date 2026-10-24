@@ -8,7 +8,7 @@ public static class CaptureFactory
 {
     public static CaptureEnvelope? Create(string provider, JsonElement input, Attachment attachment,
         DateTimeOffset ingressAt, ProcessIdentity? hookShell = null, List<ProcessEvidence>? ancestors = null,
-        bool dedicated = true, string? name = null, string? change = null, string? role = null)
+        bool dedicated = true, string? name = null, string? change = null)
     {
         var observation = HookAdapter.Parse(provider, input, attachment, ingressAt);
         if (observation is null)
@@ -30,13 +30,11 @@ public static class CaptureFactory
         };
         var selection = OpenSpecSelectionReader.Read(input);
         var root = selection is null ? null : OpenSpecSelectionReader.SuccessfulRoot(input, selection, checkScaffold: false);
+        // The consumer verifies the scaffold; this only records that the shell reported a non-failed create.
         var created = selection is { Verb: "new", Store: null } && HookInput.Text(input, "hook_event_name") == "PostToolUse" &&
-            input.TryGetProperty("tool_response", out var response) &&
-            (response.ValueKind == JsonValueKind.String ? response.GetString() : HookInput.Text(response, "stdout")) is { } output &&
-            output.Contains("Created change '" + selection.Change + "' at ", StringComparison.Ordinal) &&
-            !(response.ValueKind == JsonValueKind.Object &&
-                (response.TryGetProperty("exit_code", out var code) && (!code.TryGetInt32(out var exit) || exit != 0) ||
-                 response.TryGetProperty("interrupted", out var interrupted) && interrupted.ValueKind == JsonValueKind.True));
+            input.TryGetProperty("tool_response", out var response) && !OpenSpecSelectionReader.Failed(response) &&
+            (selection.Redirected || (response.ValueKind == JsonValueKind.String ? response.GetString() : HookInput.Text(response, "stdout")) is { } output &&
+                output.Contains("Created change '" + selection.Change + "' at ", StringComparison.Ordinal));
         var envelope = new CaptureEnvelope
         {
             Id = observation.Id,
@@ -48,7 +46,6 @@ public static class CaptureFactory
             Dedicated = dedicated,
             Name = dedicated ? name : null,
             Change = dedicated ? change : null,
-            Role = dedicated ? role : null,
             TranscriptPath = HookInput.Text(input, "transcript_path"),
             Selection = selection,
             SelectionPre = HookInput.Text(input, "hook_event_name") == "PreToolUse",

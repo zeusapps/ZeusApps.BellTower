@@ -51,8 +51,7 @@ public static class Program
                 .FirstOrDefault(p => p.Name.Equals("bash.exe", StringComparison.OrdinalIgnoreCase) ||
                 p.Name.Equals("sh.exe", StringComparison.OrdinalIgnoreCase) || p.Name.Equals("cmd.exe", StringComparison.OrdinalIgnoreCase));
             var envelope = CaptureFactory.Create(provider, input.RootElement, attachment, at, shell?.Identity, ancestors,
-                dedicated, Environment.GetEnvironmentVariable("BELLTOWER_NAME"), Environment.GetEnvironmentVariable("BELLTOWER_CHANGE"),
-                Environment.GetEnvironmentVariable("BELLTOWER_ROLE"));
+                dedicated, Environment.GetEnvironmentVariable("BELLTOWER_NAME"), Environment.GetEnvironmentVariable("BELLTOWER_CHANGE"));
             if (envelope is not null)
             {
                 CaptureSpool.Write(root, envelope);

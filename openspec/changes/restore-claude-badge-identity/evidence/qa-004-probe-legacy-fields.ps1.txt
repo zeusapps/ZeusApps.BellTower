@@ -1,0 +1,22 @@
+# QA 004 probe: ANALYSIS-102. An old dev identity JSON with pendingForkTitle/nativeTitleAt still loads and round-trips them (extension data).
+param([Parameter(Mandatory)][string]$Bin)
+$ErrorActionPreference='Stop'
+Add-Type -Path (Join-Path $Bin 'bell-tower.dll')
+$root=Join-Path $PSScriptRoot ("data-"+[guid]::NewGuid().ToString('N').Substring(0,8))
+$paths=[BellTower.IO.DataPaths]::new((Join-Path $root 'data')); $paths.Ensure()
+$work=Join-Path $root 'repo'; New-Item -ItemType Directory -Force $work|Out-Null
+foreach($provider in 'claude','codex'){
+  $key="${provider}:legacy"
+  $store=[BellTower.IO.IdentityStore]::new($paths,$null)
+  $null=$store.Get($key,$work,[NullString]::Value,[NullString]::Value,$null)
+  $file=Join-Path $paths.Identities ([BellTower.IO.ContentHash]::Compute($key)+'.json')
+  $node=[System.Text.Json.Nodes.JsonNode]::Parse([IO.File]::ReadAllText($file))
+  $node['pendingForkTitle']='Old title (fork)'; $node['nativeTitleAt']='2026-10-20T12:00:00+00:00'; $node['manualName']='kept name'
+  [IO.File]::WriteAllText($file,$node.ToJsonString())
+  $store2=[BellTower.IO.IdentityStore]::new($paths,$null)
+  $i=$store2.Get($key,$work,[NullString]::Value,[NullString]::Value,$null)
+  $null=$store2.Update($key,$work,[Func[BellTower.Core.SessionIdentity,bool]]{param($v)$v.ObservedBranch='main';$true})
+  $raw=[IO.File]::ReadAllText($file)
+  "{0}: loaded ManualName={1} extensionKeys={2} diskHasPendingForkTitle={3} diskHasNativeTitleAt={4}" -f $provider,$i.ManualName,($i.AdditionalData.Keys -join ','),($raw.Contains('pendingForkTitle')),($raw.Contains('nativeTitleAt'))
+}
+Remove-Item -Recurse -Force $root

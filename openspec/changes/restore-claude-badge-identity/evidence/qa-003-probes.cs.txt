@@ -1,0 +1,257 @@
+using System.Diagnostics;
+using System.Text;
+using System.Text.Json;
+using System.Text.RegularExpressions;
+using BellTower.Core;
+using BellTower.IO;
+using BellTower.Providers;
+using BellTower.Sessions;
+using BellTower.Tests.Testing;
+using Xunit;
+
+namespace Probe;
+
+public class Probes : IDisposable
+{
+    readonly TestWorkspace ws = new();
+    static readonly string Out = Path.Combine(Environment.GetEnvironmentVariable("QA_OUT")!, "qa-003-probe-results.txt");
+    static void Log(string s) => File.AppendAllText(Out, s + "\n");
+    public void Dispose() => ws.Dispose();
+    static string L(string line, DateTimeOffset t) => Regex.Replace(line, @"2026-10-23T\d\d:\d\d:\d\d\.\d{3}Z", t.ToString("yyyy-MM-ddTHH:mm:ss.fffZ"));
+    static string[] Work(string p, string id, string tid, string root, string change, DateTimeOffset t) => p == "claude"
+        ? new[] { L(IdentityFixtures.Claude.Write(id, tid, root, change, 0), t), L(IdentityFixtures.Claude.Result(id, tid, 1), t.AddMilliseconds(100)) }
+        : new[] { L(IdentityFixtures.Codex.Patch(tid, root, change, 0), t), L(IdentityFixtures.Codex.PatchResult(tid, 1), t.AddMilliseconds(100)) };
+    static string Chat(string p, string id, DateTimeOffset t, int n) => L(p == "claude" ? IdentityFixtures.Claude.Chatter(id, 0, n) : IdentityFixtures.Codex.Chatter(0, n), t);
+    string Active(IdentityStore s, SessionState x) => s.Get(x.Key, ws.Root).ActiveWork ?? "null";
+    static void Drain(IdentityHistoryReader r, SessionState s) { for (var n = 0; n < 6 && r.Refresh(s); n++) { } }
+
+    [Theory][InlineData("claude")][InlineData("codex")]
+    public void TailGrowthRealClock(string p)
+    {
+        foreach (var c in new[] { "old-z", "fresh-c", "lag-d" }) IdentityFixtures.Change(ws.Root, c);
+        var store = new IdentityStore(ws.Paths); var reader = new IdentityHistoryReader(ws.Paths);
+        var path = Path.Combine(ws.Root, "t.jsonl"); var id = "s-" + p;
+        var t0 = DateTimeOffset.UtcNow.AddMinutes(-10);
+        IdentityFixtures.Write(path, Chat(p, id, t0, 2000));
+        var s = IdentityFixtures.Session(p, id, ws.Root);
+        store.Update(s.Key, ws.Root, i => HistoryState.Bind(i, path));
+        Drain(reader, s);
+        IdentityFixtures.Append(path, Work(p, id, "w1", ws.Root, "old-z", t0.AddMinutes(5)).Append(Chat(p, id, t0.AddMinutes(6), 30_000)).ToArray());
+        store.Update(s.Key, ws.Root, i => { i.ObservedBranch = "main"; return WorkPolicy.Apply(i, new("old-z", ws.Root, "live:edit", false, t0.AddMinutes(5))); });
+        Drain(reader, s);
+        Log($"{p} tail: before switch={Active(store, s)}");
+        store.Update(s.Key, ws.Root, i => CheckoutPolicy.ApplyBranch(i, ws.Root, ws.Root, "other"));
+        var switchAt = DateTimeOffset.UtcNow;
+        Log($"{p} tail: after switch={Active(store, s)} floorDelta={(store.Get(s.Key, ws.Root).WorkFloorAt - switchAt)?.TotalMilliseconds}ms");
+        Drain(reader, s);
+        Log($"{p} tail: after tick={Active(store, s)}");
+        store.Update(s.Key, ws.Root, i => { HistoryState.Reset(i); return true; });
+        var r2 = new IdentityHistoryReader(ws.Paths);
+        Drain(r2, s);
+        Log($"{p} tail: after fresh pass={Active(store, s)}");
+        IdentityFixtures.Append(path, Work(p, id, "w2", ws.Root, "fresh-c", DateTimeOffset.UtcNow.AddSeconds(1)));
+        Drain(r2, s);
+        Log($"{p} tail: post-switch work={Active(store, s)}");
+        store.Update(s.Key, ws.Root, i => { WorkPolicy.Clear(i, WorkClear.Branch, DateTimeOffset.UtcNow.AddSeconds(3)); return true; });
+        IdentityFixtures.Append(path, Work(p, id, "w3", ws.Root, "lag-d", DateTimeOffset.UtcNow.AddSeconds(1)));
+        Drain(r2, s);
+        Log($"{p} tail: work stamped ~2s BEFORE a later-detected switch (simulated detection lag)={Active(store, s)}");
+    }
+
+    [Theory][InlineData("claude")][InlineData("codex")]
+    public void SwitchBeforeFirstRead(string p)
+    {
+        foreach (var c in new[] { "old-z", "fresh-c" }) IdentityFixtures.Change(ws.Root, c);
+        var store = new IdentityStore(ws.Paths); var reader = new IdentityHistoryReader(ws.Paths);
+        var path = Path.Combine(ws.Root, "t.jsonl"); var id = "s-" + p;
+        var t0 = DateTimeOffset.UtcNow.AddMinutes(-10);
+        IdentityFixtures.Write(path, Work(p, id, "w1", ws.Root, "old-z", t0));
+        var s = IdentityFixtures.Session(p, id, ws.Root);
+        store.Update(s.Key, ws.Root, i => HistoryState.Bind(i, path));
+        store.Update(s.Key, ws.Root, i => { i.ObservedBranch = "main"; return WorkPolicy.Apply(i, new("old-z", ws.Root, "live:edit", false, t0)); });
+        store.Update(s.Key, ws.Root, i => CheckoutPolicy.ApplyBranch(i, ws.Root, ws.Root, "other"));
+        Drain(reader, s);
+        Log($"{p} before-first-read: after first read={Active(store, s)}");
+        var path2 = Path.Combine(ws.Root, "t2.jsonl");
+        IdentityFixtures.Write(path2, Work(p, id, "w1", ws.Root, "old-z", t0));
+        store.Update(s.Key, ws.Root, i => HistoryState.Bind(i, path2));
+        Drain(reader, s);
+        Log($"{p} before-first-read: after rotation={Active(store, s)}");
+        IdentityFixtures.Append(path2, Work(p, id, "w2", ws.Root, "fresh-c", DateTimeOffset.UtcNow.AddSeconds(1)));
+        Drain(reader, s);
+        Log($"{p} before-first-read: post-switch={Active(store, s)}");
+        Log($"{p} floor persisted in new store instance={new IdentityStore(ws.Paths).Get(s.Key, ws.Root).WorkFloorAt is not null}");
+    }
+
+    [Fact]
+    public void ForkTitle()
+    {
+        var path = Path.Combine(ws.Root, "f.jsonl");
+        IdentityFixtures.Write(path, IdentityFixtures.Claude.Title("s1", "Fix the login"));
+        var store = new IdentityStore(ws.Paths); var reader = new IdentityHistoryReader(ws.Paths);
+        var s = IdentityFixtures.Session("claude", "s1", ws.Root);
+        store.Update(s.Key, ws.Root, i => HistoryState.Bind(i, path));
+        Drain(reader, s);
+        Log("fork: valid=" + store.Get(s.Key, ws.Root).NativeTitle);
+        IdentityFixtures.Append(path, IdentityFixtures.Claude.Title("s1", "Release plan (fork)"));
+        Drain(reader, s);
+        var i2 = store.Get(s.Key, ws.Root);
+        Log($"fork: after ignored (fork) title NativeTitle={i2.NativeTitle ?? "null"} Name={i2.Name}");
+        IdentityFixtures.Append(path, IdentityFixtures.Claude.Title("s1", "Second title"));
+        Drain(reader, s);
+        Log("fork: later valid=" + store.Get(s.Key, ws.Root).NativeTitle);
+    }
+
+    [Theory][InlineData("claude")][InlineData("codex")]
+    public void RoleEnvInHookIngestor(string p)
+    {
+        Environment.SetEnvironmentVariable("BELLTOWER_ROLE", "PM");
+        Environment.SetEnvironmentVariable("BELLTOWER_DEDICATED", "1");
+        Environment.SetEnvironmentVariable("BELLTOWER_NAME", null);
+        try
+        {
+            IdentityFixtures.Change(ws.Root, "ttyd-download-chips");
+            var json = JsonSerializer.Serialize(new { session_id = "r-" + p, hook_event_name = "SessionStart", cwd = ws.Root, source = "startup" });
+            new HookIngestor(ws.Paths).Ingest(p, new StringReader(json));
+            var perm = JsonSerializer.Serialize(new { session_id = "r-" + p, hook_event_name = "PermissionRequest", cwd = ws.Root, tool_name = "Bash", tool_input = new { command = "ls" } });
+            new HookIngestor(ws.Paths).Ingest(p, new StringReader(perm));
+            var key = p + ":r-" + p;
+            var i = new IdentityStore(ws.Paths).Get(key, ws.Root);
+            Log($"roleenv HookIngestor {p}: Role={i.Role ?? "null"} Name='{i.Name}'");
+        }
+        finally { Environment.SetEnvironmentVariable("BELLTOWER_ROLE", null); Environment.SetEnvironmentVariable("BELLTOWER_DEDICATED", null); }
+    }
+
+    [Theory][InlineData("claude")][InlineData("codex")]
+    public void RoleEnvInIngressExe(string p)
+    {
+        var exe = @"D:\Code\ZeusApps.BellTower\src\BellTower.Ingress\bin\Release\net10.0-windows\win-x64\bell-tower-ingress.exe";
+        var psi = new ProcessStartInfo(exe, $"--provider {p} --data-dir \"{ws.Paths.Root}\"") { RedirectStandardInput = true, RedirectStandardOutput = true, UseShellExecute = false };
+        psi.Environment["BELLTOWER_ROLE"] = "PM"; psi.Environment["BELLTOWER_DEDICATED"] = "1"; psi.Environment.Remove("BELLTOWER_NAME");
+        using var proc = Process.Start(psi)!;
+        proc.StandardInput.Write(JsonSerializer.Serialize(new { session_id = "e-" + p, hook_event_name = "PermissionRequest", cwd = ws.Root, tool_name = "Bash", tool_input = new { command = "ls" } }));
+        proc.StandardInput.Close(); proc.WaitForExit(20000);
+        var spool = Directory.GetFiles(ws.Paths.Root, "*", SearchOption.AllDirectories).Where(f => !f.EndsWith(".tmp")).ToArray();
+        var rolePresent = spool.Any(f => { try { var t = File.ReadAllText(f); return t.Contains("\"role\":\"PM\"", StringComparison.OrdinalIgnoreCase); } catch { return false; } });
+        var state = new StateStore(ws.Paths).Drain();
+        var key = p + ":e-" + p;
+        var ok = state.Sessions.TryGetValue(key, out var sess);
+        var i = new IdentityStore(ws.Paths).Get(key, ws.Root);
+        Log($"roleenv ingress.exe {p}: exit={proc.ExitCode} spoolFiles={spool.Length} envelopeHasRolePM={rolePresent} consumed={ok} Role={i.Role ?? "null"} Name='{i.Name}' phrase='{(ok ? AlertPolicy.Phrase(sess!, i) : "n/a")}'");
+    }
+
+    [Theory][InlineData("claude")][InlineData("codex")]
+    public void SupersededLegacy(string p)
+    {
+        IdentityFixtures.Change(ws.Root, "legacy-a"); IdentityFixtures.Change(ws.Root, "work-b");
+        var store = new IdentityStore(ws.Paths); var reader = new IdentityHistoryReader(ws.Paths);
+        var path = Path.Combine(ws.Root, "t.jsonl"); var id = "s-" + p;
+        var t0 = DateTimeOffset.UtcNow.AddMinutes(-10);
+        IdentityFixtures.Write(path, Work(p, id, "w1", ws.Root, "work-b", t0.AddMinutes(1)));
+        var s = IdentityFixtures.Session(p, id, ws.Root);
+        store.Update(s.Key, ws.Root, i => { i.Change = "legacy-a"; i.SelectionRoot = ws.Root; i.SelectionEvent = "status"; i.SelectionAt = t0; i.Role = "PM"; return true; });
+        Log($"{p} legacy: initial Name='{store.Get(s.Key, ws.Root).Name}'");
+        store.Update(s.Key, ws.Root, i => HistoryState.Bind(i, path));
+        Drain(reader, s);
+        var a = store.Get(s.Key, ws.Root);
+        Log($"{p} legacy: after newer work Name='{a.Name}' Active={a.ActiveWork} Change(on disk)={a.Change} src={a.ChangeSource} Role(on disk)={a.Role}");
+        store.Update(s.Key, ws.Root, i => { i.ObservedBranch = "main"; i.WorkBranch = "main"; return true; });
+        store.Update(s.Key, ws.Root, i => CheckoutPolicy.ApplyBranch(i, ws.Root, ws.Root, "other"));
+        Log($"{p} legacy: after branch invalidation Name='{store.Get(s.Key, ws.Root).Name}'");
+        store.Update(s.Key, ws.Root, i => { HistoryState.Reset(i); return true; });
+        Drain(new IdentityHistoryReader(ws.Paths), s);
+        Log($"{p} legacy: after transcript restart Name='{store.Get(s.Key, ws.Root).Name}' Change(on disk)={store.Get(s.Key, ws.Root).Change}");
+    }
+
+    [Fact]
+    public void Speech()
+    {
+        IdentityFixtures.Change(ws.Root, "ttyd-download-chips");
+        foreach (var p in new[] { "claude", "codex" })
+        {
+            var sess = IdentityFixtures.Session(p, "sp-" + p, ws.Root);
+            new IdentityStore(ws.Paths).Update(sess.Key, ws.Root, i => { i.ActiveWork = "ttyd-download-chips"; i.WorkSource = "x"; i.SelectionRoot = ws.Root; i.SelectionAt = DateTimeOffset.UtcNow; i.Role = "DEV"; return true; });
+            var ev = TestWorkspace.Event(EventKind.Permission, DateTimeOffset.UtcNow.AddSeconds(-5)) with { Provider = p, SessionId = "sp-" + p, AttachmentId = "a" + p, Directory = ws.Root };
+            new EventStore(ws.Paths).Publish(ev);
+        }
+        var state = new StateStore(ws.Paths).Drain();
+        foreach (var p in new[] { "claude", "codex" })
+        { var k = p + ":sp-" + p; var i = new IdentityStore(ws.Paths).Get(k, ws.Root); Log($"speech {p}: Name='{i.Name}' phrase='{AlertPolicy.Phrase(state.Sessions[k], i)}' savedRole={i.Role}"); }
+    }
+}
+using System.Text.Json;
+using BellTower.Core;
+using BellTower.IO;
+using BellTower.Providers;
+using BellTower.Sessions;
+using BellTower.Tests.Testing;
+using Xunit;
+
+namespace Probe;
+
+public class Five
+{
+    static readonly string Out = Path.Combine(Environment.GetEnvironmentVariable("QA_OUT")!, "qa-003-probe-results.txt");
+    static void Log(string s) => File.AppendAllText(Out, s + "\n");
+
+    [Fact]
+    public async Task FiveConversationFixture()
+    {
+        using var ws = new TestWorkspace();
+        var fam = WorktreeFamily.Create(ws.Root);
+        var w1 = fam.Add("DEP-7070", "login", "dep-7070-fix", "dep-7070-b");
+        var w2 = fam.Add("DEP-8080", "docs", "dep-8080-docs");
+        var w3 = fam.Add("DEP-9090", "api", "dep-9090-api");
+        IdentityFixtures.Change(fam.Main, "shared-spec", true);
+        var plans = new (string P, string Id, string Role, string Change, string Where)[]
+        {
+            ("claude","c1","PM","dep-7070-fix",w1), ("claude","c2","QA","dep-8080-docs",w2), ("claude","c3","DEV","dep-9090-api",w3),
+            ("codex","x1","PM","dep-7070-b",w1), ("codex","x2","QA","shared-spec",fam.Main)
+        };
+        var now = DateTimeOffset.UtcNow;
+        var events = new EventStore(ws.Paths);
+        var ids = new IdentityStore(ws.Paths);
+        foreach (var p in plans)
+            events.Publish(TestWorkspace.Event(EventKind.Permission, now.AddSeconds(-30)) with { Provider = p.P, SessionId = p.Id, AttachmentId = "att-" + p.Id, Directory = fam.Main });
+        var state = new StateStore(ws.Paths).Drain();
+        var obs = new OpenSpecSelectionObserver(ws.Paths);
+        foreach (var p in plans)
+        {
+            var key = p.P + ":" + p.Id;
+            ids.Update(key, fam.Main, v => { v.Role = p.Role; return true; });
+            string file = Path.Combine(p.Where, "openspec", "changes", p.Change, "proposal.md").Replace('\\', '/');
+            Directory.CreateDirectory(Path.GetDirectoryName(file)!);
+            var tool = p.P == "claude" ? "Write" : "apply_patch";
+            object toolInput = p.P == "claude" ? new { file_path = file, content = "x" } : new { command = "*** Begin Patch\n*** Update File: " + file + "\n@@\n-a\n+b\n*** End Patch" };
+            var json = JsonSerializer.Serialize(new { session_id = p.Id, hook_event_name = "PostToolUse", tool_name = tool, tool_use_id = "w-" + p.Id, cwd = fam.Main, tool_input = toolInput, tool_response = new { } });
+            using (var d = JsonDocument.Parse(json)) obs.Observe(key, fam.Main, d.RootElement);
+            var inspect = JsonSerializer.Serialize(new { session_id = p.Id, hook_event_name = "PostToolUse", tool_name = "Bash", tool_use_id = "i-" + p.Id, cwd = fam.Main, tool_input = new { command = "openspec status --change shared-spec --json" }, tool_response = "{}" });
+            using (var d = JsonDocument.Parse(inspect)) obs.Observe(key, fam.Main, d.RootElement);
+            var inspect2 = JsonSerializer.Serialize(new { session_id = p.Id, hook_event_name = "PostToolUse", tool_name = "Read", tool_use_id = "r-" + p.Id, cwd = fam.Main, tool_input = new { file_path = Path.Combine(w2, "openspec", "changes", "dep-8080-docs", "proposal.md") }, tool_response = "x" });
+            using (var d = JsonDocument.Parse(inspect2)) obs.Observe(key, fam.Main, d.RootElement);
+        }
+        ids.Update("claude:c3", fam.Main, v => { v.NativeTitle = "My own title"; v.NativeTitleSource = "claude-custom-title"; return true; });
+        ids.Update("codex:x2", fam.Main, v => { v.ManualName = "Manual X2"; return true; });
+        var resolver = new IdentityResolver(ws.Paths, new CheckoutCache());
+        var presentations = new IdentityPresentationStore(ws.Paths);
+        var contexts = new Dictionary<string, GitContext>();
+        foreach (var p in plans)
+        {
+            var key = p.P + ":" + p.Id;
+            var g = await resolver.RefreshAsync(state.Sessions[key]);
+            contexts[key] = g;
+            presentations.Save(ids.Get(key, fam.Main), g);
+        }
+        var ids2 = new IdentityStore(ws.Paths);
+        foreach (var p in plans)
+        {
+            var key = p.P + ":" + p.Id;
+            var i = ids2.Get(key, fam.Main);
+            var snap = presentations.Read(key)!;
+            var phrase = AlertPolicy.Phrase(state.Sessions[key], i);
+            var rolePresent = new[] { i.Name, SessionPresentation.Title(i.Name, contexts[key]), phrase, snap.Title }.Any(x => x.Contains("PM") || x.Contains("QA") || x.Contains("DEV"));
+            Log($"FIVE {key} savedRole={i.Role} name='{i.Name}' active={i.ActiveWork} checkout={Path.GetFileName(i.WorkingCheckout)} src={i.CheckoutSource} accent={i.Palette.Accent} title='{SessionPresentation.Title(i.Name, contexts[key])}' speech='{phrase}' snap='{snap.Title}' prov={snap.Provenance} roleInAnyText={rolePresent}");
+        }
+        Log($"FIVE distinct accents={plans.Select(p => ids2.Get(p.P + ":" + p.Id, fam.Main).Palette.Accent).Distinct().Count()}/5");
+    }
+}

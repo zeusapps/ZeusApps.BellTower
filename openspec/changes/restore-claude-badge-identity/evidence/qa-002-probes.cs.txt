@@ -1,0 +1,62 @@
+using BellTower.Core;
+using BellTower.IO;
+using BellTower.Sessions;
+using BellTower.Tests.Testing;
+using Xunit;
+
+namespace Probe;
+
+public class Probes : IDisposable
+{
+    readonly TestWorkspace workspace = new();
+    static readonly string Out = Path.Combine(Environment.GetEnvironmentVariable("QA_OUT")!, "qa-002-probe-results.txt");
+    static void Log(string s) => File.AppendAllText(Out, s + "\n");
+    public void Dispose() => workspace.Dispose();
+
+    [Theory]
+    [InlineData("claude")]
+    [InlineData("codex")]
+    public void LiveWorkThenBranchSwitchBeforeFirstHistoryRead(string provider)
+    {
+        IdentityFixtures.Change(workspace.Root, "change-a");
+        var path = Path.Combine(workspace.Root, "t.jsonl");
+        var lines = provider == "claude"
+            ? new[] { IdentityFixtures.Claude.Write("s1", "w1", workspace.Root, "change-a", 1), IdentityFixtures.Claude.Result("s1", "w1", 2) }
+            : new[] { IdentityFixtures.Codex.Patch("one", workspace.Root, "change-a", 1), IdentityFixtures.Codex.PatchResult("one", 2) };
+        IdentityFixtures.Write(path, lines);
+        var store = new IdentityStore(workspace.Paths);
+        var reader = new IdentityHistoryReader(workspace.Paths);
+        var session = IdentityFixtures.Session(provider, "s1", workspace.Root);
+        store.Update(session.Key, workspace.Root, i => HistoryState.Bind(i, path));
+        // live hook work on branch main, history never read
+        store.Update(session.Key, workspace.Root, i =>
+        {
+            i.ObservedBranch = "main";
+            WorkPolicy.Apply(i, new WorkEvidence("change-a", workspace.Root, "live:edit", false, DateTimeOffset.UtcNow.AddMinutes(-5)));
+            return true;
+        });
+        // branch switch before first history read
+        store.Update(session.Key, workspace.Root, i => CheckoutPolicy.ApplyBranch(i, workspace.Root, workspace.Root, "other"));
+        var after = store.Get(session.Key, workspace.Root);
+        Log($"{provider}: after switch ActiveWork={after.ActiveWork ?? "null"} floor={after.HistoryFloor} len={after.HistoryLength}");
+        for (var n = 0; n < 5 && reader.Refresh(session); n++) { }
+        var end = store.Get(session.Key, workspace.Root);
+        Log($"{provider}: after first history read ActiveWork={end.ActiveWork ?? "null"} source={end.WorkSource}");
+    }
+
+    [Fact]
+    public void ForkTitleShapes()
+    {
+        var path = Path.Combine(workspace.Root, "f.jsonl");
+        IdentityFixtures.Write(path, IdentityFixtures.Claude.Title("s1", "Fix the login (fork)"), IdentityFixtures.Claude.Title("s1", "Fix the login"));
+        var store = new IdentityStore(workspace.Paths);
+        var reader = new IdentityHistoryReader(workspace.Paths);
+        var session = IdentityFixtures.Session("claude", "s1", workspace.Root);
+        store.Update(session.Key, workspace.Root, i => HistoryState.Bind(i, path));
+        for (var n = 0; n < 5 && reader.Refresh(session); n++) { }
+        Log("title '(fork)' then plain: NativeTitle=" + (store.Get(session.Key, workspace.Root).NativeTitle ?? "null"));
+        IdentityFixtures.Append(path, IdentityFixtures.Claude.Title("s1", "Release plan (fork)"));
+        for (var n = 0; n < 5 && reader.Refresh(session); n++) { }
+        Log("user-typed 'Release plan (fork)' newer: NativeTitle=" + (store.Get(session.Key, workspace.Root).NativeTitle ?? "null"));
+    }
+}

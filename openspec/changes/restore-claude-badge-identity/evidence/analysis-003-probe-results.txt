@@ -1,0 +1,142 @@
+# Analysis 003 probe results (reviewed Release build, isolated data dirs, synthetic transcripts; 2026-10-24)
+
+## 1. Time floor, ANALYSIS-100 recheck (probe-floor.ps1)
+provider=claude case=tail (synthetic clock: t=N is 12:00:00+N s)
+ticks=1
+after first read                         fileBytes=4352 HistoryLength=4352 WorkFloorAt= ActiveWork= WorkSource= WorkBranch= Subject=repo
+ticks=0
+after live work (t=12) + tail read       fileBytes=9082 HistoryLength=4352 WorkFloorAt= ActiveWork=change-a WorkSource=edit WorkBranch=main Subject=change-a
+after switch detected at t=20            fileBytes=9082 HistoryLength=4352 WorkFloorAt=12:00:20 ActiveWork= WorkSource= WorkBranch= Subject=repo
+ticks=0
+after next history pass                  fileBytes=9082 HistoryLength=4352 WorkFloorAt=12:00:20 ActiveWork= WorkSource= WorkBranch= Subject=repo
+ticks=1
+after post-switch work (t=30) read       fileBytes=9636 HistoryLength=9636 WorkFloorAt=12:00:20 ActiveWork=change-b WorkSource=history:edit WorkBranch=feature Subject=change-b
+
+provider=claude case=before-first-read (synthetic clock: t=N is 12:00:00+N s)
+after live work (no read yet)            fileBytes=4906 HistoryLength=0 WorkFloorAt= ActiveWork=change-a WorkSource=edit WorkBranch=main Subject=change-a
+after switch detected at t=20            fileBytes=4906 HistoryLength=0 WorkFloorAt=12:00:20 ActiveWork= WorkSource= WorkBranch= Subject=repo
+ticks=1
+after first history pass                 fileBytes=4906 HistoryLength=4906 WorkFloorAt=12:00:20 ActiveWork= WorkSource= WorkBranch= Subject=repo
+
+provider=claude case=lag (synthetic clock: t=N is 12:00:00+N s)
+ticks=1
+after first read (pre-switch work)       fileBytes=2730 HistoryLength=2730 WorkFloorAt= ActiveWork=change-a WorkSource=history:edit WorkBranch=main Subject=change-a
+ticks=0
+post-switch work at t=17, not yet detected fileBytes=3284 HistoryLength=2730 WorkFloorAt= ActiveWork=change-b WorkSource=edit WorkBranch=main Subject=change-b
+after switch detected at t=20            fileBytes=3284 HistoryLength=2730 WorkFloorAt=12:00:20 ActiveWork= WorkSource= WorkBranch= Subject=repo
+ticks=0
+after next history pass                  fileBytes=3284 HistoryLength=2730 WorkFloorAt=12:00:20 ActiveWork= WorkSource= WorkBranch= Subject=repo
+ticks=1
+after fresh pass (file recreated)        fileBytes=3284 HistoryLength=3284 WorkFloorAt=12:00:20 ActiveWork= WorkSource= WorkBranch= Subject=repo
+
+provider=claude case=reset (synthetic clock: t=N is 12:00:00+N s)
+ticks=1
+after first read                         fileBytes=2730 HistoryLength=2730 WorkFloorAt= ActiveWork=change-a WorkSource=history:edit WorkBranch=main Subject=change-a
+after switch detected at t=20            fileBytes=2730 HistoryLength=2730 WorkFloorAt=12:00:20 ActiveWork= WorkSource= WorkBranch= Subject=repo
+after explicit reset + history reset     fileBytes=2730 HistoryLength=0 WorkFloorAt=12:00:20 ActiveWork= WorkSource= WorkBranch= Subject=repo
+ticks=1
+after re-walk                            fileBytes=2730 HistoryLength=2730 WorkFloorAt=12:00:20 ActiveWork= WorkSource= WorkBranch= Subject=repo
+
+provider=claude case=restart (synthetic clock: t=N is 12:00:00+N s)
+ticks=1
+after first read                         fileBytes=2730 HistoryLength=2730 WorkFloorAt= ActiveWork=change-a WorkSource=history:edit WorkBranch=main Subject=change-a
+after switch detected at t=20            fileBytes=2730 HistoryLength=2730 WorkFloorAt=12:00:20 ActiveWork= WorkSource= WorkBranch= Subject=repo
+ticks=1
+after rebind to a copied transcript      fileBytes=2730 HistoryLength=2730 WorkFloorAt=12:00:20 ActiveWork= WorkSource= WorkBranch= Subject=repo
+
+provider=codex case=tail (synthetic clock: t=N is 12:00:00+N s)
+ticks=1
+after first read                         fileBytes=4314 HistoryLength=4314 WorkFloorAt= ActiveWork= WorkSource= WorkBranch= Subject=repo
+ticks=0
+after live work (t=12) + tail read       fileBytes=8973 HistoryLength=4314 WorkFloorAt= ActiveWork=change-a WorkSource=edit WorkBranch=main Subject=change-a
+after switch detected at t=20            fileBytes=8973 HistoryLength=4314 WorkFloorAt=12:00:20 ActiveWork= WorkSource= WorkBranch= Subject=repo
+ticks=0
+after next history pass                  fileBytes=8973 HistoryLength=4314 WorkFloorAt=12:00:20 ActiveWork= WorkSource= WorkBranch= Subject=repo
+ticks=1
+after post-switch work (t=30) read       fileBytes=9475 HistoryLength=9475 WorkFloorAt=12:00:20 ActiveWork=change-b WorkSource=history:edit WorkBranch=feature Subject=change-b
+
+provider=codex case=before-first-read (synthetic clock: t=N is 12:00:00+N s)
+after live work (no read yet)            fileBytes=4816 HistoryLength=0 WorkFloorAt= ActiveWork=change-a WorkSource=edit WorkBranch=main Subject=change-a
+after switch detected at t=20            fileBytes=4816 HistoryLength=0 WorkFloorAt=12:00:20 ActiveWork= WorkSource= WorkBranch= Subject=repo
+ticks=1
+after first history pass                 fileBytes=4816 HistoryLength=4816 WorkFloorAt=12:00:20 ActiveWork= WorkSource= WorkBranch= Subject=repo
+
+provider=codex case=lag (synthetic clock: t=N is 12:00:00+N s)
+ticks=1
+after first read (pre-switch work)       fileBytes=2659 HistoryLength=2659 WorkFloorAt= ActiveWork=change-a WorkSource=history:edit WorkBranch=main Subject=change-a
+ticks=0
+post-switch work at t=17, not yet detected fileBytes=3161 HistoryLength=2659 WorkFloorAt= ActiveWork=change-b WorkSource=edit WorkBranch=main Subject=change-b
+after switch detected at t=20            fileBytes=3161 HistoryLength=2659 WorkFloorAt=12:00:20 ActiveWork= WorkSource= WorkBranch= Subject=repo
+ticks=0
+after next history pass                  fileBytes=3161 HistoryLength=2659 WorkFloorAt=12:00:20 ActiveWork= WorkSource= WorkBranch= Subject=repo
+ticks=1
+after fresh pass (file recreated)        fileBytes=3161 HistoryLength=3161 WorkFloorAt=12:00:20 ActiveWork= WorkSource= WorkBranch= Subject=repo
+
+provider=codex case=reset (synthetic clock: t=N is 12:00:00+N s)
+ticks=1
+after first read                         fileBytes=2659 HistoryLength=2659 WorkFloorAt= ActiveWork=change-a WorkSource=history:edit WorkBranch=main Subject=change-a
+after switch detected at t=20            fileBytes=2659 HistoryLength=2659 WorkFloorAt=12:00:20 ActiveWork= WorkSource= WorkBranch= Subject=repo
+after explicit reset + history reset     fileBytes=2659 HistoryLength=0 WorkFloorAt=12:00:20 ActiveWork= WorkSource= WorkBranch= Subject=repo
+ticks=1
+after re-walk                            fileBytes=2659 HistoryLength=2659 WorkFloorAt=12:00:20 ActiveWork= WorkSource= WorkBranch= Subject=repo
+
+provider=codex case=restart (synthetic clock: t=N is 12:00:00+N s)
+ticks=1
+after first read                         fileBytes=2659 HistoryLength=2659 WorkFloorAt= ActiveWork=change-a WorkSource=history:edit WorkBranch=main Subject=change-a
+after switch detected at t=20            fileBytes=2659 HistoryLength=2659 WorkFloorAt=12:00:20 ActiveWork= WorkSource= WorkBranch= Subject=repo
+ticks=1
+after rebind to a copied transcript      fileBytes=2659 HistoryLength=2659 WorkFloorAt=12:00:20 ActiveWork= WorkSource= WorkBranch= Subject=repo
+
+
+## 2. Legacy supersession, ANALYSIS-101 recheck (probe-legacy.ps1)
+provider=claude
+loaded 0.1.8 record                            Change=legacy-x origin=legacy-selection diskSource= ActiveWork= WorkSubject=legacy-x Name=legacy-x provenance=legacy-selection futureKept=True
+weak evidence while legacy holds               Change=legacy-x origin=legacy-selection diskSource= ActiveWork= WorkSubject=legacy-x Name=legacy-x provenance=legacy-selection futureKept=True
+newer verified live work                       Change=legacy-x origin=legacy-superseded diskSource=legacy-superseded ActiveWork=change-a WorkSubject=change-a Name=change-a provenance=edit futureKept=True
+after branch invalidation                      Change=legacy-x origin=legacy-superseded diskSource=legacy-superseded ActiveWork= WorkSubject= Name=repo provenance=fallback futureKept=True
+history work again (offset 100)                Change=legacy-x origin=legacy-superseded diskSource=legacy-superseded ActiveWork=change-a WorkSubject=change-a Name=change-a provenance=history:edit futureKept=True
+after transcript restart (history work cleared) Change=legacy-x origin=legacy-superseded diskSource=legacy-superseded ActiveWork= WorkSubject= Name=repo provenance=fallback futureKept=True
+fork child of superseded parent                Change= origin= diskSource= ActiveWork= WorkSubject= Name=repo provenance=fallback futureKept=False
+weak evidence after retirement                 Change=legacy-x origin=legacy-superseded diskSource=legacy-superseded ActiveWork=change-w WorkSubject=change-w Name=change-w provenance=edit futureKept=True
+rollback build rewrites the same value         Change=legacy-x origin=legacy-superseded diskSource=legacy-superseded ActiveWork=change-w WorkSubject=change-w Name=change-w provenance=edit futureKept=True
+rollback build writes a different value        Change=legacy-y origin=legacy-selection diskSource=legacy-superseded ActiveWork=change-w WorkSubject=change-w Name=change-w provenance=edit futureKept=True
+
+provider=codex
+loaded 0.1.8 record                            Change=legacy-x origin=legacy-selection diskSource= ActiveWork= WorkSubject=legacy-x Name=legacy-x provenance=legacy-selection futureKept=True
+weak evidence while legacy holds               Change=legacy-x origin=legacy-selection diskSource= ActiveWork= WorkSubject=legacy-x Name=legacy-x provenance=legacy-selection futureKept=True
+newer verified live work                       Change=legacy-x origin=legacy-superseded diskSource=legacy-superseded ActiveWork=change-a WorkSubject=change-a Name=change-a provenance=edit futureKept=True
+after branch invalidation                      Change=legacy-x origin=legacy-superseded diskSource=legacy-superseded ActiveWork= WorkSubject= Name=repo provenance=fallback futureKept=True
+history work again (offset 100)                Change=legacy-x origin=legacy-superseded diskSource=legacy-superseded ActiveWork=change-a WorkSubject=change-a Name=change-a provenance=history:edit futureKept=True
+after transcript restart (history work cleared) Change=legacy-x origin=legacy-superseded diskSource=legacy-superseded ActiveWork= WorkSubject= Name=repo provenance=fallback futureKept=True
+fork child of superseded parent                Change= origin= diskSource= ActiveWork= WorkSubject= Name=repo provenance=fallback futureKept=False
+weak evidence after retirement                 Change=legacy-x origin=legacy-superseded diskSource=legacy-superseded ActiveWork=change-w WorkSubject=change-w Name=change-w provenance=edit futureKept=True
+rollback build rewrites the same value         Change=legacy-x origin=legacy-superseded diskSource=legacy-superseded ActiveWork=change-w WorkSubject=change-w Name=change-w provenance=edit futureKept=True
+rollback build writes a different value        Change=legacy-y origin=legacy-selection diskSource=legacy-superseded ActiveWork=change-w WorkSubject=change-w Name=change-w provenance=edit futureKept=True
+
+
+## 3. Fork of a conversation after a branch invalidation (probe-fork-floor.ps1), ANALYSIS-150
+provider=claude (synthetic clock: t=N is 12:00:00+N s)
+ticks=1
+parent after read                  WorkFloorAt= ActiveWork=change-a WorkSource=history:edit WorkBranch=main ForkInheritedFrom= Subject=change-a
+ticks=0
+parent after switch (t=20)         WorkFloorAt=12:00:20 ActiveWork= WorkSource= WorkBranch= ForkInheritedFrom= Subject=repo
+ticks=1
+fork child after first read        WorkFloorAt= ActiveWork=change-a WorkSource=history:edit WorkBranch=feature ForkInheritedFrom=parent Subject=change-a
+parent (unchanged)                 WorkFloorAt=12:00:20 ActiveWork= WorkSource= WorkBranch= ForkInheritedFrom= Subject=repo
+
+provider=codex (synthetic clock: t=N is 12:00:00+N s)
+ticks=1
+parent after read                  WorkFloorAt= ActiveWork=change-a WorkSource=history:edit WorkBranch=main ForkInheritedFrom= Subject=change-a
+ticks=0
+parent after switch (t=20)         WorkFloorAt=12:00:20 ActiveWork= WorkSource= WorkBranch= ForkInheritedFrom= Subject=repo
+ticks=1
+fork child after first read        WorkFloorAt= ActiveWork=change-a WorkSource=history:edit WorkBranch=feature ForkInheritedFrom=parent Subject=change-a
+parent (unchanged)                 WorkFloorAt=12:00:20 ActiveWork= WorkSource= WorkBranch= ForkInheritedFrom= Subject=repo
+
+
+## 4. Codex fresh-pass head-window cost (probe-head.ps1; 8 MiB rollout, Stopwatch around the first Refresh; decimal comma is the host locale)
+dense head pairs=697
+sparse: fileBytes=8698212 ForkParent=parent HistoryOffset=8436076 HistoryLength=8698212
+sparse: fresh Refresh ms per run = 22,1, 3,4, 4,5, 2,4, 3,3 (first run includes JIT)
+dense: fileBytes=8697154 ForkParent=parent HistoryOffset=8435018 HistoryLength=8697154
+dense: fresh Refresh ms per run = 31,9, 18,6, 19,1, 18,1, 31,6 (first run includes JIT)

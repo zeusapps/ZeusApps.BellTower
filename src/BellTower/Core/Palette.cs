@@ -12,7 +12,38 @@ public sealed record Palette(string Background, string Accent, string Foreground
         return new(dark, accent, Contrast(accent, "#ffffff") >= Contrast(accent, "#000000") ? "#ffffff" : "#000000");
     }
 
+    // Picks the candidate whose accent is farthest from every accent already in use. The caller must hold the shared
+    // identity lock so concurrent creations observe each other's choice.
+    public static Palette Allocate(IReadOnlyCollection<string> taken, Func<Palette>? create = null, int attempts = 32)
+    {
+        create ??= Create;
+        var candidates = Enumerable.Range(0, attempts).Select(_ => create()).ToArray();
+        return taken.Count == 0 ? candidates[0] : candidates.MaxBy(candidate => taken.Min(accent => Distance(candidate.Accent, accent)))!;
+    }
+
     public static bool IsHex(string value) => value.Length == 7 && value[0] == '#' && value.Skip(1).All(Uri.IsHexDigit);
+    public static Palette FromColor(string value)
+    {
+        var named = value.ToLowerInvariant() switch
+        {
+            "red" => "#d84b4b",
+            "orange" => "#d18a32",
+            "yellow" => "#c2ad35",
+            "green" => "#39a866",
+            "blue" => "#438bd1",
+            "purple" => "#9863d1",
+            "pink" => "#cd5ca5",
+            "cyan" => "#34aeb8",
+            _ => value
+        };
+        if (!IsHex(named))
+        { throw new ArgumentException("Use red, orange, yellow, green, blue, purple, pink, cyan or #RRGGBB."); }
+        var dark = "#" + string.Concat(Enumerable.Range(0, 3).Select(i => (Convert.ToInt32(named.Substring(1 + i * 2, 2), 16) / 4).ToString("x2")));
+        return new(dark, named.ToLowerInvariant(), Contrast(named, "#ffffff") >= Contrast(named, "#000000") ? "#ffffff" : "#000000");
+    }
+
+    public static double Distance(string first, string second) => Math.Sqrt(Enumerable.Range(0, 3).Sum(i =>
+        Math.Pow(Convert.ToInt32(first.Substring(1 + i * 2, 2), 16) - Convert.ToInt32(second.Substring(1 + i * 2, 2), 16), 2)));
     public static double Contrast(string first, string second)
     {
         var x = RelativeLuminance(first);

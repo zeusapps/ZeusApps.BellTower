@@ -6,8 +6,10 @@ using BellTower.Providers;
 
 namespace BellTower.Sessions;
 
-public sealed class CodexNameService(DataPaths paths, Func<ICodexNameClient>? createClient = null)
+public sealed class CodexNameService(DataPaths paths, Func<ICodexNameClient>? createClient = null, NativeNameSchedule? schedule = null)
 {
+    public static readonly TimeSpan VerifyEvery = TimeSpan.FromSeconds(10);
+
     public void Sync(SessionState session, GitContext? context = null)
     {
         if (session.Provider != "codex" || session.Ended || session.AttachmentHealth == "unavailable")
@@ -23,74 +25,60 @@ public sealed class CodexNameService(DataPaths paths, Func<ICodexNameClient>? cr
         {
             return;
         }
+        string? scheduledName = null;
         try
         {
+            var desired = SessionPresentation.CodexName(identity.Name, context ?? new GitReader().Read(identity.Checkout(session.Directory)));
+            if (schedule is not null && !schedule.Due(session.Key, desired, identity.NativeSyncTakeOwnership || identity.NativeSyncStatus == "pending"))
+            {
+                return;
+            }
+            scheduledName = desired;
             var runtimes = new CodexRuntimeStore(paths);
             var runtime = runtimes.Get(session.AttachmentId);
             var attachment = new AttachmentStore(paths).Get(session.AttachmentId);
             if (runtime is null || attachment is not { EndedAt: null } || attachment.Host.Shell != runtime.Shell)
             {
                 SetStatus(identities, session, "unavailable: no verified dedicated runtime");
+                schedule?.Failed(session.Key, desired);
                 return;
             }
-            var desired = SessionPresentation.CodexName(identity.Name, context ?? new GitReader().Read(session.Directory));
             var token = File.ReadAllText(runtimes.TokenPath(runtime.Attachment));
             using var client = createClient?.Invoke() ?? new CodexConnection();
             using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(3));
             client.ConnectAsync(runtime.Endpoint, token, timeout.Token).GetAwaiter().GetResult();
             var current = client.ReadNameAsync(session.SessionId, timeout.Token).GetAwaiter().GetResult();
-            if (!identity.NativeSyncTakeOwnership &&
-                (identity.NativeLastName is null ? !string.IsNullOrWhiteSpace(current) : current != identity.NativeLastName))
+            if (NativeNamePolicy.Conflict(identity, current))
             {
                 identities.Update(session.Key, session.Directory, value =>
                 {
-                    value.NativeSyncEnabled = false;
-                    value.NativeSyncStatus = "paused: native chat name was set outside Bell Tower";
+                    NativeNamePolicy.Pause(value, current);
                     return true;
                 });
+                schedule?.Succeeded(session.Key, desired);
                 return;
             }
             if (current != desired)
             {
+                // Record the intended name before the write so a crash or a concurrent reader between the
+                // write and the bookkeeping never reads Bell Tower's own name as a user rename.
+                identities.Update(session.Key, session.Directory, value => value.NativeSyncEnabled && NativeNamePolicy.RecordIntent(value, desired));
                 client.SetNameAsync(session.SessionId, desired, timeout.Token).GetAwaiter().GetResult();
             }
-            identities.Update(session.Key, session.Directory, value =>
-            {
-                // Preserve a concurrent user request to disable synchronization.
-                if (!value.NativeSyncEnabled)
-                {
-                    return false;
-                }
-                var changed = value.NativeLastName != desired || value.NativeSyncTakeOwnership || value.NativeSyncStatus != "synchronized";
-                value.NativeLastName = desired;
-                value.NativeSyncTakeOwnership = false;
-                value.NativeSyncStatus = "synchronized";
-                return changed;
-            });
+            // Preserve a concurrent user request to disable synchronization.
+            identities.Update(session.Key, session.Directory, value => value.NativeSyncEnabled && NativeNamePolicy.Confirm(value, desired));
+            schedule?.Succeeded(session.Key, desired);
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or WebSocketException or
             OperationCanceledException or JsonException or InvalidOperationException or ArgumentException)
         {
+            schedule?.Failed(session.Key, scheduledName ?? "");
             SetStatus(identities, session, "unavailable: native metadata connection failed");
             new LocalLog(paths).Write("native-name-unavailable");
         }
     }
 
-    public void SetEnabled(SessionState session, bool enabled)
-    {
-        if (session.Provider != "codex")
-        {
-            throw new ArgumentException("Native name synchronization is available for Codex sessions only.");
-        }
-        using var gate = new DataLock(paths, "native-name-" + ContentHash.Compute(session.Key));
-        new IdentityStore(paths).Update(session.Key, session.Directory, value =>
-        {
-            value.NativeSyncEnabled = enabled;
-            value.NativeSyncTakeOwnership = enabled;
-            value.NativeSyncStatus = enabled ? "pending" : "disabled";
-            return true;
-        });
-    }
+    public void SetEnabled(SessionState session, bool enabled) => NativeNameControl.SetEnabled(paths, session, enabled);
 
     private static void SetStatus(IdentityStore identities, SessionState session, string status) =>
         identities.Update(session.Key, session.Directory, value =>

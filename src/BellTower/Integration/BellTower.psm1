@@ -3,6 +3,7 @@ function Invoke-BellTowerSession {
     [CmdletBinding(PositionalBinding = $false)]
     param(
         [string]$Provider,
+        # Deprecated and ignored: Bell Tower has no session role. Kept so existing Start-*PM/Dev/QA/APM shortcuts still bind.
         [string]$Role,
         [string]$Name,
         [string]$Change,
@@ -40,7 +41,7 @@ function Invoke-BellTowerSession {
         $env:BELLTOWER_DATA_DIR = $script:BellTowerDataDirectory
         $env:BELLTOWER_NAME = $Name
         $env:BELLTOWER_CHANGE = $Change
-        $env:BELLTOWER_ROLE = $Role
+        $env:BELLTOWER_ROLE = $null
         $env:BELLTOWER_SHELL_PID = [string]$PID
         $env:BELLTOWER_DEDICATED = $null
         $env:BELLTOWER_MANAGED_TITLE = $null

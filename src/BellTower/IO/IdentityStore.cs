@@ -3,16 +3,16 @@ using BellTower.Core;
 
 namespace BellTower.IO;
 
-public sealed class IdentityStore(DataPaths paths)
+public sealed class IdentityStore(DataPaths paths, Func<Palette>? candidate = null)
 {
-    public SessionIdentity Get(string key, string directory, string? initialName = null, string? initialChange = null, string? initialRole = null, Palette? initialPalette = null)
+    public SessionIdentity Get(string key, string directory, string? initialName = null, string? initialChange = null, Palette? initialPalette = null)
     {
         using var gate = new DataLock(paths, "identity");
-        return GetCore(key, directory, initialName, initialChange, initialRole, initialPalette);
+        return GetCore(key, directory, initialName, initialChange, initialPalette);
     }
 
     private SessionIdentity GetCore(string key, string directory, string? initialName = null, string? initialChange = null,
-        string? initialRole = null, Palette? initialPalette = null)
+        Palette? initialPalette = null)
     {
         var path = Path.Combine(paths.Identities, ContentHash.Compute(key) + ".json");
         SessionIdentity? identity = null;
@@ -37,6 +37,8 @@ public sealed class IdentityStore(DataPaths paths)
                 palette.Foreground is not null && Palette.IsHex(palette.Background) &&
                 Palette.IsHex(palette.Accent) && Palette.IsHex(palette.Foreground))
             {
+                // Classify an older record's Change once; the marker is persisted by the next save.
+                ChangeOrigin.Classify(identity);
                 return identity;
             }
         }
@@ -47,12 +49,27 @@ public sealed class IdentityStore(DataPaths paths)
             Key = key,
             DefaultName = string.IsNullOrEmpty(name) ? "Session" : IdentityText.Clean(name),
             ManualName = initialName,
-            Change = initialChange,
-            Role = initialRole,
-            Palette = initialPalette ?? Palette.Create()
+            LaunchDirectory = directory,
+            Palette = initialPalette ?? AllocatePalette(key)
         };
+        ChangeOrigin.Pin(identity, initialChange, ChangeOrigin.Launch);
         AtomicFile.Write(path, Json.Encode(identity));
         return identity;
+    }
+
+    // Reads an existing identity without creating one (null when absent or unreadable).
+    public SessionIdentity? Find(string key)
+    {
+        using var gate = new DataLock(paths, "identity");
+        var path = Path.Combine(paths.Identities, ContentHash.Compute(key) + ".json");
+        try
+        {
+            return AtomicFile.Read<SessionIdentity>(path) is { } found && found.Key == key ? found : null;
+        }
+        catch (Exception e) when (e is IOException or JsonException or InvalidDataException)
+        {
+            return null;
+        }
     }
 
     public void Save(SessionIdentity identity)
@@ -71,6 +88,43 @@ public sealed class IdentityStore(DataPaths paths)
         }
         return identity;
     }
+
+    public SessionIdentity SetColor(string key, string directory, string? color, bool reset = false) => Update(key, directory, identity =>
+    {
+        if (reset)
+        { IdentityControls.Reset(identity, () => AllocatePalette(key)); }
+        if (color is not null || !reset)
+        { IdentityControls.ApplyColor(identity, color, () => AllocatePalette(key)); }
+        return true;
+    });
+
+    // Callers must hold the "identity" lock (Get/Update do; the launch preparer takes it explicitly) so concurrent
+    // creations from either provider observe each other's accents. Live-session proxies: the most recent
+    // identities plus every launch palette that was prepared in the last day (consumed or not).
+    internal Palette AllocatePalette(string key)
+    {
+        var accents = new List<string>();
+        void Collect(string directory, Func<string, string?> accent)
+        {
+            if (!Directory.Exists(directory))
+            { return; }
+            foreach (var file in new DirectoryInfo(directory).EnumerateFiles("*.json").OrderByDescending(file => file.LastWriteTimeUtc).Take(RecentLimit))
+            {
+                try
+                {
+                    if (accent(file.FullName) is { } value && Palette.IsHex(value))
+                    { accents.Add(value); }
+                }
+                catch (Exception e) when (e is IOException or JsonException or InvalidDataException or UnauthorizedAccessException) { }
+            }
+        }
+        Collect(paths.Identities, file => AtomicFile.Read<SessionIdentity>(file) is { } saved && saved.Key != key ? saved.Palette?.Accent : null);
+        Collect(Path.Combine(paths.Root, "launches"), file => AtomicFile.Read<LaunchPresentation>(file) is { } launch &&
+            launch.AttachmentId != key && DateTimeOffset.UtcNow - launch.CreatedAt < TimeSpan.FromHours(24) ? launch.Palette?.Accent : null);
+        return Palette.Allocate(accents, candidate);
+    }
+
+    private const int RecentLimit = 64;
 
     private void SaveCore(SessionIdentity identity)
     {

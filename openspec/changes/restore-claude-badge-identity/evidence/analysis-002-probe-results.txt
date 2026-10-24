@@ -1,0 +1,47 @@
+# Analysis 002 probe results (Release build copied from src/BellTower/bin/Release/net10.0-windows, isolated data dirs, synthetic transcripts)
+
+## 1. ANALYSIS-001 weak-evidence walk (Analysis 001 probe-weak.ps1, unchanged)
+withTitle=True transcriptBytes=603238 ticks=3 ActiveWork=change-a WorkWeak=False NativeTitle=User title HistoryOffset=0 HistoryWorkOffset=0 NativeTitleOffset=602556 Name=User title
+withTitle=False transcriptBytes=603157 ticks=3 ActiveWork=change-a WorkWeak=False NativeTitle= HistoryOffset=0 HistoryWorkOffset=0 NativeTitleOffset=-1 Name=change-a
+
+## 2. History floor (probe-floor.ps1)
+provider=claude case=tail
+ticks=1
+after first read             fileBytes=4352 HistoryLength=4352 HistoryOffset=0 HistoryFloor=-1 ActiveWork= WorkSource= WorkBranch= Subject=repo
+ticks=0
+after live work + tail read  fileBytes=9296 HistoryLength=4352 HistoryOffset=0 HistoryFloor=-1 ActiveWork=change-a WorkSource=edit WorkBranch=main Subject=change-a
+after branch switch          fileBytes=9296 HistoryLength=4352 HistoryOffset=0 HistoryFloor=4352 ActiveWork= WorkSource= WorkBranch= Subject=repo
+ticks=1
+after next history pass      fileBytes=9296 HistoryLength=9296 HistoryOffset=0 HistoryFloor=4352 ActiveWork=change-a WorkSource=history:edit WorkBranch=feature Subject=change-a
+
+provider=claude case=before-first-read
+after live work (no read yet) fileBytes=5120 HistoryLength=0 HistoryOffset=0 HistoryFloor=-1 ActiveWork=change-a WorkSource=edit WorkBranch=main Subject=change-a
+after branch switch          fileBytes=5120 HistoryLength=0 HistoryOffset=0 HistoryFloor=0 ActiveWork= WorkSource= WorkBranch= Subject=repo
+ticks=1
+after first history pass     fileBytes=5120 HistoryLength=5120 HistoryOffset=0 HistoryFloor=-1 ActiveWork=change-a WorkSource=history:edit WorkBranch=feature Subject=change-a
+
+provider=codex case=tail
+ticks=1
+after first read             fileBytes=4314 HistoryLength=4314 HistoryOffset=0 HistoryFloor=-1 ActiveWork= WorkSource= WorkBranch= Subject=repo
+ticks=0
+after live work + tail read  fileBytes=9080 HistoryLength=4314 HistoryOffset=0 HistoryFloor=-1 ActiveWork=change-a WorkSource=edit WorkBranch=main Subject=change-a
+after branch switch          fileBytes=9080 HistoryLength=4314 HistoryOffset=0 HistoryFloor=4314 ActiveWork= WorkSource= WorkBranch= Subject=repo
+ticks=1
+after next history pass      fileBytes=9080 HistoryLength=9080 HistoryOffset=0 HistoryFloor=4314 ActiveWork=change-a WorkSource=history:edit WorkBranch=feature Subject=change-a
+
+provider=codex case=before-first-read
+after live work (no read yet) fileBytes=4923 HistoryLength=0 HistoryOffset=0 HistoryFloor=-1 ActiveWork=change-a WorkSource=edit WorkBranch=main Subject=change-a
+after branch switch          fileBytes=4923 HistoryLength=0 HistoryOffset=0 HistoryFloor=0 ActiveWork= WorkSource= WorkBranch= Subject=repo
+ticks=1
+after first history pass     fileBytes=4923 HistoryLength=4923 HistoryOffset=0 HistoryFloor=-1 ActiveWork=change-a WorkSource=history:edit WorkBranch=feature Subject=change-a
+
+## 3. Legacy-selection Change after newer work and a branch invalidation (probe-legacy.ps1)
+provider=claude
+loaded 0.1.8 record                Change=legacy-x origin=legacy-selection ActiveWork= WorkSubject=legacy-x Name=legacy-x provenance=legacy-selection futureKept=True
+newer verified live work           Change=legacy-x origin=legacy-selection ActiveWork=change-a WorkSubject=change-a Name=change-a provenance=edit futureKept=True
+after branch invalidation          Change=legacy-x origin=legacy-selection ActiveWork= WorkSubject=legacy-x Name=legacy-x provenance=legacy-selection futureKept=True
+
+provider=codex
+loaded 0.1.8 record                Change=legacy-x origin=legacy-selection ActiveWork= WorkSubject=legacy-x Name=legacy-x provenance=legacy-selection futureKept=True
+newer verified live work           Change=legacy-x origin=legacy-selection ActiveWork=change-a WorkSubject=change-a Name=change-a provenance=edit futureKept=True
+after branch invalidation          Change=legacy-x origin=legacy-selection ActiveWork= WorkSubject=legacy-x Name=legacy-x provenance=legacy-selection futureKept=True

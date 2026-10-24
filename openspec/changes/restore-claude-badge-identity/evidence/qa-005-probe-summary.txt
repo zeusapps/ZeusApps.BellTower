@@ -1,0 +1,95 @@
+provider=claude case=small mode=switch | parent=/ | first=-/; post-forkwork=change-b/history:edit
+provider=claude case=noboundary mode=switch | parent=/ | first(noownboundaryevent)=-/
+provider=claude case=large mode=switch | parent=/ | first=-/; post-forkwork=change-b/history:edit
+provider=claude case=tailwin mode=switch | parent=/ | first=-/
+provider=claude case=growth mode=switch | parent=/ | prefixonly=-/; boundaryappended=-/; post-forkwork=change-b/history:edit
+provider=claude case=growth-large mode=switch | parent=/ | largeprefix,noownboundaryyet=-/; boundaryappended=-/; post-forkwork=change-b/history:edit
+provider=codex case=small mode=switch | parent=/ | first=-/; post-forkwork=change-b/history:edit
+provider=codex case=noboundary mode=switch | parent=/ | first(noownboundaryevent)=change-a/history:edit
+provider=codex case=large mode=switch | parent=/ | first=-/; post-forkwork=change-b/history:edit
+provider=codex case=tailwin mode=switch | parent=/ | first=-/
+provider=codex case=growth mode=switch | parent=/ | prefixonly=change-a/history:edit; boundaryappended=-/; post-forkwork=change-b/history:edit
+provider=codex case=growth-large mode=switch | parent=/ | largeprefix,noownboundaryyet=-/; largeprefix,noownboundaryyet=change-a/history:edit; boundaryappended=-/; post-forkwork=change-b/history:edit
+provider=claude case=small mode=orphan |  | first=change-a/history:edit; post-forkwork=change-b/history:edit
+provider=claude case=noboundary mode=orphan |  | first(noownboundaryevent)=change-a/history:edit
+provider=claude case=large mode=orphan |  | first=-/; first=change-a/history:edit; post-forkwork=change-b/history:edit
+provider=claude case=tailwin mode=orphan |  | first=-/; first=change-a/history:edit
+provider=claude case=growth mode=orphan |  | prefixonly=change-a/history:edit; boundaryappended=change-a/history:edit; post-forkwork=change-b/history:edit
+provider=claude case=growth-large mode=orphan |  | largeprefix,noownboundaryyet=-/; largeprefix,noownboundaryyet=change-a/history:edit; boundaryappended=change-a/history:edit; post-forkwork=change-b/history:edit
+provider=codex case=small mode=orphan |  | first=change-a/history:edit; post-forkwork=change-b/history:edit
+provider=codex case=noboundary mode=orphan |  | first(noownboundaryevent)=change-a/history:edit
+provider=codex case=large mode=orphan |  | first=-/; first=change-a/history:edit; post-forkwork=change-b/history:edit
+provider=codex case=tailwin mode=orphan |  | first=-/; first=change-a/history:edit
+provider=codex case=growth mode=orphan |  | prefixonly=change-a/history:edit; boundaryappended=change-a/history:edit; post-forkwork=change-b/history:edit
+provider=codex case=growth-large mode=orphan |  | largeprefix,noownboundaryyet=-/; largeprefix,noownboundaryyet=change-a/history:edit; boundaryappended=change-a/history:edit; post-forkwork=change-b/history:edit
+provider=claude case=small mode=nofloor | parent=change-a/history:edit | first=change-a/fork:history:edit; post-forkwork=change-b/history:edit
+provider=claude case=noboundary mode=nofloor | parent=change-a/history:edit | first(noownboundaryevent)=change-a/fork:history:edit
+provider=claude case=large mode=nofloor | parent=change-a/history:edit | first=-/; first=change-a/fork:history:edit; post-forkwork=change-b/history:edit
+provider=claude case=tailwin mode=nofloor | parent=change-a/history:edit | first=-/; first=change-a/fork:history:edit
+provider=claude case=growth mode=nofloor | parent=change-a/history:edit | prefixonly=change-a/fork:history:edit; boundaryappended=change-a/fork:history:edit; post-forkwork=change-b/history:edit
+provider=claude case=growth-large mode=nofloor | parent=change-a/history:edit | largeprefix,noownboundaryyet=-/; largeprefix,noownboundaryyet=change-a/fork:history:edit; boundaryappended=change-a/fork:history:edit; post-forkwork=change-b/history:edit
+provider=codex case=small mode=nofloor | parent=change-a/history:edit | first=change-a/fork:history:edit; post-forkwork=change-b/history:edit
+provider=codex case=noboundary mode=nofloor | parent=change-a/history:edit | first(noownboundaryevent)=change-a/history:edit
+provider=codex case=large mode=nofloor | parent=change-a/history:edit | first=change-a/fork:history:edit; post-forkwork=change-b/history:edit
+provider=codex case=tailwin mode=nofloor | parent=change-a/history:edit | first=change-a/fork:history:edit
+provider=codex case=growth mode=nofloor | parent=change-a/history:edit | prefixonly=change-a/history:edit; boundaryappended=change-a/history:edit; post-forkwork=change-b/history:edit
+provider=codex case=growth-large mode=nofloor | parent=change-a/history:edit | largeprefix,noownboundaryyet=change-a/fork:history:edit; largeprefix,noownboundaryyet=change-a/history:edit; boundaryappended=change-a/history:edit; post-forkwork=change-b/history:edit
+provider=claude case=small mode=live | parent=change-a/Write | first=change-a/fork:Write; post-forkwork=change-b/history:edit
+provider=claude case=noboundary mode=live | parent=change-a/Write | first(noownboundaryevent)=change-a/fork:Write
+provider=claude case=large mode=live | parent=change-a/Write | first=-/; first=change-a/fork:Write; post-forkwork=change-b/history:edit
+provider=claude case=tailwin mode=live | parent=change-a/Write | first=-/; first=change-a/fork:Write
+provider=claude case=growth mode=live | parent=change-a/Write | prefixonly=change-a/fork:Write; boundaryappended=change-a/fork:Write; post-forkwork=change-b/history:edit
+provider=claude case=growth-large mode=live | parent=change-a/Write | largeprefix,noownboundaryyet=-/; largeprefix,noownboundaryyet=change-a/fork:Write; boundaryappended=change-a/fork:Write; post-forkwork=change-b/history:edit
+provider=codex case=small mode=live | parent=change-a/Write | first=change-a/fork:Write; post-forkwork=change-b/history:edit
+provider=codex case=noboundary mode=live | parent=change-a/Write | first(noownboundaryevent)=change-a/history:edit
+provider=codex case=large mode=live | parent=change-a/Write | first=change-a/fork:Write; post-forkwork=change-b/history:edit
+provider=codex case=tailwin mode=live | parent=change-a/Write | first=change-a/fork:Write
+provider=codex case=growth mode=live | parent=change-a/Write | prefixonly=change-a/history:edit; boundaryappended=change-a/history:edit; post-forkwork=change-b/history:edit
+provider=codex case=growth-large mode=live | parent=change-a/Write | largeprefix,noownboundaryyet=change-a/fork:Write; largeprefix,noownboundaryyet=change-a/history:edit; boundaryappended=change-a/history:edit; post-forkwork=change-b/history:edit
+
+# livedif mode (parent live work change-b at t=30, copied history change-a)
+provider=claude case=small mode=livedif
+parent state ActiveWork=change-b WorkSource=Write Boundary=-1 Floor= Subject=change-b
+first tick1 (changed=True) ActiveWork=change-b WorkSource=fork:Write Boundary=-1 Floor= Subject=change-b
+first tick2 (changed=False) ActiveWork=change-b WorkSource=fork:Write Boundary=-1 Floor= Subject=change-b
+post-fork work tick1 (changed=True) ActiveWork=change-b WorkSource=history:edit Boundary=-1 Floor= Subject=change-b
+post-fork work tick2 (changed=False) ActiveWork=change-b WorkSource=history:edit Boundary=-1 Floor= Subject=change-b
+provider=claude case=growth mode=livedif
+parent state ActiveWork=change-b WorkSource=Write Boundary=-1 Floor= Subject=change-b
+prefix only tick1 (changed=True) ActiveWork=change-b WorkSource=fork:Write Boundary=-1 Floor= Subject=change-b
+prefix only tick2 (changed=False) ActiveWork=change-b WorkSource=fork:Write Boundary=-1 Floor= Subject=change-b
+boundary appended tick1 (changed=False) ActiveWork=change-b WorkSource=fork:Write Boundary=-1 Floor= Subject=change-b
+post-fork work tick1 (changed=True) ActiveWork=change-b WorkSource=history:edit Boundary=-1 Floor= Subject=change-b
+post-fork work tick2 (changed=False) ActiveWork=change-b WorkSource=history:edit Boundary=-1 Floor= Subject=change-b
+provider=claude case=growth-large mode=livedif
+parent state ActiveWork=change-b WorkSource=Write Boundary=-1 Floor= Subject=change-b
+large prefix, no own boundary yet tick1 (changed=True) ActiveWork= WorkSource= Boundary=-1 Floor= Subject=repo
+large prefix, no own boundary yet tick2 (changed=True) ActiveWork=change-b WorkSource=fork:Write Boundary=-1 Floor= Subject=change-b
+large prefix, no own boundary yet tick3 (changed=False) ActiveWork=change-b WorkSource=fork:Write Boundary=-1 Floor= Subject=change-b
+boundary appended tick1 (changed=False) ActiveWork=change-b WorkSource=fork:Write Boundary=-1 Floor= Subject=change-b
+post-fork work tick1 (changed=True) ActiveWork=change-b WorkSource=history:edit Boundary=-1 Floor= Subject=change-b
+post-fork work tick2 (changed=False) ActiveWork=change-b WorkSource=history:edit Boundary=-1 Floor= Subject=change-b
+provider=codex case=small mode=livedif
+parent state ActiveWork=change-b WorkSource=Write Boundary=-1 Floor= Subject=change-b
+first tick1 (changed=True) ActiveWork=change-b WorkSource=fork:Write Boundary=3064 Floor= Subject=change-b
+first tick2 (changed=False) ActiveWork=change-b WorkSource=fork:Write Boundary=3064 Floor= Subject=change-b
+post-fork work tick1 (changed=True) ActiveWork=change-b WorkSource=history:edit Boundary=3064 Floor= Subject=change-b
+post-fork work tick2 (changed=False) ActiveWork=change-b WorkSource=history:edit Boundary=3064 Floor= Subject=change-b
+provider=codex case=growth mode=livedif
+parent state ActiveWork=change-b WorkSource=Write Boundary=-1 Floor= Subject=change-b
+prefix only tick1 (changed=True) ActiveWork=change-a WorkSource=history:edit Boundary=-1 Floor= Subject=change-a
+prefix only tick2 (changed=False) ActiveWork=change-a WorkSource=history:edit Boundary=-1 Floor= Subject=change-a
+boundary appended tick1 (changed=True) ActiveWork=change-a WorkSource=history:edit Boundary=3064 Floor= Subject=change-a
+boundary appended tick2 (changed=False) ActiveWork=change-a WorkSource=history:edit Boundary=3064 Floor= Subject=change-a
+post-fork work tick1 (changed=True) ActiveWork=change-b WorkSource=history:edit Boundary=3064 Floor= Subject=change-b
+post-fork work tick2 (changed=False) ActiveWork=change-b WorkSource=history:edit Boundary=3064 Floor= Subject=change-b
+provider=codex case=growth-large mode=livedif
+parent state ActiveWork=change-b WorkSource=Write Boundary=-1 Floor= Subject=change-b
+large prefix, no own boundary yet tick1 (changed=True) ActiveWork=change-b WorkSource=fork:Write Boundary=-1 Floor= Subject=change-b
+large prefix, no own boundary yet tick2 (changed=True) ActiveWork=change-b WorkSource=fork:Write Boundary=-1 Floor= Subject=change-b
+large prefix, no own boundary yet tick3 (changed=True) ActiveWork=change-a WorkSource=history:edit Boundary=-1 Floor= Subject=change-a
+large prefix, no own boundary yet tick4 (changed=False) ActiveWork=change-a WorkSource=history:edit Boundary=-1 Floor= Subject=change-a
+boundary appended tick1 (changed=True) ActiveWork=change-a WorkSource=history:edit Boundary=401064 Floor= Subject=change-a
+boundary appended tick2 (changed=False) ActiveWork=change-a WorkSource=history:edit Boundary=401064 Floor= Subject=change-a
+post-fork work tick1 (changed=True) ActiveWork=change-b WorkSource=history:edit Boundary=401064 Floor= Subject=change-b
+post-fork work tick2 (changed=False) ActiveWork=change-b WorkSource=history:edit Boundary=401064 Floor= Subject=change-b

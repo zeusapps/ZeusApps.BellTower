@@ -1,0 +1,43 @@
+codex legacy: initial Name='legacy-a'
+codex legacy: after newer work Name='work-b' Active=work-b Change(on disk)=legacy-a src=legacy-superseded Role(on disk)=PM
+codex legacy: after branch invalidation Name='bbb3a62035cc47efaf2e9be29d2c61f1'
+codex legacy: after transcript restart Name='bbb3a62035cc47efaf2e9be29d2c61f1' Change(on disk)=legacy-a
+claude legacy: initial Name='legacy-a'
+claude legacy: after newer work Name='work-b' Active=work-b Change(on disk)=legacy-a src=legacy-superseded Role(on disk)=PM
+claude legacy: after branch invalidation Name='862f5bb6030441d58d5a5dd5687a4997'
+claude legacy: after transcript restart Name='862f5bb6030441d58d5a5dd5687a4997' Change(on disk)=legacy-a
+roleenv HookIngestor codex: Role=null Name='79e707f5117d425fae459dab0b402905'
+roleenv HookIngestor claude: Role=null Name='1124ee256b014126922c782ba3590538'
+roleenv ingress.exe claude: exit=0 spoolFiles=1 envelopeHasRolePM=False consumed=True Role=null Name='3ef5517572ba44148fe530d3c17c7754' phrase='3ef5517572ba44148fe530d3c17c7754, needs permission'
+roleenv ingress.exe codex: exit=0 spoolFiles=1 envelopeHasRolePM=False consumed=True Role=null Name='76dd8ef8b933441d959e88c92b51fabf' phrase='76dd8ef8b933441d959e88c92b51fabf, needs permission'
+speech claude: Name='ttyd-download-chips' phrase='ttyd download chips, needs permission' savedRole=DEV
+speech codex: Name='ttyd-download-chips' phrase='ttyd download chips, needs permission' savedRole=DEV
+fork: valid=Fix the login
+fork: after ignored (fork) title NativeTitle=Fix the login Name=Fix the login
+fork: later valid=Second title
+claude before-first-read: after first read=null
+claude before-first-read: after rotation=null
+claude before-first-read: post-switch=fresh-c
+claude floor persisted in new store instance=True
+codex before-first-read: after first read=null
+codex before-first-read: after rotation=null
+codex before-first-read: post-switch=fresh-c
+codex floor persisted in new store instance=True
+claude tail: before switch=old-z
+claude tail: after switch=null floorDelta=-1,4534ms
+claude tail: after tick=null
+claude tail: after fresh pass=null
+claude tail: post-switch work=fresh-c
+claude tail: work stamped ~2s BEFORE a later-detected switch (simulated detection lag)=null
+codex tail: before switch=old-z
+codex tail: after switch=null floorDelta=-1,8089ms
+codex tail: after tick=null
+codex tail: after fresh pass=null
+codex tail: post-switch work=fresh-c
+codex tail: work stamped ~2s BEFORE a later-detected switch (simulated detection lag)=null
+FIVE claude:c1 savedRole=PM name='dep-7070-fix' active=dep-7070-fix checkout=DEP-7070 src=unique-work accent=#4bab2b title='dep-7070-fix | DEP-7070-login | worktree: DEP-7070' speech='dep 7070 fix, needs permission' snap='dep-7070-fix' prov=edit roleInAnyText=False
+FIVE claude:c2 savedRole=QA name='dep-8080-docs' active=dep-8080-docs checkout=DEP-8080 src=unique-work accent=#ab2b94 title='dep-8080-docs | DEP-8080-docs | worktree: DEP-8080' speech='dep 8080 docs, needs permission' snap='dep-8080-docs' prov=edit roleInAnyText=False
+FIVE claude:c3 savedRole=DEV name='My own title' active=dep-9090-api checkout=DEP-9090 src=unique-work accent=#2b67ab title='My own title | DEP-9090-api | worktree: DEP-9090' speech='My own title, needs permission' snap='My own title' prov=native-user roleInAnyText=False
+FIVE codex:x1 savedRole=PM name='dep-7070-b' active=dep-7070-b checkout=DEP-7070 src=unique-work accent=#ab692b title='dep-7070-b | DEP-7070-login | worktree: DEP-7070' speech='dep 7070 b, needs permission' snap='dep-7070-b' prov=edit roleInAnyText=False
+FIVE codex:x2 savedRole=QA name='Manual X2' active=shared-spec checkout=D360 src=unique-work accent=#512bab title='Manual X2 | main' speech='Manual X2, needs permission' snap='Manual X2' prov=manual roleInAnyText=False
+FIVE distinct accents=5/5

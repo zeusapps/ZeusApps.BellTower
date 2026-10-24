@@ -1,0 +1,466 @@
+# QA 006 probe results (head=d307c34 diff=69c7b4fc67e6). Synthetic clock t=N is 12:00:00+N s. Codex copies restamped t=40; Claude copies keep t=10.
+--- q5 claude small livedif
+provider=claude case=small mode=livedif
+parent state                                 ActiveWork=change-b WorkSource=Write Boundary=-1 Len=0 Off=0 Floor= Subject=change-b
+first tick1 (changed=True)                   ActiveWork=change-b WorkSource=fork:Write Boundary=-1 Len=2805 Off=0 Floor= Subject=change-b
+first tick2 (changed=False)                  ActiveWork=change-b WorkSource=fork:Write Boundary=-1 Len=2805 Off=0 Floor= Subject=change-b
+post-fork work tick1 (changed=True)          ActiveWork=change-b WorkSource=history:edit Boundary=-1 Len=3441 Off=0 Floor= Subject=change-b
+post-fork work tick2 (changed=False)         ActiveWork=change-b WorkSource=history:edit Boundary=-1 Len=3441 Off=0 Floor= Subject=change-b
+--- q5 claude large livedif
+provider=claude case=large mode=livedif
+parent state                                 ActiveWork=change-b WorkSource=Write Boundary=-1 Len=0 Off=0 Floor= Subject=change-b
+first tick1 (changed=True)                   ActiveWork= WorkSource= Boundary=-1 Len=401474 Off=400805 Floor= Subject=repo
+first tick2 (changed=True)                   ActiveWork= WorkSource= Boundary=-1 Len=401474 Off=138661 Floor= Subject=repo
+first tick3 (changed=True)                   ActiveWork=change-b WorkSource=fork:Write Boundary=-1 Len=401474 Off=0 Floor= Subject=change-b
+first tick4 (changed=False)                  ActiveWork=change-b WorkSource=fork:Write Boundary=-1 Len=401474 Off=0 Floor= Subject=change-b
+post-fork work tick1 (changed=True)          ActiveWork=change-b WorkSource=history:edit Boundary=-1 Len=402110 Off=0 Floor= Subject=change-b
+post-fork work tick2 (changed=False)         ActiveWork=change-b WorkSource=history:edit Boundary=-1 Len=402110 Off=0 Floor= Subject=change-b
+--- q5 claude growth livedif
+provider=claude case=growth mode=livedif
+parent state                                 ActiveWork=change-b WorkSource=Write Boundary=-1 Len=0 Off=0 Floor= Subject=change-b
+prefix only tick1 (changed=True)             ActiveWork=change-b WorkSource=fork:Write Boundary=-1 Len=2805 Off=0 Floor= Subject=change-b
+prefix only tick2 (changed=False)            ActiveWork=change-b WorkSource=fork:Write Boundary=-1 Len=2805 Off=0 Floor= Subject=change-b
+boundary appended tick1 (changed=False)      ActiveWork=change-b WorkSource=fork:Write Boundary=-1 Len=2805 Off=0 Floor= Subject=change-b
+post-fork work tick1 (changed=True)          ActiveWork=change-b WorkSource=history:edit Boundary=-1 Len=3441 Off=0 Floor= Subject=change-b
+post-fork work tick2 (changed=False)         ActiveWork=change-b WorkSource=history:edit Boundary=-1 Len=3441 Off=0 Floor= Subject=change-b
+--- q5 claude growth-large livedif
+provider=claude case=growth-large mode=livedif
+parent state                                 ActiveWork=change-b WorkSource=Write Boundary=-1 Len=0 Off=0 Floor= Subject=change-b
+large prefix, no own boundary yet tick1 (changed=True) ActiveWork= WorkSource= Boundary=-1 Len=400805 Off=138661 Floor= Subject=repo
+large prefix, no own boundary yet tick2 (changed=True) ActiveWork=change-b WorkSource=fork:Write Boundary=-1 Len=400805 Off=0 Floor= Subject=change-b
+large prefix, no own boundary yet tick3 (changed=False) ActiveWork=change-b WorkSource=fork:Write Boundary=-1 Len=400805 Off=0 Floor= Subject=change-b
+boundary appended tick1 (changed=False)      ActiveWork=change-b WorkSource=fork:Write Boundary=-1 Len=400805 Off=0 Floor= Subject=change-b
+post-fork work tick1 (changed=True)          ActiveWork=change-b WorkSource=history:edit Boundary=-1 Len=401441 Off=0 Floor= Subject=change-b
+post-fork work tick2 (changed=False)         ActiveWork=change-b WorkSource=history:edit Boundary=-1 Len=401441 Off=0 Floor= Subject=change-b
+--- q5 claude noboundary livedif
+provider=claude case=noboundary mode=livedif
+parent state                                 ActiveWork=change-b WorkSource=Write Boundary=-1 Len=0 Off=0 Floor= Subject=change-b
+first (no own boundary event) tick1 (changed=True) ActiveWork=change-b WorkSource=fork:Write Boundary=-1 Len=2805 Off=0 Floor= Subject=change-b
+first (no own boundary event) tick2 (changed=False) ActiveWork=change-b WorkSource=fork:Write Boundary=-1 Len=2805 Off=0 Floor= Subject=change-b
+--- q5 claude tailwin livedif
+provider=claude case=tailwin mode=livedif
+parent state                                 ActiveWork=change-b WorkSource=Write Boundary=-1 Len=0 Off=0 Floor= Subject=change-b
+first tick1 (changed=True)                   ActiveWork= WorkSource= Boundary=-1 Len=602974 Off=340830 Floor= Subject=repo
+first tick2 (changed=True)                   ActiveWork= WorkSource= Boundary=-1 Len=602974 Off=78686 Floor= Subject=repo
+first tick3 (changed=True)                   ActiveWork=change-b WorkSource=fork:Write Boundary=-1 Len=602974 Off=0 Floor= Subject=change-b
+first tick4 (changed=False)                  ActiveWork=change-b WorkSource=fork:Write Boundary=-1 Len=602974 Off=0 Floor= Subject=change-b
+--- q5 codex small livedif
+provider=codex case=small mode=livedif
+parent state                                 ActiveWork=change-b WorkSource=Write Boundary=-1 Len=0 Off=0 Floor= Subject=change-b
+first tick1 (changed=True)                   ActiveWork=change-a WorkSource=history:edit Boundary=3064 Len=3189 Off=0 Floor= Subject=change-a
+first tick2 (changed=False)                  ActiveWork=change-a WorkSource=history:edit Boundary=3064 Len=3189 Off=0 Floor= Subject=change-a
+post-fork work tick1 (changed=True)          ActiveWork=change-b WorkSource=history:edit Boundary=3064 Len=3685 Off=0 Floor= Subject=change-b
+post-fork work tick2 (changed=False)         ActiveWork=change-b WorkSource=history:edit Boundary=3064 Len=3685 Off=0 Floor= Subject=change-b
+--- q5 codex large livedif
+provider=codex case=large mode=livedif
+parent state                                 ActiveWork=change-b WorkSource=Write Boundary=-1 Len=0 Off=0 Floor= Subject=change-b
+first tick1 (changed=True)                   ActiveWork=change-b WorkSource=fork:Write Boundary=401064 Len=401846 Off=400938 Floor= Subject=change-b
+first tick2 (changed=True)                   ActiveWork=change-b WorkSource=fork:Write Boundary=401064 Len=401846 Off=138794 Floor= Subject=change-b
+first tick3 (changed=True)                   ActiveWork=change-a WorkSource=history:edit Boundary=401064 Len=401846 Off=0 Floor= Subject=change-a
+first tick4 (changed=False)                  ActiveWork=change-a WorkSource=history:edit Boundary=401064 Len=401846 Off=0 Floor= Subject=change-a
+post-fork work tick1 (changed=True)          ActiveWork=change-b WorkSource=history:edit Boundary=401064 Len=402342 Off=0 Floor= Subject=change-b
+post-fork work tick2 (changed=False)         ActiveWork=change-b WorkSource=history:edit Boundary=401064 Len=402342 Off=0 Floor= Subject=change-b
+--- q5 codex growth livedif
+provider=codex case=growth mode=livedif
+parent state                                 ActiveWork=change-b WorkSource=Write Boundary=-1 Len=0 Off=0 Floor= Subject=change-b
+prefix only tick1 (changed=True)             ActiveWork=change-a WorkSource=history:edit Boundary=-1 Len=3064 Off=0 Floor= Subject=change-a
+prefix only tick2 (changed=False)            ActiveWork=change-a WorkSource=history:edit Boundary=-1 Len=3064 Off=0 Floor= Subject=change-a
+boundary appended tick1 (changed=True)       ActiveWork=change-a WorkSource=history:edit Boundary=3064 Len=3189 Off=0 Floor= Subject=change-a
+boundary appended tick2 (changed=False)      ActiveWork=change-a WorkSource=history:edit Boundary=3064 Len=3189 Off=0 Floor= Subject=change-a
+post-fork work tick1 (changed=True)          ActiveWork=change-b WorkSource=history:edit Boundary=3064 Len=3685 Off=0 Floor= Subject=change-b
+post-fork work tick2 (changed=False)         ActiveWork=change-b WorkSource=history:edit Boundary=3064 Len=3685 Off=0 Floor= Subject=change-b
+--- q5 codex growth-large livedif
+provider=codex case=growth-large mode=livedif
+parent state                                 ActiveWork=change-b WorkSource=Write Boundary=-1 Len=0 Off=0 Floor= Subject=change-b
+large prefix, no own boundary yet tick1 (changed=True) ActiveWork=change-b WorkSource=fork:Write Boundary=-1 Len=401064 Off=400938 Floor= Subject=change-b
+large prefix, no own boundary yet tick2 (changed=True) ActiveWork=change-b WorkSource=fork:Write Boundary=-1 Len=401064 Off=138794 Floor= Subject=change-b
+large prefix, no own boundary yet tick3 (changed=True) ActiveWork=change-a WorkSource=history:edit Boundary=-1 Len=401064 Off=0 Floor= Subject=change-a
+large prefix, no own boundary yet tick4 (changed=False) ActiveWork=change-a WorkSource=history:edit Boundary=-1 Len=401064 Off=0 Floor= Subject=change-a
+boundary appended tick1 (changed=True)       ActiveWork=change-a WorkSource=history:edit Boundary=401064 Len=401189 Off=0 Floor= Subject=change-a
+boundary appended tick2 (changed=False)      ActiveWork=change-a WorkSource=history:edit Boundary=401064 Len=401189 Off=0 Floor= Subject=change-a
+post-fork work tick1 (changed=True)          ActiveWork=change-b WorkSource=history:edit Boundary=401064 Len=401685 Off=0 Floor= Subject=change-b
+post-fork work tick2 (changed=False)         ActiveWork=change-b WorkSource=history:edit Boundary=401064 Len=401685 Off=0 Floor= Subject=change-b
+--- q5 codex noboundary livedif
+provider=codex case=noboundary mode=livedif
+parent state                                 ActiveWork=change-b WorkSource=Write Boundary=-1 Len=0 Off=0 Floor= Subject=change-b
+first (no own boundary event) tick1 (changed=True) ActiveWork=change-a WorkSource=history:edit Boundary=-1 Len=3064 Off=0 Floor= Subject=change-a
+first (no own boundary event) tick2 (changed=False) ActiveWork=change-a WorkSource=history:edit Boundary=-1 Len=3064 Off=0 Floor= Subject=change-a
+--- q5 codex tailwin livedif
+provider=codex case=tailwin mode=livedif
+parent state                                 ActiveWork=change-b WorkSource=Write Boundary=-1 Len=0 Off=0 Floor= Subject=change-b
+first tick1 (changed=True)                   ActiveWork=change-b WorkSource=fork:Write Boundary=-1 Len=603346 Off=341202 Floor= Subject=change-b
+first tick2 (changed=True)                   ActiveWork=change-b WorkSource=fork:Write Boundary=-1 Len=603346 Off=79058 Floor= Subject=change-b
+first tick3 (changed=True)                   ActiveWork=change-a WorkSource=history:edit Boundary=3064 Len=603346 Off=0 Floor= Subject=change-a
+first tick4 (changed=False)                  ActiveWork=change-a WorkSource=history:edit Boundary=3064 Len=603346 Off=0 Floor= Subject=change-a
+--- q5 claude small live
+provider=claude case=small mode=live
+parent state                                 ActiveWork=change-a WorkSource=Write Boundary=-1 Len=0 Off=0 Floor= Subject=change-a
+first tick1 (changed=True)                   ActiveWork=change-a WorkSource=fork:Write Boundary=-1 Len=2805 Off=0 Floor= Subject=change-a
+first tick2 (changed=False)                  ActiveWork=change-a WorkSource=fork:Write Boundary=-1 Len=2805 Off=0 Floor= Subject=change-a
+post-fork work tick1 (changed=True)          ActiveWork=change-b WorkSource=history:edit Boundary=-1 Len=3441 Off=0 Floor= Subject=change-b
+post-fork work tick2 (changed=False)         ActiveWork=change-b WorkSource=history:edit Boundary=-1 Len=3441 Off=0 Floor= Subject=change-b
+--- q5 claude large live
+provider=claude case=large mode=live
+parent state                                 ActiveWork=change-a WorkSource=Write Boundary=-1 Len=0 Off=0 Floor= Subject=change-a
+first tick1 (changed=True)                   ActiveWork= WorkSource= Boundary=-1 Len=401474 Off=400805 Floor= Subject=repo
+first tick2 (changed=True)                   ActiveWork= WorkSource= Boundary=-1 Len=401474 Off=138661 Floor= Subject=repo
+first tick3 (changed=True)                   ActiveWork=change-a WorkSource=fork:Write Boundary=-1 Len=401474 Off=0 Floor= Subject=change-a
+first tick4 (changed=False)                  ActiveWork=change-a WorkSource=fork:Write Boundary=-1 Len=401474 Off=0 Floor= Subject=change-a
+post-fork work tick1 (changed=True)          ActiveWork=change-b WorkSource=history:edit Boundary=-1 Len=402110 Off=0 Floor= Subject=change-b
+post-fork work tick2 (changed=False)         ActiveWork=change-b WorkSource=history:edit Boundary=-1 Len=402110 Off=0 Floor= Subject=change-b
+--- q5 claude growth live
+provider=claude case=growth mode=live
+parent state                                 ActiveWork=change-a WorkSource=Write Boundary=-1 Len=0 Off=0 Floor= Subject=change-a
+prefix only tick1 (changed=True)             ActiveWork=change-a WorkSource=fork:Write Boundary=-1 Len=2805 Off=0 Floor= Subject=change-a
+prefix only tick2 (changed=False)            ActiveWork=change-a WorkSource=fork:Write Boundary=-1 Len=2805 Off=0 Floor= Subject=change-a
+boundary appended tick1 (changed=False)      ActiveWork=change-a WorkSource=fork:Write Boundary=-1 Len=2805 Off=0 Floor= Subject=change-a
+post-fork work tick1 (changed=True)          ActiveWork=change-b WorkSource=history:edit Boundary=-1 Len=3441 Off=0 Floor= Subject=change-b
+post-fork work tick2 (changed=False)         ActiveWork=change-b WorkSource=history:edit Boundary=-1 Len=3441 Off=0 Floor= Subject=change-b
+--- q5 claude growth-large live
+provider=claude case=growth-large mode=live
+parent state                                 ActiveWork=change-a WorkSource=Write Boundary=-1 Len=0 Off=0 Floor= Subject=change-a
+large prefix, no own boundary yet tick1 (changed=True) ActiveWork= WorkSource= Boundary=-1 Len=400805 Off=138661 Floor= Subject=repo
+large prefix, no own boundary yet tick2 (changed=True) ActiveWork=change-a WorkSource=fork:Write Boundary=-1 Len=400805 Off=0 Floor= Subject=change-a
+large prefix, no own boundary yet tick3 (changed=False) ActiveWork=change-a WorkSource=fork:Write Boundary=-1 Len=400805 Off=0 Floor= Subject=change-a
+boundary appended tick1 (changed=False)      ActiveWork=change-a WorkSource=fork:Write Boundary=-1 Len=400805 Off=0 Floor= Subject=change-a
+post-fork work tick1 (changed=True)          ActiveWork=change-b WorkSource=history:edit Boundary=-1 Len=401441 Off=0 Floor= Subject=change-b
+post-fork work tick2 (changed=False)         ActiveWork=change-b WorkSource=history:edit Boundary=-1 Len=401441 Off=0 Floor= Subject=change-b
+--- q5 claude noboundary live
+provider=claude case=noboundary mode=live
+parent state                                 ActiveWork=change-a WorkSource=Write Boundary=-1 Len=0 Off=0 Floor= Subject=change-a
+first (no own boundary event) tick1 (changed=True) ActiveWork=change-a WorkSource=fork:Write Boundary=-1 Len=2805 Off=0 Floor= Subject=change-a
+first (no own boundary event) tick2 (changed=False) ActiveWork=change-a WorkSource=fork:Write Boundary=-1 Len=2805 Off=0 Floor= Subject=change-a
+--- q5 claude tailwin live
+provider=claude case=tailwin mode=live
+parent state                                 ActiveWork=change-a WorkSource=Write Boundary=-1 Len=0 Off=0 Floor= Subject=change-a
+first tick1 (changed=True)                   ActiveWork= WorkSource= Boundary=-1 Len=602974 Off=340830 Floor= Subject=repo
+first tick2 (changed=True)                   ActiveWork= WorkSource= Boundary=-1 Len=602974 Off=78686 Floor= Subject=repo
+first tick3 (changed=True)                   ActiveWork=change-a WorkSource=fork:Write Boundary=-1 Len=602974 Off=0 Floor= Subject=change-a
+first tick4 (changed=False)                  ActiveWork=change-a WorkSource=fork:Write Boundary=-1 Len=602974 Off=0 Floor= Subject=change-a
+--- q5 codex small live
+provider=codex case=small mode=live
+parent state                                 ActiveWork=change-a WorkSource=Write Boundary=-1 Len=0 Off=0 Floor= Subject=change-a
+first tick1 (changed=True)                   ActiveWork=change-a WorkSource=history:edit Boundary=3064 Len=3189 Off=0 Floor= Subject=change-a
+first tick2 (changed=False)                  ActiveWork=change-a WorkSource=history:edit Boundary=3064 Len=3189 Off=0 Floor= Subject=change-a
+post-fork work tick1 (changed=True)          ActiveWork=change-b WorkSource=history:edit Boundary=3064 Len=3685 Off=0 Floor= Subject=change-b
+post-fork work tick2 (changed=False)         ActiveWork=change-b WorkSource=history:edit Boundary=3064 Len=3685 Off=0 Floor= Subject=change-b
+--- q5 codex large live
+provider=codex case=large mode=live
+parent state                                 ActiveWork=change-a WorkSource=Write Boundary=-1 Len=0 Off=0 Floor= Subject=change-a
+first tick1 (changed=True)                   ActiveWork=change-a WorkSource=fork:Write Boundary=401064 Len=401846 Off=400938 Floor= Subject=change-a
+first tick2 (changed=True)                   ActiveWork=change-a WorkSource=fork:Write Boundary=401064 Len=401846 Off=138794 Floor= Subject=change-a
+first tick3 (changed=True)                   ActiveWork=change-a WorkSource=history:edit Boundary=401064 Len=401846 Off=0 Floor= Subject=change-a
+first tick4 (changed=False)                  ActiveWork=change-a WorkSource=history:edit Boundary=401064 Len=401846 Off=0 Floor= Subject=change-a
+post-fork work tick1 (changed=True)          ActiveWork=change-b WorkSource=history:edit Boundary=401064 Len=402342 Off=0 Floor= Subject=change-b
+post-fork work tick2 (changed=False)         ActiveWork=change-b WorkSource=history:edit Boundary=401064 Len=402342 Off=0 Floor= Subject=change-b
+--- q5 codex growth live
+provider=codex case=growth mode=live
+parent state                                 ActiveWork=change-a WorkSource=Write Boundary=-1 Len=0 Off=0 Floor= Subject=change-a
+prefix only tick1 (changed=True)             ActiveWork=change-a WorkSource=history:edit Boundary=-1 Len=3064 Off=0 Floor= Subject=change-a
+prefix only tick2 (changed=False)            ActiveWork=change-a WorkSource=history:edit Boundary=-1 Len=3064 Off=0 Floor= Subject=change-a
+boundary appended tick1 (changed=True)       ActiveWork=change-a WorkSource=history:edit Boundary=3064 Len=3189 Off=0 Floor= Subject=change-a
+boundary appended tick2 (changed=False)      ActiveWork=change-a WorkSource=history:edit Boundary=3064 Len=3189 Off=0 Floor= Subject=change-a
+post-fork work tick1 (changed=True)          ActiveWork=change-b WorkSource=history:edit Boundary=3064 Len=3685 Off=0 Floor= Subject=change-b
+post-fork work tick2 (changed=False)         ActiveWork=change-b WorkSource=history:edit Boundary=3064 Len=3685 Off=0 Floor= Subject=change-b
+--- q5 codex growth-large live
+provider=codex case=growth-large mode=live
+parent state                                 ActiveWork=change-a WorkSource=Write Boundary=-1 Len=0 Off=0 Floor= Subject=change-a
+large prefix, no own boundary yet tick1 (changed=True) ActiveWork=change-a WorkSource=fork:Write Boundary=-1 Len=401064 Off=400938 Floor= Subject=change-a
+large prefix, no own boundary yet tick2 (changed=True) ActiveWork=change-a WorkSource=fork:Write Boundary=-1 Len=401064 Off=138794 Floor= Subject=change-a
+large prefix, no own boundary yet tick3 (changed=True) ActiveWork=change-a WorkSource=history:edit Boundary=-1 Len=401064 Off=0 Floor= Subject=change-a
+large prefix, no own boundary yet tick4 (changed=False) ActiveWork=change-a WorkSource=history:edit Boundary=-1 Len=401064 Off=0 Floor= Subject=change-a
+boundary appended tick1 (changed=True)       ActiveWork=change-a WorkSource=history:edit Boundary=401064 Len=401189 Off=0 Floor= Subject=change-a
+boundary appended tick2 (changed=False)      ActiveWork=change-a WorkSource=history:edit Boundary=401064 Len=401189 Off=0 Floor= Subject=change-a
+post-fork work tick1 (changed=True)          ActiveWork=change-b WorkSource=history:edit Boundary=401064 Len=401685 Off=0 Floor= Subject=change-b
+post-fork work tick2 (changed=False)         ActiveWork=change-b WorkSource=history:edit Boundary=401064 Len=401685 Off=0 Floor= Subject=change-b
+--- q5 codex noboundary live
+provider=codex case=noboundary mode=live
+parent state                                 ActiveWork=change-a WorkSource=Write Boundary=-1 Len=0 Off=0 Floor= Subject=change-a
+first (no own boundary event) tick1 (changed=True) ActiveWork=change-a WorkSource=history:edit Boundary=-1 Len=3064 Off=0 Floor= Subject=change-a
+first (no own boundary event) tick2 (changed=False) ActiveWork=change-a WorkSource=history:edit Boundary=-1 Len=3064 Off=0 Floor= Subject=change-a
+--- q5 codex tailwin live
+provider=codex case=tailwin mode=live
+parent state                                 ActiveWork=change-a WorkSource=Write Boundary=-1 Len=0 Off=0 Floor= Subject=change-a
+first tick1 (changed=True)                   ActiveWork=change-a WorkSource=fork:Write Boundary=-1 Len=603346 Off=341202 Floor= Subject=change-a
+first tick2 (changed=True)                   ActiveWork=change-a WorkSource=fork:Write Boundary=-1 Len=603346 Off=79058 Floor= Subject=change-a
+first tick3 (changed=True)                   ActiveWork=change-a WorkSource=history:edit Boundary=3064 Len=603346 Off=0 Floor= Subject=change-a
+first tick4 (changed=False)                  ActiveWork=change-a WorkSource=history:edit Boundary=3064 Len=603346 Off=0 Floor= Subject=change-a
+--- q5 claude small switch
+provider=claude case=small mode=switch
+parent state                                 ActiveWork= WorkSource= Boundary=-1 Len=530 Off=0 Floor=12:00:20 Subject=repo
+first tick1 (changed=True)                   ActiveWork= WorkSource= Boundary=-1 Len=2805 Off=0 Floor=12:00:20 Subject=repo
+first tick2 (changed=False)                  ActiveWork= WorkSource= Boundary=-1 Len=2805 Off=0 Floor=12:00:20 Subject=repo
+post-fork work tick1 (changed=True)          ActiveWork=change-b WorkSource=history:edit Boundary=-1 Len=3441 Off=0 Floor=12:00:20 Subject=change-b
+post-fork work tick2 (changed=False)         ActiveWork=change-b WorkSource=history:edit Boundary=-1 Len=3441 Off=0 Floor=12:00:20 Subject=change-b
+--- q5 claude large switch
+provider=claude case=large mode=switch
+parent state                                 ActiveWork= WorkSource= Boundary=-1 Len=530 Off=0 Floor=12:00:20 Subject=repo
+first tick1 (changed=True)                   ActiveWork= WorkSource= Boundary=-1 Len=401474 Off=400805 Floor= Subject=repo
+first tick2 (changed=True)                   ActiveWork= WorkSource= Boundary=-1 Len=401474 Off=138661 Floor= Subject=repo
+first tick3 (changed=True)                   ActiveWork= WorkSource= Boundary=-1 Len=401474 Off=0 Floor=12:00:20 Subject=repo
+first tick4 (changed=False)                  ActiveWork= WorkSource= Boundary=-1 Len=401474 Off=0 Floor=12:00:20 Subject=repo
+post-fork work tick1 (changed=True)          ActiveWork=change-b WorkSource=history:edit Boundary=-1 Len=402110 Off=0 Floor=12:00:20 Subject=change-b
+post-fork work tick2 (changed=False)         ActiveWork=change-b WorkSource=history:edit Boundary=-1 Len=402110 Off=0 Floor=12:00:20 Subject=change-b
+--- q5 claude growth switch
+provider=claude case=growth mode=switch
+parent state                                 ActiveWork= WorkSource= Boundary=-1 Len=530 Off=0 Floor=12:00:20 Subject=repo
+prefix only tick1 (changed=True)             ActiveWork= WorkSource= Boundary=-1 Len=2805 Off=0 Floor=12:00:20 Subject=repo
+prefix only tick2 (changed=False)            ActiveWork= WorkSource= Boundary=-1 Len=2805 Off=0 Floor=12:00:20 Subject=repo
+boundary appended tick1 (changed=False)      ActiveWork= WorkSource= Boundary=-1 Len=2805 Off=0 Floor=12:00:20 Subject=repo
+post-fork work tick1 (changed=True)          ActiveWork=change-b WorkSource=history:edit Boundary=-1 Len=3441 Off=0 Floor=12:00:20 Subject=change-b
+post-fork work tick2 (changed=False)         ActiveWork=change-b WorkSource=history:edit Boundary=-1 Len=3441 Off=0 Floor=12:00:20 Subject=change-b
+--- q5 claude growth-large switch
+provider=claude case=growth-large mode=switch
+parent state                                 ActiveWork= WorkSource= Boundary=-1 Len=530 Off=0 Floor=12:00:20 Subject=repo
+large prefix, no own boundary yet tick1 (changed=True) ActiveWork= WorkSource= Boundary=-1 Len=400805 Off=138661 Floor= Subject=repo
+large prefix, no own boundary yet tick2 (changed=True) ActiveWork= WorkSource= Boundary=-1 Len=400805 Off=0 Floor=12:00:20 Subject=repo
+large prefix, no own boundary yet tick3 (changed=False) ActiveWork= WorkSource= Boundary=-1 Len=400805 Off=0 Floor=12:00:20 Subject=repo
+boundary appended tick1 (changed=False)      ActiveWork= WorkSource= Boundary=-1 Len=400805 Off=0 Floor=12:00:20 Subject=repo
+post-fork work tick1 (changed=True)          ActiveWork=change-b WorkSource=history:edit Boundary=-1 Len=401441 Off=0 Floor=12:00:20 Subject=change-b
+post-fork work tick2 (changed=False)         ActiveWork=change-b WorkSource=history:edit Boundary=-1 Len=401441 Off=0 Floor=12:00:20 Subject=change-b
+--- q5 claude noboundary switch
+provider=claude case=noboundary mode=switch
+parent state                                 ActiveWork= WorkSource= Boundary=-1 Len=530 Off=0 Floor=12:00:20 Subject=repo
+first (no own boundary event) tick1 (changed=True) ActiveWork= WorkSource= Boundary=-1 Len=2805 Off=0 Floor=12:00:20 Subject=repo
+first (no own boundary event) tick2 (changed=False) ActiveWork= WorkSource= Boundary=-1 Len=2805 Off=0 Floor=12:00:20 Subject=repo
+--- q5 claude tailwin switch
+provider=claude case=tailwin mode=switch
+parent state                                 ActiveWork= WorkSource= Boundary=-1 Len=530 Off=0 Floor=12:00:20 Subject=repo
+first tick1 (changed=True)                   ActiveWork= WorkSource= Boundary=-1 Len=602974 Off=340830 Floor= Subject=repo
+first tick2 (changed=True)                   ActiveWork= WorkSource= Boundary=-1 Len=602974 Off=78686 Floor= Subject=repo
+first tick3 (changed=True)                   ActiveWork= WorkSource= Boundary=-1 Len=602974 Off=0 Floor=12:00:20 Subject=repo
+first tick4 (changed=False)                  ActiveWork= WorkSource= Boundary=-1 Len=602974 Off=0 Floor=12:00:20 Subject=repo
+--- q5 codex small switch
+provider=codex case=small mode=switch
+parent state                                 ActiveWork= WorkSource= Boundary=-1 Len=626 Off=0 Floor=12:00:20 Subject=repo
+first tick1 (changed=True)                   ActiveWork= WorkSource= Boundary=3064 Len=3189 Off=0 Floor=12:00:20 Subject=repo
+first tick2 (changed=False)                  ActiveWork= WorkSource= Boundary=3064 Len=3189 Off=0 Floor=12:00:20 Subject=repo
+post-fork work tick1 (changed=True)          ActiveWork=change-b WorkSource=history:edit Boundary=3064 Len=3685 Off=0 Floor=12:00:20 Subject=change-b
+post-fork work tick2 (changed=False)         ActiveWork=change-b WorkSource=history:edit Boundary=3064 Len=3685 Off=0 Floor=12:00:20 Subject=change-b
+--- q5 codex large switch
+provider=codex case=large mode=switch
+parent state                                 ActiveWork= WorkSource= Boundary=-1 Len=626 Off=0 Floor=12:00:20 Subject=repo
+first tick1 (changed=True)                   ActiveWork= WorkSource= Boundary=401064 Len=401846 Off=400938 Floor=12:00:20 Subject=repo
+first tick2 (changed=True)                   ActiveWork= WorkSource= Boundary=401064 Len=401846 Off=138794 Floor=12:00:20 Subject=repo
+first tick3 (changed=True)                   ActiveWork= WorkSource= Boundary=401064 Len=401846 Off=0 Floor=12:00:20 Subject=repo
+first tick4 (changed=False)                  ActiveWork= WorkSource= Boundary=401064 Len=401846 Off=0 Floor=12:00:20 Subject=repo
+post-fork work tick1 (changed=True)          ActiveWork=change-b WorkSource=history:edit Boundary=401064 Len=402342 Off=0 Floor=12:00:20 Subject=change-b
+post-fork work tick2 (changed=False)         ActiveWork=change-b WorkSource=history:edit Boundary=401064 Len=402342 Off=0 Floor=12:00:20 Subject=change-b
+--- q5 codex growth switch
+provider=codex case=growth mode=switch
+parent state                                 ActiveWork= WorkSource= Boundary=-1 Len=626 Off=0 Floor=12:00:20 Subject=repo
+prefix only tick1 (changed=True)             ActiveWork=change-a WorkSource=history:edit Boundary=-1 Len=3064 Off=0 Floor=12:00:20 Subject=change-a
+prefix only tick2 (changed=False)            ActiveWork=change-a WorkSource=history:edit Boundary=-1 Len=3064 Off=0 Floor=12:00:20 Subject=change-a
+boundary appended tick1 (changed=True)       ActiveWork= WorkSource= Boundary=3064 Len=3189 Off=0 Floor=12:00:20 Subject=repo
+boundary appended tick2 (changed=False)      ActiveWork= WorkSource= Boundary=3064 Len=3189 Off=0 Floor=12:00:20 Subject=repo
+post-fork work tick1 (changed=True)          ActiveWork=change-b WorkSource=history:edit Boundary=3064 Len=3685 Off=0 Floor=12:00:20 Subject=change-b
+post-fork work tick2 (changed=False)         ActiveWork=change-b WorkSource=history:edit Boundary=3064 Len=3685 Off=0 Floor=12:00:20 Subject=change-b
+--- q5 codex growth-large switch
+provider=codex case=growth-large mode=switch
+parent state                                 ActiveWork= WorkSource= Boundary=-1 Len=626 Off=0 Floor=12:00:20 Subject=repo
+large prefix, no own boundary yet tick1 (changed=True) ActiveWork= WorkSource= Boundary=-1 Len=401064 Off=400938 Floor=12:00:20 Subject=repo
+large prefix, no own boundary yet tick2 (changed=True) ActiveWork= WorkSource= Boundary=-1 Len=401064 Off=138794 Floor=12:00:20 Subject=repo
+large prefix, no own boundary yet tick3 (changed=True) ActiveWork=change-a WorkSource=history:edit Boundary=-1 Len=401064 Off=0 Floor=12:00:20 Subject=change-a
+large prefix, no own boundary yet tick4 (changed=False) ActiveWork=change-a WorkSource=history:edit Boundary=-1 Len=401064 Off=0 Floor=12:00:20 Subject=change-a
+boundary appended tick1 (changed=True)       ActiveWork= WorkSource= Boundary=401064 Len=401189 Off=0 Floor=12:00:20 Subject=repo
+boundary appended tick2 (changed=False)      ActiveWork= WorkSource= Boundary=401064 Len=401189 Off=0 Floor=12:00:20 Subject=repo
+post-fork work tick1 (changed=True)          ActiveWork=change-b WorkSource=history:edit Boundary=401064 Len=401685 Off=0 Floor=12:00:20 Subject=change-b
+post-fork work tick2 (changed=False)         ActiveWork=change-b WorkSource=history:edit Boundary=401064 Len=401685 Off=0 Floor=12:00:20 Subject=change-b
+--- q5 codex noboundary switch
+provider=codex case=noboundary mode=switch
+parent state                                 ActiveWork= WorkSource= Boundary=-1 Len=626 Off=0 Floor=12:00:20 Subject=repo
+first (no own boundary event) tick1 (changed=True) ActiveWork=change-a WorkSource=history:edit Boundary=-1 Len=3064 Off=0 Floor=12:00:20 Subject=change-a
+first (no own boundary event) tick2 (changed=False) ActiveWork=change-a WorkSource=history:edit Boundary=-1 Len=3064 Off=0 Floor=12:00:20 Subject=change-a
+--- q5 codex tailwin switch
+provider=codex case=tailwin mode=switch
+parent state                                 ActiveWork= WorkSource= Boundary=-1 Len=626 Off=0 Floor=12:00:20 Subject=repo
+first tick1 (changed=True)                   ActiveWork= WorkSource= Boundary=-1 Len=603346 Off=341202 Floor=12:00:20 Subject=repo
+first tick2 (changed=True)                   ActiveWork= WorkSource= Boundary=-1 Len=603346 Off=79058 Floor=12:00:20 Subject=repo
+first tick3 (changed=True)                   ActiveWork= WorkSource= Boundary=3064 Len=603346 Off=0 Floor=12:00:20 Subject=repo
+first tick4 (changed=False)                  ActiveWork= WorkSource= Boundary=3064 Len=603346 Off=0 Floor=12:00:20 Subject=repo
+--- q5 claude small orphan
+provider=claude case=small mode=orphan
+orphan: parent never stored
+first tick1 (changed=True)                   ActiveWork=change-a WorkSource=history:edit Boundary=-1 Len=2805 Off=0 Floor= Subject=change-a
+first tick2 (changed=False)                  ActiveWork=change-a WorkSource=history:edit Boundary=-1 Len=2805 Off=0 Floor= Subject=change-a
+post-fork work tick1 (changed=True)          ActiveWork=change-b WorkSource=history:edit Boundary=-1 Len=3441 Off=0 Floor= Subject=change-b
+post-fork work tick2 (changed=False)         ActiveWork=change-b WorkSource=history:edit Boundary=-1 Len=3441 Off=0 Floor= Subject=change-b
+--- q5 claude large orphan
+provider=claude case=large mode=orphan
+orphan: parent never stored
+first tick1 (changed=True)                   ActiveWork= WorkSource= Boundary=-1 Len=401474 Off=400805 Floor= Subject=repo
+first tick2 (changed=True)                   ActiveWork= WorkSource= Boundary=-1 Len=401474 Off=138661 Floor= Subject=repo
+first tick3 (changed=True)                   ActiveWork=change-a WorkSource=history:edit Boundary=-1 Len=401474 Off=0 Floor= Subject=change-a
+first tick4 (changed=False)                  ActiveWork=change-a WorkSource=history:edit Boundary=-1 Len=401474 Off=0 Floor= Subject=change-a
+post-fork work tick1 (changed=True)          ActiveWork=change-b WorkSource=history:edit Boundary=-1 Len=402110 Off=0 Floor= Subject=change-b
+post-fork work tick2 (changed=False)         ActiveWork=change-b WorkSource=history:edit Boundary=-1 Len=402110 Off=0 Floor= Subject=change-b
+--- q5 claude growth orphan
+provider=claude case=growth mode=orphan
+orphan: parent never stored
+prefix only tick1 (changed=True)             ActiveWork=change-a WorkSource=history:edit Boundary=-1 Len=2805 Off=0 Floor= Subject=change-a
+prefix only tick2 (changed=False)            ActiveWork=change-a WorkSource=history:edit Boundary=-1 Len=2805 Off=0 Floor= Subject=change-a
+boundary appended tick1 (changed=False)      ActiveWork=change-a WorkSource=history:edit Boundary=-1 Len=2805 Off=0 Floor= Subject=change-a
+post-fork work tick1 (changed=True)          ActiveWork=change-b WorkSource=history:edit Boundary=-1 Len=3441 Off=0 Floor= Subject=change-b
+post-fork work tick2 (changed=False)         ActiveWork=change-b WorkSource=history:edit Boundary=-1 Len=3441 Off=0 Floor= Subject=change-b
+--- q5 claude growth-large orphan
+provider=claude case=growth-large mode=orphan
+orphan: parent never stored
+large prefix, no own boundary yet tick1 (changed=True) ActiveWork= WorkSource= Boundary=-1 Len=400805 Off=138661 Floor= Subject=repo
+large prefix, no own boundary yet tick2 (changed=True) ActiveWork=change-a WorkSource=history:edit Boundary=-1 Len=400805 Off=0 Floor= Subject=change-a
+large prefix, no own boundary yet tick3 (changed=False) ActiveWork=change-a WorkSource=history:edit Boundary=-1 Len=400805 Off=0 Floor= Subject=change-a
+boundary appended tick1 (changed=False)      ActiveWork=change-a WorkSource=history:edit Boundary=-1 Len=400805 Off=0 Floor= Subject=change-a
+post-fork work tick1 (changed=True)          ActiveWork=change-b WorkSource=history:edit Boundary=-1 Len=401441 Off=0 Floor= Subject=change-b
+post-fork work tick2 (changed=False)         ActiveWork=change-b WorkSource=history:edit Boundary=-1 Len=401441 Off=0 Floor= Subject=change-b
+--- q5 claude noboundary orphan
+provider=claude case=noboundary mode=orphan
+orphan: parent never stored
+first (no own boundary event) tick1 (changed=True) ActiveWork=change-a WorkSource=history:edit Boundary=-1 Len=2805 Off=0 Floor= Subject=change-a
+first (no own boundary event) tick2 (changed=False) ActiveWork=change-a WorkSource=history:edit Boundary=-1 Len=2805 Off=0 Floor= Subject=change-a
+--- q5 claude tailwin orphan
+provider=claude case=tailwin mode=orphan
+orphan: parent never stored
+first tick1 (changed=True)                   ActiveWork= WorkSource= Boundary=-1 Len=602974 Off=340830 Floor= Subject=repo
+first tick2 (changed=True)                   ActiveWork= WorkSource= Boundary=-1 Len=602974 Off=78686 Floor= Subject=repo
+first tick3 (changed=True)                   ActiveWork=change-a WorkSource=history:edit Boundary=-1 Len=602974 Off=0 Floor= Subject=change-a
+first tick4 (changed=False)                  ActiveWork=change-a WorkSource=history:edit Boundary=-1 Len=602974 Off=0 Floor= Subject=change-a
+--- q5 codex small orphan
+provider=codex case=small mode=orphan
+orphan: parent never stored
+first tick1 (changed=True)                   ActiveWork=change-a WorkSource=history:edit Boundary=3064 Len=3189 Off=0 Floor= Subject=change-a
+first tick2 (changed=False)                  ActiveWork=change-a WorkSource=history:edit Boundary=3064 Len=3189 Off=0 Floor= Subject=change-a
+post-fork work tick1 (changed=True)          ActiveWork=change-b WorkSource=history:edit Boundary=3064 Len=3685 Off=0 Floor= Subject=change-b
+post-fork work tick2 (changed=False)         ActiveWork=change-b WorkSource=history:edit Boundary=3064 Len=3685 Off=0 Floor= Subject=change-b
+--- q5 codex large orphan
+provider=codex case=large mode=orphan
+orphan: parent never stored
+first tick1 (changed=True)                   ActiveWork= WorkSource= Boundary=401064 Len=401846 Off=400938 Floor= Subject=repo
+first tick2 (changed=True)                   ActiveWork= WorkSource= Boundary=401064 Len=401846 Off=138794 Floor= Subject=repo
+first tick3 (changed=True)                   ActiveWork=change-a WorkSource=history:edit Boundary=401064 Len=401846 Off=0 Floor= Subject=change-a
+first tick4 (changed=False)                  ActiveWork=change-a WorkSource=history:edit Boundary=401064 Len=401846 Off=0 Floor= Subject=change-a
+post-fork work tick1 (changed=True)          ActiveWork=change-b WorkSource=history:edit Boundary=401064 Len=402342 Off=0 Floor= Subject=change-b
+post-fork work tick2 (changed=False)         ActiveWork=change-b WorkSource=history:edit Boundary=401064 Len=402342 Off=0 Floor= Subject=change-b
+--- q5 codex growth orphan
+provider=codex case=growth mode=orphan
+orphan: parent never stored
+prefix only tick1 (changed=True)             ActiveWork=change-a WorkSource=history:edit Boundary=-1 Len=3064 Off=0 Floor= Subject=change-a
+prefix only tick2 (changed=False)            ActiveWork=change-a WorkSource=history:edit Boundary=-1 Len=3064 Off=0 Floor= Subject=change-a
+boundary appended tick1 (changed=True)       ActiveWork=change-a WorkSource=history:edit Boundary=3064 Len=3189 Off=0 Floor= Subject=change-a
+boundary appended tick2 (changed=False)      ActiveWork=change-a WorkSource=history:edit Boundary=3064 Len=3189 Off=0 Floor= Subject=change-a
+post-fork work tick1 (changed=True)          ActiveWork=change-b WorkSource=history:edit Boundary=3064 Len=3685 Off=0 Floor= Subject=change-b
+post-fork work tick2 (changed=False)         ActiveWork=change-b WorkSource=history:edit Boundary=3064 Len=3685 Off=0 Floor= Subject=change-b
+--- q5 codex growth-large orphan
+provider=codex case=growth-large mode=orphan
+orphan: parent never stored
+large prefix, no own boundary yet tick1 (changed=True) ActiveWork= WorkSource= Boundary=-1 Len=401064 Off=400938 Floor= Subject=repo
+large prefix, no own boundary yet tick2 (changed=True) ActiveWork= WorkSource= Boundary=-1 Len=401064 Off=138794 Floor= Subject=repo
+large prefix, no own boundary yet tick3 (changed=True) ActiveWork=change-a WorkSource=history:edit Boundary=-1 Len=401064 Off=0 Floor= Subject=change-a
+large prefix, no own boundary yet tick4 (changed=False) ActiveWork=change-a WorkSource=history:edit Boundary=-1 Len=401064 Off=0 Floor= Subject=change-a
+boundary appended tick1 (changed=True)       ActiveWork=change-a WorkSource=history:edit Boundary=401064 Len=401189 Off=0 Floor= Subject=change-a
+boundary appended tick2 (changed=False)      ActiveWork=change-a WorkSource=history:edit Boundary=401064 Len=401189 Off=0 Floor= Subject=change-a
+post-fork work tick1 (changed=True)          ActiveWork=change-b WorkSource=history:edit Boundary=401064 Len=401685 Off=0 Floor= Subject=change-b
+post-fork work tick2 (changed=False)         ActiveWork=change-b WorkSource=history:edit Boundary=401064 Len=401685 Off=0 Floor= Subject=change-b
+--- q5 codex noboundary orphan
+provider=codex case=noboundary mode=orphan
+orphan: parent never stored
+first (no own boundary event) tick1 (changed=True) ActiveWork=change-a WorkSource=history:edit Boundary=-1 Len=3064 Off=0 Floor= Subject=change-a
+first (no own boundary event) tick2 (changed=False) ActiveWork=change-a WorkSource=history:edit Boundary=-1 Len=3064 Off=0 Floor= Subject=change-a
+--- q5 codex tailwin orphan
+provider=codex case=tailwin mode=orphan
+orphan: parent never stored
+first tick1 (changed=True)                   ActiveWork= WorkSource= Boundary=-1 Len=603346 Off=341202 Floor= Subject=repo
+first tick2 (changed=True)                   ActiveWork= WorkSource= Boundary=-1 Len=603346 Off=79058 Floor= Subject=repo
+first tick3 (changed=True)                   ActiveWork=change-a WorkSource=history:edit Boundary=3064 Len=603346 Off=0 Floor= Subject=change-a
+first tick4 (changed=False)                  ActiveWork=change-a WorkSource=history:edit Boundary=3064 Len=603346 Off=0 Floor= Subject=change-a
+--- q5 claude small nofloor
+provider=claude case=small mode=nofloor
+parent state                                 ActiveWork=change-a WorkSource=history:edit Boundary=-1 Len=530 Off=0 Floor= Subject=change-a
+first tick1 (changed=True)                   ActiveWork=change-a WorkSource=fork:history:edit Boundary=-1 Len=2805 Off=0 Floor= Subject=change-a
+first tick2 (changed=False)                  ActiveWork=change-a WorkSource=fork:history:edit Boundary=-1 Len=2805 Off=0 Floor= Subject=change-a
+post-fork work tick1 (changed=True)          ActiveWork=change-b WorkSource=history:edit Boundary=-1 Len=3441 Off=0 Floor= Subject=change-b
+post-fork work tick2 (changed=False)         ActiveWork=change-b WorkSource=history:edit Boundary=-1 Len=3441 Off=0 Floor= Subject=change-b
+--- q5 claude large nofloor
+provider=claude case=large mode=nofloor
+parent state                                 ActiveWork=change-a WorkSource=history:edit Boundary=-1 Len=530 Off=0 Floor= Subject=change-a
+first tick1 (changed=True)                   ActiveWork= WorkSource= Boundary=-1 Len=401474 Off=400805 Floor= Subject=repo
+first tick2 (changed=True)                   ActiveWork= WorkSource= Boundary=-1 Len=401474 Off=138661 Floor= Subject=repo
+first tick3 (changed=True)                   ActiveWork=change-a WorkSource=fork:history:edit Boundary=-1 Len=401474 Off=0 Floor= Subject=change-a
+first tick4 (changed=False)                  ActiveWork=change-a WorkSource=fork:history:edit Boundary=-1 Len=401474 Off=0 Floor= Subject=change-a
+post-fork work tick1 (changed=True)          ActiveWork=change-b WorkSource=history:edit Boundary=-1 Len=402110 Off=0 Floor= Subject=change-b
+post-fork work tick2 (changed=False)         ActiveWork=change-b WorkSource=history:edit Boundary=-1 Len=402110 Off=0 Floor= Subject=change-b
+--- q5 claude growth nofloor
+provider=claude case=growth mode=nofloor
+parent state                                 ActiveWork=change-a WorkSource=history:edit Boundary=-1 Len=530 Off=0 Floor= Subject=change-a
+prefix only tick1 (changed=True)             ActiveWork=change-a WorkSource=fork:history:edit Boundary=-1 Len=2805 Off=0 Floor= Subject=change-a
+prefix only tick2 (changed=False)            ActiveWork=change-a WorkSource=fork:history:edit Boundary=-1 Len=2805 Off=0 Floor= Subject=change-a
+boundary appended tick1 (changed=False)      ActiveWork=change-a WorkSource=fork:history:edit Boundary=-1 Len=2805 Off=0 Floor= Subject=change-a
+post-fork work tick1 (changed=True)          ActiveWork=change-b WorkSource=history:edit Boundary=-1 Len=3441 Off=0 Floor= Subject=change-b
+post-fork work tick2 (changed=False)         ActiveWork=change-b WorkSource=history:edit Boundary=-1 Len=3441 Off=0 Floor= Subject=change-b
+--- q5 claude growth-large nofloor
+provider=claude case=growth-large mode=nofloor
+parent state                                 ActiveWork=change-a WorkSource=history:edit Boundary=-1 Len=530 Off=0 Floor= Subject=change-a
+large prefix, no own boundary yet tick1 (changed=True) ActiveWork= WorkSource= Boundary=-1 Len=400805 Off=138661 Floor= Subject=repo
+large prefix, no own boundary yet tick2 (changed=True) ActiveWork=change-a WorkSource=fork:history:edit Boundary=-1 Len=400805 Off=0 Floor= Subject=change-a
+large prefix, no own boundary yet tick3 (changed=False) ActiveWork=change-a WorkSource=fork:history:edit Boundary=-1 Len=400805 Off=0 Floor= Subject=change-a
+boundary appended tick1 (changed=False)      ActiveWork=change-a WorkSource=fork:history:edit Boundary=-1 Len=400805 Off=0 Floor= Subject=change-a
+post-fork work tick1 (changed=True)          ActiveWork=change-b WorkSource=history:edit Boundary=-1 Len=401441 Off=0 Floor= Subject=change-b
+post-fork work tick2 (changed=False)         ActiveWork=change-b WorkSource=history:edit Boundary=-1 Len=401441 Off=0 Floor= Subject=change-b
+--- q5 claude noboundary nofloor
+provider=claude case=noboundary mode=nofloor
+parent state                                 ActiveWork=change-a WorkSource=history:edit Boundary=-1 Len=530 Off=0 Floor= Subject=change-a
+first (no own boundary event) tick1 (changed=True) ActiveWork=change-a WorkSource=fork:history:edit Boundary=-1 Len=2805 Off=0 Floor= Subject=change-a
+first (no own boundary event) tick2 (changed=False) ActiveWork=change-a WorkSource=fork:history:edit Boundary=-1 Len=2805 Off=0 Floor= Subject=change-a
+--- q5 claude tailwin nofloor
+provider=claude case=tailwin mode=nofloor
+parent state                                 ActiveWork=change-a WorkSource=history:edit Boundary=-1 Len=530 Off=0 Floor= Subject=change-a
+first tick1 (changed=True)                   ActiveWork= WorkSource= Boundary=-1 Len=602974 Off=340830 Floor= Subject=repo
+first tick2 (changed=True)                   ActiveWork= WorkSource= Boundary=-1 Len=602974 Off=78686 Floor= Subject=repo
+first tick3 (changed=True)                   ActiveWork=change-a WorkSource=fork:history:edit Boundary=-1 Len=602974 Off=0 Floor= Subject=change-a
+first tick4 (changed=False)                  ActiveWork=change-a WorkSource=fork:history:edit Boundary=-1 Len=602974 Off=0 Floor= Subject=change-a
+--- q5 codex small nofloor
+provider=codex case=small mode=nofloor
+parent state                                 ActiveWork=change-a WorkSource=history:edit Boundary=-1 Len=626 Off=0 Floor= Subject=change-a
+first tick1 (changed=True)                   ActiveWork=change-a WorkSource=history:edit Boundary=3064 Len=3189 Off=0 Floor= Subject=change-a
+first tick2 (changed=False)                  ActiveWork=change-a WorkSource=history:edit Boundary=3064 Len=3189 Off=0 Floor= Subject=change-a
+post-fork work tick1 (changed=True)          ActiveWork=change-b WorkSource=history:edit Boundary=3064 Len=3685 Off=0 Floor= Subject=change-b
+post-fork work tick2 (changed=False)         ActiveWork=change-b WorkSource=history:edit Boundary=3064 Len=3685 Off=0 Floor= Subject=change-b
+--- q5 codex large nofloor
+provider=codex case=large mode=nofloor
+parent state                                 ActiveWork=change-a WorkSource=history:edit Boundary=-1 Len=626 Off=0 Floor= Subject=change-a
+first tick1 (changed=True)                   ActiveWork=change-a WorkSource=fork:history:edit Boundary=401064 Len=401846 Off=400938 Floor= Subject=change-a
+first tick2 (changed=True)                   ActiveWork=change-a WorkSource=fork:history:edit Boundary=401064 Len=401846 Off=138794 Floor= Subject=change-a
+first tick3 (changed=True)                   ActiveWork=change-a WorkSource=history:edit Boundary=401064 Len=401846 Off=0 Floor= Subject=change-a
+first tick4 (changed=False)                  ActiveWork=change-a WorkSource=history:edit Boundary=401064 Len=401846 Off=0 Floor= Subject=change-a
+post-fork work tick1 (changed=True)          ActiveWork=change-b WorkSource=history:edit Boundary=401064 Len=402342 Off=0 Floor= Subject=change-b
+post-fork work tick2 (changed=False)         ActiveWork=change-b WorkSource=history:edit Boundary=401064 Len=402342 Off=0 Floor= Subject=change-b
+--- q5 codex growth nofloor
+provider=codex case=growth mode=nofloor
+parent state                                 ActiveWork=change-a WorkSource=history:edit Boundary=-1 Len=626 Off=0 Floor= Subject=change-a
+prefix only tick1 (changed=True)             ActiveWork=change-a WorkSource=history:edit Boundary=-1 Len=3064 Off=0 Floor= Subject=change-a
+prefix only tick2 (changed=False)            ActiveWork=change-a WorkSource=history:edit Boundary=-1 Len=3064 Off=0 Floor= Subject=change-a
+boundary appended tick1 (changed=True)       ActiveWork=change-a WorkSource=history:edit Boundary=3064 Len=3189 Off=0 Floor= Subject=change-a
+boundary appended tick2 (changed=False)      ActiveWork=change-a WorkSource=history:edit Boundary=3064 Len=3189 Off=0 Floor= Subject=change-a
+post-fork work tick1 (changed=True)          ActiveWork=change-b WorkSource=history:edit Boundary=3064 Len=3685 Off=0 Floor= Subject=change-b
+post-fork work tick2 (changed=False)         ActiveWork=change-b WorkSource=history:edit Boundary=3064 Len=3685 Off=0 Floor= Subject=change-b
+--- q5 codex growth-large nofloor
+provider=codex case=growth-large mode=nofloor
+parent state                                 ActiveWork=change-a WorkSource=history:edit Boundary=-1 Len=626 Off=0 Floor= Subject=change-a
+large prefix, no own boundary yet tick1 (changed=True) ActiveWork=change-a WorkSource=fork:history:edit Boundary=-1 Len=401064 Off=400938 Floor= Subject=change-a
+large prefix, no own boundary yet tick2 (changed=True) ActiveWork=change-a WorkSource=fork:history:edit Boundary=-1 Len=401064 Off=138794 Floor= Subject=change-a
+large prefix, no own boundary yet tick3 (changed=True) ActiveWork=change-a WorkSource=history:edit Boundary=-1 Len=401064 Off=0 Floor= Subject=change-a
+large prefix, no own boundary yet tick4 (changed=False) ActiveWork=change-a WorkSource=history:edit Boundary=-1 Len=401064 Off=0 Floor= Subject=change-a
+boundary appended tick1 (changed=True)       ActiveWork=change-a WorkSource=history:edit Boundary=401064 Len=401189 Off=0 Floor= Subject=change-a
+boundary appended tick2 (changed=False)      ActiveWork=change-a WorkSource=history:edit Boundary=401064 Len=401189 Off=0 Floor= Subject=change-a
+post-fork work tick1 (changed=True)          ActiveWork=change-b WorkSource=history:edit Boundary=401064 Len=401685 Off=0 Floor= Subject=change-b
+post-fork work tick2 (changed=False)         ActiveWork=change-b WorkSource=history:edit Boundary=401064 Len=401685 Off=0 Floor= Subject=change-b
+--- q5 codex noboundary nofloor
+provider=codex case=noboundary mode=nofloor
+parent state                                 ActiveWork=change-a WorkSource=history:edit Boundary=-1 Len=626 Off=0 Floor= Subject=change-a
+first (no own boundary event) tick1 (changed=True) ActiveWork=change-a WorkSource=history:edit Boundary=-1 Len=3064 Off=0 Floor= Subject=change-a
+first (no own boundary event) tick2 (changed=False) ActiveWork=change-a WorkSource=history:edit Boundary=-1 Len=3064 Off=0 Floor= Subject=change-a
+--- q5 codex tailwin nofloor
+provider=codex case=tailwin mode=nofloor
+parent state                                 ActiveWork=change-a WorkSource=history:edit Boundary=-1 Len=626 Off=0 Floor= Subject=change-a
+first tick1 (changed=True)                   ActiveWork=change-a WorkSource=fork:history:edit Boundary=-1 Len=603346 Off=341202 Floor= Subject=change-a
+first tick2 (changed=True)                   ActiveWork=change-a WorkSource=fork:history:edit Boundary=-1 Len=603346 Off=79058 Floor= Subject=change-a
+first tick3 (changed=True)                   ActiveWork=change-a WorkSource=history:edit Boundary=3064 Len=603346 Off=0 Floor= Subject=change-a
+first tick4 (changed=False)                  ActiveWork=change-a WorkSource=history:edit Boundary=3064 Len=603346 Off=0 Floor= Subject=change-a

@@ -1,0 +1,7 @@
+{"timestamp":"2026-10-23T12:00:00.000Z","type":"session_meta","payload":{"cli_version":"0.164.0","source":"cli"}}
+{"timestamp":"2026-10-23T12:00:01.000Z","type":"response_item","payload":{"type":"function_call","name":"exec_command","arguments":"{\"cmd\":\"cd {ROOT} && openspec new change change-a\"}","call_id":"call_new_a"}}
+{"timestamp":"2026-10-23T12:00:02.000Z","type":"response_item","payload":{"type":"function_call_output","call_id":"call_new_a","output":"Chunk ID: 1\nWall time: 0.1000 seconds\nProcess exited with code 0\nOutput:\nCreated change 'change-a' at openspec/changes/change-a/"}}
+{"timestamp":"2026-10-23T12:00:03.000Z","type":"response_item","payload":{"type":"function_call","name":"exec_command","arguments":"{\"cmd\":\"openspec new change change-b\",\"workdir\":\"{ROOT}\"}","call_id":"call_new_b_failed"}}
+{"timestamp":"2026-10-23T12:00:04.000Z","type":"response_item","payload":{"type":"function_call_output","call_id":"call_new_b_failed","output":[{"type":"input_text","text":"Wall time: 0.1000 seconds\nProcess exited with code 1\nOutput:\nChange already exists"}]}}
+{"timestamp":"2026-10-23T12:00:05.000Z","type":"response_item","payload":{"type":"custom_tool_call","name":"apply_patch","input":"*** Begin Patch\n*** Add File: {ROOT}/openspec/changes/change-p/proposal.md\n+x\n*** End Patch","call_id":"call_patch_p"}}
+{"timestamp":"2026-10-23T12:00:06.000Z","type":"response_item","payload":{"type":"custom_tool_call_output","call_id":"call_patch_p","output":"<redacted>"}}

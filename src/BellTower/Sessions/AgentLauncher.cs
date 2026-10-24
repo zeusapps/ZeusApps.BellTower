@@ -33,7 +33,6 @@ public sealed class AgentLauncher(DataPaths paths)
         start.Environment["BELLTOWER_DATA_DIR"] = paths.Root;
         start.Environment["BELLTOWER_NAME"] = options.Name;
         start.Environment["BELLTOWER_CHANGE"] = options.Change;
-        start.Environment["BELLTOWER_ROLE"] = options.Role;
         start.Environment["BELLTOWER_SHELL_PID"] = attachment.Host.Shell?.Pid.ToString();
         using var child = Process.Start(start) ?? throw new InvalidOperationException("Could not start agent.");
         attachment = attachment with

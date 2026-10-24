@@ -1,0 +1,9 @@
+=== variant A ===
+Failed BellTower.Tests.Sessions.IdentityRecoveryPolicyTests.AMixedClaudeAndCodexPairOfForksWithNoKnownInvalidationBothResolveTheCopiedWork [18 ms]
+Error Message:
+Error: Assert.Equal() Failure: Strings differ
+Failed BellTower.Tests.Sessions.IdentityRecoveryPolicyTests.AForkWithNoKnownInvalidationUsesItsCopiedWorkForBothClients(provider: "codex", parentIdentityExistsUnread: False) [6 ms]
+Error Message:
+Failed BellTower.Tests.Sessions.IdentityRecoveryPolicyTests.AForkWithNoKnownInvalidationUsesItsCopiedWorkForBothClients(provider: "codex", parentIdentityExistsUnread: True) [9 ms]
+Error Message:
+Failed!  - Failed:     3, Passed:    44, Skipped:     0, Total:    47, Duration: 642 ms - BellTower.Tests.dll (net10.0)

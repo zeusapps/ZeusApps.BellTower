@@ -1,0 +1,13 @@
+{
+  "session_id": "fixture-session",
+  "transcript_path": "{ROOT}/transcript.jsonl",
+  "cwd": "{ROOT}",
+  "permission_mode": "default",
+  "agent_type": "pm",
+  "agent_id": "agent-sub",
+  "hook_event_name": "PostToolUse",
+  "tool_name": "Write",
+  "tool_use_id": "toolu_fixture_main",
+  "tool_input": { "file_path": "{ROOT}/openspec/changes/change-a/proposal.md", "content": "<redacted>" },
+  "tool_response": { "filePath": "{ROOT}/openspec/changes/change-a/proposal.md", "type": "update" }
+}

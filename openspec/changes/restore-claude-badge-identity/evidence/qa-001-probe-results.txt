@@ -1,0 +1,40 @@
+HIST codex fixture builders: see IdentityFixtures.Codex
+HIST claude after growth active=grown-c src=history:edit weak=False off=0 len=902240
+HIST claude partial-line active=grown-c len=902240 fileLen=902300
+FIVE claude:c1 name='PM: dep-7070-fix' active=dep-7070-fix checkout=DEP-7070 src=unique-work accent=#2babab title='PM: dep-7070-fix | DEP-7070-login | worktree: DEP-7070' speech='PM, dep 7070 fix, needs permission' snap='PM: dep-7070-fix' prov=edit
+FIVE claude:c2 name='QA: dep-8080-docs' active=dep-8080-docs checkout=DEP-8080 src=unique-work accent=#ab2b2b title='QA: dep-8080-docs | DEP-8080-docs | worktree: DEP-8080' speech='QA, dep 8080 docs, needs permission' snap='QA: dep-8080-docs' prov=edit
+FIVE claude:c3 name='My own title' active=dep-9090-api checkout=DEP-9090 src=unique-work accent=#8d2bab title='My own title | DEP-9090-api | worktree: DEP-9090' speech='DEV, My own title, needs permission' snap='My own title' prov=native-user
+FIVE codex:x1 name='PM: dep-7070-b' active=dep-7070-b checkout=DEP-7070 src=unique-work accent=#76ab2b title='PM: dep-7070-b | DEP-7070-login | worktree: DEP-7070' speech='PM, dep 7070 b, needs permission' snap='PM: dep-7070-b' prov=edit
+FIVE codex:x2 name='Manual X2' active=shared-spec checkout=D360 src=unique-work accent=#2b2dab title='Manual X2 | main' speech='QA, Manual X2, needs permission' snap='Manual X2' prov=manual
+FIVE distinct accents=5/5
+OWN after pause name='Generated summary title' status=paused: native chat name was set outside Bell Tower source=verified-user-name
+OWN after take ownership name='Generated summary title'
+OWN after reset name='Generated summary title'
+SHELL ACCEPT wd= red=False | classify=new:x1:C:\Code\D360 | openspec new change x1
+SHELL ACCEPT wd=C:\Code\D360-worktrees\DEP-7070 red=False | classify=new:x1:C:\Code\D360-worktrees\DEP-7070 | cd C:\Code\D360-worktrees\DEP-7070 && openspec new change x1
+SHELL ACCEPT wd=C:\Code\D360-worktrees\DEP-7070 red=False | classify=new:x1:C:\Code\D360-worktrees\DEP-7070 | cd "C:/Code/D360-worktrees/DEP-7070" && openspec new change x1
+SHELL ACCEPT wd=C:\Code\D360-worktrees\DEP-7070 red=False | classify=new:x1:C:\Code\D360-worktrees\DEP-7070 | cd /d C:\Code\D360-worktrees\DEP-7070 && openspec new change x1
+SHELL ACCEPT wd=C:\Code\W red=False | classify=new:x1:C:\Code\W | cd C:\Code\W; openspec new change x1 | Out-String
+SHELL ACCEPT wd=C:\Code\W red=False | classify=new:x1:C:\Code\W | pwsh -NoProfile -Command 'cd C:\Code\W ; openspec new change x1'
+SHELL ACCEPT wd=C:\Code\W red=False | classify=new:x1:C:\Code\W | powershell.exe -Command "Set-Location -LiteralPath 'C:\Code\W'; openspec new change x1"
+SHELL ACCEPT wd=C:\Code\W red=True | classify=new:x1:C:\Code\W | cd C:\Code\W && openspec new change x1 > out.txt
+SHELL REJECT | classify=none | cd C:\Code\W && openspec new change x1 | tee f.txt
+SHELL REJECT | classify=none | cd /c/Code/W && openspec new change x1
+SHELL REJECT | classify=none | cd ~/W && openspec new change x1
+SHELL REJECT | classify=none | cd $env:W && openspec new change x1
+SHELL REJECT | classify=none | cd $(pwd) && openspec new change x1
+SHELL REJECT | classify=none | cd C:\a && cd C:\b && openspec new change x1
+SHELL REJECT | classify=none | openspec new change x1 || true
+SHELL REJECT | classify=none | openspec new change x1; echo done
+SHELL REJECT | classify=none | openspec new change x1 2>&1
+SHELL ACCEPT wd=C:\Code\D360\relative\dir red=False | classify=new:x1:C:\Code\D360\relative\dir | cd relative\dir && openspec new change x1
+SHELL REJECT | classify=none | cd C:\Code\W && (openspec new change x1)
+SHELL ACCEPT wd=C:\Code\W red=False | classify=status:x1:C:\Code\W | cd C:\Code\W && openspec status --change x1 --json
+SHELL ACCEPT wd=C:\Code\W red=False | classify=instructions:x1:C:\Code\W | cd C:\Code\W && openspec instructions apply --change x1 --json
+SHELL ACCEPT wd= red=False | classify=new:x1:C:\Code\D360 | openspec.cmd new change x1
+SHELL ACCEPT wd= red=False | classify=none | npx openspec new change x1
+SHELL ACCEPT wd= red=False | classify=none | FOO=bar openspec new change x1
+SHELL ACCEPT wd= red=False | classify=none | cmd /c "cd C:\Code\W && openspec new change x1"
+BRANCH after first tick active=new-a histOffset=700837 workOffset=700837
+BRANCH after switch active=
+BRANCH after more ticks active=old-z source=history:edit histOffset=0

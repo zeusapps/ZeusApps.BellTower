@@ -1,5 +1,9 @@
 # Proposal
 
+## Supersession during identity restoration (2026-10-23)
+
+The approved `restore-claude-badge-identity` change supersedes this proposal's original selection and naming policies for both providers. Read-only status/instructions do not establish or replace active work. Identity uses explicit Bell Tower title, verified explicit native title, then shared role/subject resolution with separate working-checkout metadata. The four overlapping delta requirements are reconciled to that approved contract so a later archive cannot restore the older policy. The implementation narrative below records historical scope, not an instruction to reinstate it. Preserve shipped runtime/native-name ownership safeguards and the unchecked evidence gaps in tasks 1.1 and 5.3; this reconciliation does not claim new acceptance.
+
 ## Why
 
 Several Claude or Codex sessions often share one project directory, so the directory-derived title does not identify their work. Session titles should follow the OpenSpec change selected during the conversation, and Codex should expose that identity inside its native footer with useful Git context.

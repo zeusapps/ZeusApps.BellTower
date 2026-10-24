@@ -111,6 +111,28 @@ public sealed class CaptureTests
     [Theory]
     [InlineData("claude")]
     [InlineData("codex")]
+    public void ALegacyCaptureCarryingARoleIsConsumedWithoutAnyRoleInNameOrSpeech(string provider)
+    {
+        using var workspace = new TestWorkspace();
+        var node = JsonNode.Parse(CaptureProtocol.Encode(Envelope(provider, hook: "Stop")))!;
+        // An envelope spooled by an older ingress (BELLTOWER_ROLE) still decodes; the role is ignored.
+        node["role"] = "PM";
+        node["name"] = null;
+        using var stream = new MemoryStream(Encoding.UTF8.GetBytes(node.ToJsonString()));
+        var legacy = CaptureProtocol.Decode(stream);
+        Assert.Equal("PM", legacy.Role);
+        CaptureSpool.Write(workspace.Paths.Root, legacy);
+        var state = new StateStore(workspace.Paths).Drain();
+        var identity = new IdentityStore(workspace.Paths).Get(provider + ":fixture", "D:/unicode-Δ");
+        Assert.Null(identity.Role);
+        Assert.DoesNotContain("PM", identity.Name, StringComparison.Ordinal);
+        Assert.DoesNotContain("PM", AlertPolicy.Phrase(state.Sessions[provider + ":fixture"], identity), StringComparison.Ordinal);
+        Assert.DoesNotContain("\"role\":\"PM\"", Encoding.UTF8.GetString(CaptureProtocol.Encode(Envelope(provider))), StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("claude")]
+    [InlineData("codex")]
     public void TrayOffConsumptionCrashReplayAndLegacyInboxCoexist(string provider)
     {
         using var workspace = new TestWorkspace();
@@ -258,15 +280,19 @@ public sealed class CaptureTests
         var at = DateTimeOffset.UtcNow.AddMinutes(-2);
         CaptureEnvelope Selection(string change, DateTimeOffset when)
         {
+            var directory = Path.Combine(workspace.Root, "openspec", "changes", change);
+            Directory.CreateDirectory(directory);
             using var input = JsonDocument.Parse(JsonSerializer.Serialize(new
             {
                 session_id = "fixture",
                 cwd = workspace.Root,
                 hook_event_name = "PostToolUse",
-                tool_name = "Bash",
+                tool_name = provider == "codex" ? "apply_patch" : "Write",
                 tool_use_id = change,
-                tool_input = new { command = "openspec status --change " + change + " --json" },
-                tool_response = JsonSerializer.Serialize(new { changeName = change, schemaName = "spec-driven", root = new { path = workspace.Root } })
+                tool_input = provider == "codex"
+                    ? (object)new { command = "*** Begin Patch\n*** Add File: " + Path.Combine(directory, "proposal.md").Replace('\\', '/') + "\n+x\n*** End Patch" }
+                    : new { file_path = Path.Combine(directory, "proposal.md") },
+                tool_response = provider == "codex" ? (object)"Success." : new { type = "create" }
             }));
             return CaptureFactory.Create(provider, input.RootElement,
                 new("attachment", provider, null, new(), workspace.Root, at), when)!;
@@ -276,7 +302,7 @@ public sealed class CaptureTests
         store.Drain();
         CaptureSpool.Write(workspace.Paths.Root, Selection("old", at));
         store.Drain();
-        Assert.Equal("new", new IdentityStore(workspace.Paths).Get(provider + ":fixture", workspace.Root).Change);
+        Assert.Equal("new", new IdentityStore(workspace.Paths).Get(provider + ":fixture", workspace.Root).ActiveWork);
     }
 
     [Theory]
@@ -291,10 +317,12 @@ public sealed class CaptureTests
             using var workspace = new TestWorkspace();
             var key = provider + ":fixture";
             var original = new IdentityStore(workspace.Paths).Get(key, workspace.Root, initialName: "Manual");
+            Directory.CreateDirectory(Path.Combine(workspace.Root, "openspec", "changes", "old"));
+            Directory.CreateDirectory(Path.Combine(workspace.Root, "openspec", "changes", "new"));
             var receipts = new[] { ("old", true), ("new", true), ("new", false), ("old", false) }
                 .Select((item, index) => Envelope(provider, item.Item2 ? "PreToolUse" : "PostToolUse", item.Item1, at.AddSeconds(index)) with
                 {
-                    Selection = new(item.Item1, null, ContentHash.Compute(item.Item1), "status"),
+                    Selection = new(item.Item1, null, ContentHash.Compute(item.Item1), "edit") { WorkRoot = workspace.Root },
                     SelectionPre = item.Item2,
                     SelectionRoot = item.Item2 ? null : workspace.Root
                 }).ToArray();
@@ -305,7 +333,7 @@ public sealed class CaptureTests
                 observer.Observe(receipt);
             }
             var result = new IdentityStore(workspace.Paths).Get(key, workspace.Root);
-            Assert.Equal("new", result.Change);
+            Assert.Equal("new", result.ActiveWork);
             Assert.Equal("Manual", result.Name);
             Assert.Equal(original.Palette, result.Palette);
             Assert.False(File.Exists(workspace.Paths.State));

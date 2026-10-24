@@ -1,0 +1,294 @@
+# Analysis 003 probe scripts. Each loads the reviewed Release build read-only from src/BellTower/bin/Release/net10.0-windows (-Bin),
+# writes only an isolated data dir and synthetic transcripts next to the script (D:\Temp\bt-a3, because the C: volume holding the session scratchpad was full) and deletes it.
+# Commands: pwsh -NoProfile -File probe-floor.ps1 -Provider claude|codex -Case tail|before-first-read|lag|reset|restart -Bin <bin>
+#           pwsh -NoProfile -File probe-legacy.ps1 -Provider claude|codex -Bin <bin>
+#           pwsh -NoProfile -File probe-fork-floor.ps1 -Provider claude|codex -Bin <bin>
+#           pwsh -NoProfile -File probe-head.ps1 -Bin <bin>
+
+##### probe-floor.ps1 #####
+# Analysis 003 probe: time-based WorkFloorAt (ANALYSIS-100 recheck). Adapted from analysis-002 probe-floor.ps1:
+# HistoryFloor -> WorkFloorAt, the switch passes an explicit detection time on the synthetic timeline, and three cases are added.
+# Isolated data dir and synthetic transcripts only; loads the reviewed Release build read-only.
+param([ValidateSet('claude', 'codex')][string]$Provider = 'claude',
+    [ValidateSet('tail', 'before-first-read', 'lag', 'reset', 'restart')][string]$Case = 'tail',
+    [Parameter(Mandatory)][string]$Bin)
+$ErrorActionPreference = 'Stop'
+Add-Type -Path (Join-Path $Bin 'bell-tower.dll')
+$root = Join-Path $PSScriptRoot ("data-floor-" + [guid]::NewGuid().ToString('N').Substring(0, 8))
+$work = Join-Path $root 'repo'
+foreach ($c in 'change-a', 'change-b') { New-Item -ItemType Directory -Force (Join-Path $work "openspec\changes\$c") | Out-Null }
+$paths = [BellTower.IO.DataPaths]::new((Join-Path $root 'data'))
+$paths.Ensure()
+$id = "probe-$Provider"
+$slash = $work.Replace('\', '/')
+function T([int]$s) { ([datetimeoffset]'2026-10-23T12:00:00Z').AddSeconds($s) }
+function Ts([int]$s) { (T $s).ToString('yyyy-MM-ddTHH:mm:ss.fffZ') }
+function J($o) { $o | ConvertTo-Json -Depth 10 -Compress }
+function Chatter([int]$at, [int]$bytes) {
+    if ($Provider -eq 'claude') { J @{ isSidechain = $false; type = 'assistant'; timestamp = (Ts $at); sessionId = $id; message = @{ role = 'assistant'; content = @(@{ type = 'text'; text = ('x' * $bytes) }) } } }
+    else { J @{ timestamp = (Ts $at); type = 'response_item'; payload = @{ type = 'message'; role = 'assistant'; content = @(@{ type = 'output_text'; text = ('x' * $bytes) }) } } }
+}
+function Work([string]$change, [string]$call, [int]$at) {
+    if ($Provider -eq 'claude') {
+        J @{ isSidechain = $false; type = 'assistant'; timestamp = (Ts $at); cwd = $slash; sessionId = $id; message = @{ role = 'assistant'; content = @(@{ type = 'tool_use'; id = $call; name = 'Write'; input = @{ file_path = "$slash/openspec/changes/$change/proposal.md"; content = 'x' } }) } }
+        J @{ isSidechain = $false; type = 'user'; timestamp = (Ts ($at + 1)); sessionId = $id; message = @{ role = 'user'; content = @(@{ type = 'tool_result'; tool_use_id = $call; content = 'ok' }) } }
+    }
+    else {
+        J @{ timestamp = (Ts $at); type = 'response_item'; payload = @{ type = 'custom_tool_call'; name = 'apply_patch'; call_id = $call; input = "*** Begin Patch`n*** Add File: $slash/openspec/changes/$change/proposal.md`n+x`n*** End Patch" } }
+        J @{ timestamp = (Ts ($at + 1)); type = 'response_item'; payload = @{ type = 'custom_tool_call_output'; call_id = $call; output = "Exit code: 0`nWall time: 0.1 seconds`nOutput:`nSuccess. Updated the following files:`nA x`n" } }
+    }
+}
+$utf8 = [System.Text.UTF8Encoding]::new($false)
+$transcript = Join-Path $root 'transcript.jsonl'
+$session = [BellTower.Core.SessionState]::new()
+$session.Key = "${Provider}:$id"; $session.Provider = $Provider; $session.SessionId = $id; $session.AttachmentId = "attachment-$id"; $session.Directory = $work
+$store = [BellTower.IO.IdentityStore]::new($paths, $null)
+$reader = [BellTower.Sessions.IdentityHistoryReader]::new($paths)
+function Get-Identity { $store.Get($session.Key, $work, $null, $null, $null) }
+function Tick { $n = 0; while ($n -lt 40 -and $reader.Refresh($session)) { $n++ }; $n }
+function Live([string]$change, [int]$at) {
+    $evidence = [BellTower.Core.WorkEvidence]::new($change, $work, 'edit', $false, (T $at), -1)
+    $null = $store.Update($session.Key, $work, [Func[BellTower.Core.SessionIdentity, bool]] { param($v) [BellTower.Core.WorkPolicy]::Apply($v, $evidence) })
+}
+function Set-Branch([string]$branch, [int]$detectedAt) {
+    # Same sequence as IdentityResolver.RefreshAsync: ApplyBranch(previous checkout, selected, branch, clock()) then ObservedBranch.
+    $null = $store.Update($session.Key, $work, [Func[BellTower.Core.SessionIdentity, bool]] { param($v)
+        $changed = [BellTower.Core.CheckoutPolicy]::ApplyBranch($v, $work, $work, $branch, (T $detectedAt))
+        $v.ObservedBranch = $branch
+        $changed })
+}
+function Show([string]$label) {
+    $i = Get-Identity
+    $len = if (Test-Path $transcript) { (Get-Item $transcript).Length } else { 0 }
+    "{0,-40} fileBytes={1} HistoryLength={2} WorkFloorAt={3} ActiveWork={4} WorkSource={5} WorkBranch={6} Subject={7}" -f $label, $len, $i.HistoryLength,
+    $(if ($i.WorkFloorAt) { ([datetimeoffset]$i.WorkFloorAt).ToString('HH:mm:ss') } else { '' }), $i.ActiveWork, $i.WorkSource, $i.WorkBranch, $i.Subject
+}
+"provider=$Provider case=$Case (synthetic clock: t=N is 12:00:00+N s)"
+$null = $store.Update($session.Key, $work, [Func[BellTower.Core.SessionIdentity, bool]] { param($v) $v.ObservedBranch = 'main'; [BellTower.Core.HistoryState]::Bind($v, $transcript) })
+switch ($Case) {
+    'tail' {
+        [System.IO.File]::WriteAllText($transcript, ((@(Chatter 1 2000; Chatter 2 2000)) -join "`n") + "`n", $utf8)
+        "ticks=$(Tick)"; Show 'after first read'
+        [System.IO.File]::AppendAllText($transcript, ((@(Work 'change-a' 'w1' 10; Chatter 13 4000)) -join "`n") + "`n", $utf8)
+        Live 'change-a' 12
+        "ticks=$(Tick)"; Show 'after live work (t=12) + tail read'
+        Set-Branch 'feature' 20; Show 'after switch detected at t=20'
+        "ticks=$(Tick)"; Show 'after next history pass'
+        [System.IO.File]::AppendAllText($transcript, ((@(Work 'change-b' 'w2' 30)) -join "`n") + "`n", $utf8)
+        "ticks=$(Tick)"; Show 'after post-switch work (t=30) read'
+    }
+    'before-first-read' {
+        [System.IO.File]::WriteAllText($transcript, ((@(Chatter 1 2000; Work 'change-a' 'w1' 10; Chatter 13 2000)) -join "`n") + "`n", $utf8)
+        Live 'change-a' 12; Show 'after live work (no read yet)'
+        Set-Branch 'feature' 20; Show 'after switch detected at t=20'
+        "ticks=$(Tick)"; Show 'after first history pass'
+    }
+    'lag' {
+        # Pre-switch work t=10, actual switch at t=15, post-switch work at t=17 (record) before the tray detects the switch at t=20.
+        [System.IO.File]::WriteAllText($transcript, ((@(Chatter 1 2000; Work 'change-a' 'w1' 10)) -join "`n") + "`n", $utf8)
+        "ticks=$(Tick)"; Show 'after first read (pre-switch work)'
+        [System.IO.File]::AppendAllText($transcript, ((@(Work 'change-b' 'w2' 17)) -join "`n") + "`n", $utf8)
+        Live 'change-b' 18
+        "ticks=$(Tick)"; Show 'post-switch work at t=17, not yet detected'
+        Set-Branch 'feature' 20; Show 'after switch detected at t=20'
+        "ticks=$(Tick)"; Show 'after next history pass'
+        Remove-Item -Force $transcript; [System.IO.File]::WriteAllText($transcript, ((@(Chatter 1 2000; Work 'change-a' 'w1' 10; Work 'change-b' 'w2' 17)) -join "`n") + "`n", $utf8)
+        "ticks=$(Tick)"; Show 'after fresh pass (file recreated)'
+    }
+    'reset' {
+        [System.IO.File]::WriteAllText($transcript, ((@(Chatter 1 2000; Work 'change-a' 'w1' 10)) -join "`n") + "`n", $utf8)
+        "ticks=$(Tick)"; Show 'after first read'
+        Set-Branch 'feature' 20; Show 'after switch detected at t=20'
+        $null = $store.Update($session.Key, $work, [Func[BellTower.Core.SessionIdentity, bool]] { param($v)
+            $p = $v.Palette; [BellTower.Core.IdentityControls]::Reset($v, [Func[BellTower.Core.Palette]] { $p }); [BellTower.Core.HistoryState]::Reset($v); $true })
+        Show 'after explicit reset + history reset'
+        "ticks=$(Tick)"; Show 'after re-walk'
+    }
+    'restart' {
+        [System.IO.File]::WriteAllText($transcript, ((@(Chatter 1 2000; Work 'change-a' 'w1' 10)) -join "`n") + "`n", $utf8)
+        "ticks=$(Tick)"; Show 'after first read'
+        Set-Branch 'feature' 20; Show 'after switch detected at t=20'
+        $second = Join-Path $root 'transcript-2.jsonl'
+        Copy-Item $transcript $second
+        $null = $store.Update($session.Key, $work, [Func[BellTower.Core.SessionIdentity, bool]] { param($v) [BellTower.Core.HistoryState]::Bind($v, $second) })
+        $transcript = $second
+        "ticks=$(Tick)"; Show 'after rebind to a copied transcript'
+    }
+}
+Remove-Item -Recurse -Force $root
+
+##### probe-legacy.ps1 #####
+# Analysis 003 probe: legacy-superseded origin (ANALYSIS-101 recheck). Extends analysis-002 probe-legacy.ps1 with a transcript
+# restart, a fork child, an older-build rewrite after supersession (same and different value) and weak evidence after retirement.
+# Isolated data dir only; loads the reviewed Release build read-only.
+param([ValidateSet('claude', 'codex')][string]$Provider = 'claude', [Parameter(Mandatory)][string]$Bin)
+$ErrorActionPreference = 'Stop'
+Add-Type -Path (Join-Path $Bin 'bell-tower.dll')
+$root = Join-Path $PSScriptRoot ("data-legacy-" + [guid]::NewGuid().ToString('N').Substring(0, 8))
+$work = Join-Path $root 'repo'
+foreach ($c in 'legacy-x', 'legacy-y', 'change-a', 'change-w') { New-Item -ItemType Directory -Force (Join-Path $work "openspec\changes\$c") | Out-Null }
+$paths = [BellTower.IO.DataPaths]::new((Join-Path $root 'data'))
+$paths.Ensure()
+$key = "${Provider}:legacy-probe"
+$store = [BellTower.IO.IdentityStore]::new($paths, $null)
+$null = $store.Get($key, $work, [NullString]::Value, [NullString]::Value, $null)
+$file = Join-Path $paths.Identities ([BellTower.IO.ContentHash]::Compute($key) + '.json')
+function OldBuildWrite([string]$change) {
+    # The 0.1.8 selector writes Change + SelectionRoot + SelectionEvent + SelectionAt and keeps unknown fields (JsonExtensionData).
+    $node = [System.Text.Json.Nodes.JsonNode]::Parse([System.IO.File]::ReadAllText($file))
+    $node['change'] = $change; $node['selectionRoot'] = $work; $node['selectionEvent'] = 'evt-' + $change; $node['selectionAt'] = '2026-10-20T12:00:00+00:00'
+    if ($null -eq $node['futureField']) { $node['futureField'] = 'kept' }
+    [System.IO.File]::WriteAllText($file, $node.ToJsonString())
+}
+$node = [System.Text.Json.Nodes.JsonNode]::Parse([System.IO.File]::ReadAllText($file))
+foreach ($n in 'changeSource', 'changeSourceValue') { $null = $node.AsObject().Remove($n) }
+[System.IO.File]::WriteAllText($file, $node.ToJsonString())
+OldBuildWrite 'legacy-x'
+$presentations = [BellTower.IO.IdentityPresentationStore]::new($paths)
+$git = [BellTower.Core.GitContext]::new('main', $null)
+function Show([string]$label, [string]$k = $key) {
+    $i = $store.Get($k, $work, [NullString]::Value, [NullString]::Value, $null)
+    $null = $presentations.Save($i, $git, $null)
+    $p = $presentations.Read($k, $null)
+    $raw = [System.IO.File]::ReadAllText((Join-Path $paths.Identities ([BellTower.IO.ContentHash]::Compute($k) + '.json')))
+    $disk = [System.Text.Json.Nodes.JsonNode]::Parse($raw)
+    "{0,-46} Change={1} origin={2} diskSource={3} ActiveWork={4} WorkSubject={5} Name={6} provenance={7} futureKept={8}" -f $label, $i.Change, [BellTower.Core.ChangeOrigin]::Of($i),
+    $disk['changeSource'], $i.ActiveWork, $i.WorkSubject, $i.Name, $(if ($p) { $p.Provenance } else { '(stale)' }), ($raw.IndexOf('futureField') -ge 0)
+}
+function Apply([string]$change, [bool]$weak, [long]$offset = -1, [string]$k = $key) {
+    $evidence = [BellTower.Core.WorkEvidence]::new($change, $work, $(if ($offset -ge 0) { 'history:edit' } else { 'edit' }), $weak, [datetimeoffset]::UtcNow, $offset)
+    $null = $store.Update($k, $work, [Func[BellTower.Core.SessionIdentity, bool]] { param($v) $v.ObservedBranch = 'main'; [BellTower.Core.WorkPolicy]::Apply($v, $evidence) })
+}
+"provider=$Provider"
+Show 'loaded 0.1.8 record'
+Apply 'change-w' $true; Show 'weak evidence while legacy holds'
+Apply 'change-a' $false; Show 'newer verified live work'
+$null = $store.Update($key, $work, [Func[BellTower.Core.SessionIdentity, bool]] { param($v) $c = [BellTower.Core.CheckoutPolicy]::ApplyBranch($v, $work, $work, 'feature'); $v.ObservedBranch = 'feature'; $c })
+Show 'after branch invalidation'
+Apply 'change-a' $false 100; Show 'history work again (offset 100)'
+$null = $store.Update($key, $work, [Func[BellTower.Core.SessionIdentity, bool]] { param($v) [BellTower.Core.HistoryState]::Reset($v); $true })
+Show 'after transcript restart (history work cleared)'
+# Fork child of the superseded parent (shared inheritance policy, same call the reader makes).
+$child = "${Provider}:legacy-child"
+$null = $store.Get($child, $work, [NullString]::Value, [NullString]::Value, $null)
+$parent = $store.Find($key)
+$null = $store.Update($child, $work, [Func[BellTower.Core.SessionIdentity, bool]] { param($v) [BellTower.Core.IdentityInheritance]::FromParent($v, $parent, 'legacy-probe') })
+Show 'fork child of superseded parent' $child
+Apply 'change-w' $true; Show 'weak evidence after retirement'
+OldBuildWrite 'legacy-x'; Show 'rollback build rewrites the same value'
+OldBuildWrite 'legacy-y'; Show 'rollback build writes a different value'
+Remove-Item -Recurse -Force $root
+
+##### probe-fork-floor.ps1 #####
+# Analysis 003 probe: a fork of a conversation whose pre-switch work was invalidated by a branch switch (WorkFloorAt set,
+# ActiveWork cleared, no post-switch work). The fork shares the parent's checkout, which is now on the new branch.
+# Claude: SDK forkSession copies parent records with their original timestamps, rewrites sessionId, adds forkedFrom
+#   (tests/BellTower.Tests/Fixtures/identity/claude-sdk-0.3.309-fork.jsonl).
+# Codex: the fork's own first line is session_meta{id, forked_from_id}; copied items are written by the rollout recorder,
+#   which stamps every line at write time (JsonlWriter.write_rollout_item uses OffsetDateTime::now_utc(); ForkPersistence::Copied default),
+#   so copied parent work carries the fork time.
+# Isolated data dir and synthetic transcripts only; loads the reviewed Release build read-only.
+param([ValidateSet('claude', 'codex')][string]$Provider = 'claude', [Parameter(Mandatory)][string]$Bin)
+$ErrorActionPreference = 'Stop'
+Add-Type -Path (Join-Path $Bin 'bell-tower.dll')
+$root = Join-Path $PSScriptRoot ("data-fork-" + [guid]::NewGuid().ToString('N').Substring(0, 8))
+$work = Join-Path $root 'repo'
+New-Item -ItemType Directory -Force (Join-Path $work 'openspec\changes\change-a') | Out-Null
+$paths = [BellTower.IO.DataPaths]::new((Join-Path $root 'data'))
+$paths.Ensure()
+$slash = $work.Replace('\', '/')
+function T([int]$s) { ([datetimeoffset]'2026-10-23T12:00:00Z').AddSeconds($s) }
+function Ts([int]$s) { (T $s).ToString('yyyy-MM-ddTHH:mm:ss.fffZ') }
+function J($o) { $o | ConvertTo-Json -Depth 10 -Compress }
+function Work([string]$sid, [int]$at, [string]$forkedFrom) {
+    if ($Provider -eq 'claude') {
+        $a = @{ isSidechain = $false; type = 'assistant'; timestamp = (Ts $at); cwd = $slash; sessionId = $sid; message = @{ role = 'assistant'; content = @(@{ type = 'tool_use'; id = 'w1'; name = 'Write'; input = @{ file_path = "$slash/openspec/changes/change-a/proposal.md"; content = 'x' } }) } }
+        $b = @{ isSidechain = $false; type = 'user'; timestamp = (Ts ($at + 1)); sessionId = $sid; message = @{ role = 'user'; content = @(@{ type = 'tool_result'; tool_use_id = 'w1'; content = 'ok' }) } }
+        if ($forkedFrom) { $a.forkedFrom = @{ sessionId = $forkedFrom; messageUuid = 'm1' }; $b.forkedFrom = @{ sessionId = $forkedFrom; messageUuid = 'm2' } }
+        J $a; J $b
+    }
+    else {
+        J @{ timestamp = (Ts $at); type = 'response_item'; payload = @{ type = 'custom_tool_call'; name = 'apply_patch'; call_id = 'p1'; input = "*** Begin Patch`n*** Add File: $slash/openspec/changes/change-a/proposal.md`n+x`n*** End Patch" } }
+        J @{ timestamp = (Ts ($at + 1)); type = 'response_item'; payload = @{ type = 'custom_tool_call_output'; call_id = 'p1'; output = "Exit code: 0`nWall time: 0.1 seconds`nOutput:`nSuccess. Updated the following files:`nA x`n" } }
+    }
+}
+$utf8 = [System.Text.UTF8Encoding]::new($false)
+$store = [BellTower.IO.IdentityStore]::new($paths, $null)
+$reader = [BellTower.Sessions.IdentityHistoryReader]::new($paths)
+function New-Session([string]$sid) {
+    $s = [BellTower.Core.SessionState]::new(); $s.Key = "${Provider}:$sid"; $s.Provider = $Provider; $s.SessionId = $sid; $s.AttachmentId = "attachment-$sid"; $s.Directory = $work; $s
+}
+function Tick($s) { $n = 0; while ($n -lt 40 -and $reader.Refresh($s)) { $n++ }; $n }
+function Show([string]$label, $s) {
+    $i = $store.Get($s.Key, $work, $null, $null, $null)
+    "{0,-34} WorkFloorAt={1} ActiveWork={2} WorkSource={3} WorkBranch={4} ForkInheritedFrom={5} Subject={6}" -f $label,
+    $(if ($i.WorkFloorAt) { ([datetimeoffset]$i.WorkFloorAt).ToString('HH:mm:ss') } else { '' }), $i.ActiveWork, $i.WorkSource, $i.WorkBranch, $i.ForkInheritedFrom, $i.Subject
+}
+"provider=$Provider (synthetic clock: t=N is 12:00:00+N s)"
+# Parent: pre-switch work at t=10 on main, switch detected at t=20, no later work.
+$parent = New-Session 'parent'
+$parentFile = Join-Path $root 'parent.jsonl'
+$parentLines = if ($Provider -eq 'claude') { @(Work 'parent' 10 $null) } else { @((J @{ timestamp = (Ts 0); type = 'session_meta'; payload = @{ id = 'parent'; cwd = $slash } }); (Work 'parent' 10 $null)) }
+[System.IO.File]::WriteAllText($parentFile, ($parentLines -join "`n") + "`n", $utf8)
+$null = $store.Update($parent.Key, $work, [Func[BellTower.Core.SessionIdentity, bool]] { param($v) $v.ObservedBranch = 'main'; [BellTower.Core.HistoryState]::Bind($v, $parentFile) })
+"ticks=$(Tick $parent)"; Show 'parent after read' $parent
+$null = $store.Update($parent.Key, $work, [Func[BellTower.Core.SessionIdentity, bool]] { param($v) $c = [BellTower.Core.CheckoutPolicy]::ApplyBranch($v, $work, $work, 'feature', (T 20)); $v.ObservedBranch = 'feature'; $c })
+"ticks=$(Tick $parent)"; Show 'parent after switch (t=20)' $parent
+# Fork created at t=40 on the same checkout (now on 'feature').
+$child = New-Session 'child'
+$childFile = Join-Path $root 'child.jsonl'
+$childLines = if ($Provider -eq 'claude') { @(Work 'child' 10 'parent') } else {
+    @((J @{ timestamp = (Ts 40); type = 'session_meta'; payload = @{ id = 'child'; forked_from_id = 'parent'; cwd = $slash } }); (J @{ timestamp = (Ts 40); type = 'session_meta'; payload = @{ id = 'parent'; cwd = $slash } }); (Work 'child' 40 $null)) }
+[System.IO.File]::WriteAllText($childFile, ($childLines -join "`n") + "`n", $utf8)
+$null = $store.Update($child.Key, $work, [Func[BellTower.Core.SessionIdentity, bool]] { param($v) $v.ObservedBranch = 'feature'; [BellTower.Core.HistoryState]::Bind($v, $childFile) })
+"ticks=$(Tick $child)"; Show 'fork child after first read' $child
+Show 'parent (unchanged)' $parent
+Remove-Item -Recurse -Force $root
+
+##### probe-head.ps1 #####
+# Analysis 003 probe: cost of the Codex fresh-pass head-window read (IdentityHistoryReader.Refresh, fresh && codex && length > 256 KiB).
+# Builds an ~8 MiB synthetic rollout whose first 256 KiB is either chatter (sparse) or dense exec_command/output pairs that the
+# classifier must parse (dense), plus the own session_meta first line. Measures the first (fresh) Refresh and the number of reads.
+# Isolated data dir and synthetic transcripts only; loads the reviewed Release build read-only.
+param([Parameter(Mandatory)][string]$Bin, [int]$Runs = 5)
+$ErrorActionPreference = 'Stop'
+Add-Type -Path (Join-Path $Bin 'bell-tower.dll')
+$root = Join-Path $PSScriptRoot ("data-head-" + [guid]::NewGuid().ToString('N').Substring(0, 8))
+$work = Join-Path $root 'repo'
+New-Item -ItemType Directory -Force (Join-Path $work 'openspec\changes\change-a') | Out-Null
+$slash = $work.Replace('\', '/')
+$utf8 = [System.Text.UTF8Encoding]::new($false)
+function J($o) { $o | ConvertTo-Json -Depth 10 -Compress }
+$ts = '2026-10-23T12:00:00.000Z'
+$chatter = J @{ timestamp = $ts; type = 'response_item'; payload = @{ type = 'message'; role = 'assistant'; content = @(@{ type = 'output_text'; text = ('x' * 900) }) } }
+$sb = [System.Text.StringBuilder]::new()
+$i = 0
+while ($sb.Length -lt 300000) {
+    $null = $sb.Append((J @{ timestamp = $ts; type = 'response_item'; payload = @{ type = 'function_call'; name = 'exec_command'; call_id = "c$i"; arguments = (J @{ cmd = "openspec instructions apply --change change-a"; workdir = $slash }) } })).Append("`n")
+    $null = $sb.Append((J @{ timestamp = $ts; type = 'response_item'; payload = @{ type = 'function_call_output'; call_id = "c$i"; output = "Process exited with code 0`nok" } })).Append("`n")
+    $i++
+}
+$dense = $sb.ToString()
+$sparse = (@($chatter) * [math]::Ceiling(300000 / $chatter.Length)) -join "`n"
+$tail = (@($chatter) * [math]::Ceiling(8MB / $chatter.Length)) -join "`n"
+"dense head pairs=$i"
+foreach ($shape in 'sparse', 'dense') {
+    $times = @()
+    foreach ($r in 1..$Runs) {
+        $paths = [BellTower.IO.DataPaths]::new((Join-Path $root "data-$shape-$r")); $paths.Ensure()
+        $file = Join-Path $root "rollout-$shape-$r.jsonl"
+        $meta = J @{ timestamp = $ts; type = 'session_meta'; payload = @{ id = 'head'; forked_from_id = 'parent'; cwd = $slash } }
+        [System.IO.File]::WriteAllText($file, $meta + "`n" + $(if ($shape -eq 'dense') { $dense } else { $sparse + "`n" }) + $tail + "`n", $utf8)
+        $s = [BellTower.Core.SessionState]::new(); $s.Key = "codex:head"; $s.Provider = 'codex'; $s.SessionId = 'head'; $s.AttachmentId = 'a'; $s.Directory = $work
+        $store = [BellTower.IO.IdentityStore]::new($paths, $null)
+        $null = $store.Update($s.Key, $work, [Func[BellTower.Core.SessionIdentity, bool]] { param($v) [BellTower.Core.HistoryState]::Bind($v, $file) })
+        $reader = [BellTower.Sessions.IdentityHistoryReader]::new($paths)
+        $sw = [System.Diagnostics.Stopwatch]::StartNew(); $null = $reader.Refresh($s); $sw.Stop()
+        $times += $sw.Elapsed.TotalMilliseconds
+        $id = $store.Get($s.Key, $work, $null, $null, $null)
+        if ($r -eq 1) { "{0}: fileBytes={1} ForkParent={2} HistoryOffset={3} HistoryLength={4}" -f $shape, (Get-Item $file).Length, $id.ForkParent, $id.HistoryOffset, $id.HistoryLength }
+    }
+    "{0}: fresh Refresh ms per run = {1} (first run includes JIT)" -f $shape, (($times | ForEach-Object { [math]::Round($_, 1) }) -join ', ')
+}
+Remove-Item -Recurse -Force $root
+

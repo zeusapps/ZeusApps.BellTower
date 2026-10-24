@@ -38,10 +38,15 @@ public sealed class HookIngestor(DataPaths paths)
         var initialPalette = dedicated ? new LaunchPresentationStore(paths).Consume(attachment.Id, attachment.Host.Shell) : null;
         new IdentityStore(paths).Get(observation.Key, observation.Directory,
             dedicated ? IdentityText.Optional(Environment.GetEnvironmentVariable("BELLTOWER_NAME")) : null,
-            dedicated ? IdentityText.Optional(Environment.GetEnvironmentVariable("BELLTOWER_CHANGE")) : null,
-            dedicated ? IdentityText.Optional(Environment.GetEnvironmentVariable("BELLTOWER_ROLE")) : null, initialPalette);
+            dedicated ? IdentityText.Optional(Environment.GetEnvironmentVariable("BELLTOWER_CHANGE")) : null, initialPalette);
         try
         {
+            var transcript = HookInput.Text(input, "transcript_path") is { } path && Path.IsPathFullyQualified(path) ? path : null;
+            new IdentityStore(paths).Update(observation.Key, observation.Directory, value =>
+            {
+                var bound = transcript is not null && HistoryState.Bind(value, transcript);
+                return CheckoutEvidence.Observe(value, HookInput.Text(input, "cwd"), observation.IsMainThread) | bound;
+            });
             new OpenSpecSelectionObserver(paths).Observe(observation.Key, observation.Directory, input);
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or ArgumentException or JsonException)

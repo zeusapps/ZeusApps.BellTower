@@ -18,7 +18,7 @@ Development executables retain the legacy normalized `event` command for compone
 | `observation.hookShellStartedAt`, `orderConfidence` | Available ordering evidence; `hook-shell` or `ingress-only`, never an invented provider timestamp |
 | `observation.processedAt` | Added by the consumer; never used as event source order |
 | `attachment`, `hookShell`, `ancestors` | Available process identities with PID and creation ticks; host and approved presentation ownership flags |
-| `dedicated`, `name`, `change`, `role` | Approved launch metadata; shared/remote Codex keeps its deliberately unverified attachment policy |
+| `dedicated`, `name`, `change` (legacy `role` is read and ignored) | Approved launch metadata; shared/remote Codex keeps its deliberately unverified attachment policy |
 | `transcriptPath` | Location only; capture never reads or stores transcript contents |
 | `selection`, `selectionRoot`, `selectionPre`, `createdScaffold` | Bounded derived selection evidence; local scaffold confirmation is deferred |
 

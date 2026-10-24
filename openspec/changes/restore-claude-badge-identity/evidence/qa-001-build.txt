@@ -1,0 +1,14 @@
+  BellTower.Protocol -> D:\Code\ZeusApps.BellTower\src\BellTower.Protocol\bin\Release\net10.0\BellTower.Protocol.dll
+  BellTower.Ingress -> D:\Code\ZeusApps.BellTower\src\BellTower.Ingress\bin\Release\net10.0-windows\win-x64\bell-tower-ingress.dll
+  BellTower.Distribution -> D:\Code\ZeusApps.BellTower\src\BellTower.Distribution\bin\Release\net10.0-windows\BellTower.Distribution.dll
+  BellTower.Launcher -> D:\Code\ZeusApps.BellTower\src\BellTower.Launcher\bin\Release\net10.0-windows\bell-tower.dll
+  BellTower -> D:\Code\ZeusApps.BellTower\src\BellTower\bin\Release\net10.0-windows\bell-tower.dll
+  BellTower.Smoke -> D:\Code\ZeusApps.BellTower\tools\BellTower.Smoke\bin\Release\net10.0-windows\BellTower.Smoke.dll
+  BellTower.Ingress.Bench -> D:\Code\ZeusApps.BellTower\tools\BellTower.Ingress.Bench\bin\Release\net10.0-windows\BellTower.Ingress.Bench.dll
+  BellTower.Tests -> D:\Code\ZeusApps.BellTower\tests\BellTower.Tests\bin\Release\net10.0-windows\BellTower.Tests.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:00.82

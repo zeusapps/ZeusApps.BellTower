@@ -1,0 +1,211 @@
+using System.Text.Json;
+using BellTower.Core;
+using BellTower.IO;
+using BellTower.Providers;
+using BellTower.Sessions;
+using BellTower.Tests.Testing;
+using Xunit;
+
+namespace Probe;
+
+public class Probes
+{
+    static readonly string Out = Path.Combine(Environment.GetEnvironmentVariable("QA_OUT")!, "qa-001-probe-results.txt");
+    static void Log(string s) => File.AppendAllText(Out, s + "\n");
+
+    [Fact]
+    public void ShellMatrix()
+    {
+        var cwd = @"C:\Code\D360";
+        string[] cmds =
+        {
+            @"openspec new change x1",
+            @"cd C:\Code\D360-worktrees\DEP-7070 && openspec new change x1",
+            @"cd ""C:/Code/D360-worktrees/DEP-7070"" && openspec new change x1",
+            @"cd /d C:\Code\D360-worktrees\DEP-7070 && openspec new change x1",
+            @"cd C:\Code\W; openspec new change x1 | Out-String",
+            @"pwsh -NoProfile -Command 'cd C:\Code\W ; openspec new change x1'",
+            @"powershell.exe -Command ""Set-Location -LiteralPath 'C:\Code\W'; openspec new change x1""",
+            @"cd C:\Code\W && openspec new change x1 > out.txt",
+            @"cd C:\Code\W && openspec new change x1 | tee f.txt",
+            @"cd /c/Code/W && openspec new change x1",
+            @"cd ~/W && openspec new change x1",
+            @"cd $env:W && openspec new change x1",
+            @"cd $(pwd) && openspec new change x1",
+            @"cd C:\a && cd C:\b && openspec new change x1",
+            @"openspec new change x1 || true",
+            @"openspec new change x1; echo done",
+            @"openspec new change x1 2>&1",
+            @"cd relative\dir && openspec new change x1",
+            @"cd C:\Code\W && (openspec new change x1)",
+            @"cd C:\Code\W && openspec status --change x1 --json",
+            @"cd C:\Code\W && openspec instructions apply --change x1 --json",
+            @"openspec.cmd new change x1",
+            @"npx openspec new change x1",
+            @"FOO=bar openspec new change x1",
+            @"cmd /c ""cd C:\Code\W && openspec new change x1""",
+        };
+        foreach (var c in cmds)
+        {
+            var inv = ShellGrammar.Parse(c, cwd);
+            using var doc = JsonDocument.Parse(JsonSerializer.Serialize(new { hook_event_name = "PostToolUse", tool_name = "Bash", tool_use_id = "t", cwd, tool_input = new { command = c }, tool_response = "Created change 'x1' at C:\\x" }));
+            var op = OpenSpecSelectionReader.Classify(doc.RootElement);
+            Log($"SHELL {(inv is null ? "REJECT" : "ACCEPT wd=" + inv.WorkDirectory + " red=" + inv.Redirected)} | classify={(op is null ? "none" : op.Verb + ":" + op.Change + ":" + op.Directory)} | {c}");
+        }
+    }
+
+    [Fact]
+    public void BranchSwitchThenOlderHistory()
+    {
+        using var ws = new TestWorkspace();
+        var fam = WorktreeFamily.Create(ws.Root);
+        var store = new IdentityStore(ws.Paths);
+        var reader = new IdentityHistoryReader(ws.Paths);
+        var id = "sess-branch";
+        var session = IdentityFixtures.Session("claude", id, fam.Main);
+        IdentityFixtures.Change(fam.Main, "old-z", true);
+        IdentityFixtures.Change(fam.Main, "new-a", true);
+        var t = Path.Combine(ws.Root, "t.jsonl");
+        var lines = new List<string>
+        {
+            IdentityFixtures.Claude.Write(id, "u1", fam.Main, "old-z", 1),
+            IdentityFixtures.Claude.Result(id, "u1", 2),
+            IdentityFixtures.Claude.Chatter(id, 3, 700_000),
+            IdentityFixtures.Claude.Write(id, "u2", fam.Main, "new-a", 10),
+            IdentityFixtures.Claude.Result(id, "u2", 11),
+            IdentityFixtures.Claude.Chatter(id, 12, 1000),
+        };
+        File.WriteAllLines(t, lines);
+        store.Update(session.Key, fam.Main, i => HistoryState.Bind(i, t));
+        reader.Refresh(session);
+        var after1 = store.Get(session.Key, fam.Main);
+        Log($"BRANCH after first tick active={after1.ActiveWork} histOffset={after1.HistoryOffset} workOffset={after1.HistoryWorkOffset}");
+        store.Update(session.Key, fam.Main, i => { i.ObservedBranch = "main"; i.WorkBranch = "main"; i.WorkingCheckout = fam.Main; return true; });
+        store.Update(session.Key, fam.Main, i => CheckoutPolicy.ApplyBranch(i, fam.Main, fam.Main, "other-branch"));
+        var inval = store.Get(session.Key, fam.Main);
+        Log($"BRANCH after switch active={inval.ActiveWork}");
+        for (var n = 0; n < 6; n++) reader.Refresh(session);
+        var end = store.Get(session.Key, fam.Main);
+        Log($"BRANCH after more ticks active={end.ActiveWork} source={end.WorkSource} histOffset={end.HistoryOffset}");
+    }
+
+    [Theory]
+    [InlineData("claude")]
+    [InlineData("codex")]
+    public void HistoryGrowthAndInspection(string provider)
+    {
+        using var ws = new TestWorkspace();
+        var fam = WorktreeFamily.Create(ws.Root);
+        var store = new IdentityStore(ws.Paths);
+        var reader = new IdentityHistoryReader(ws.Paths);
+        var id = "sess-" + provider;
+        var session = IdentityFixtures.Session(provider, id, fam.Main);
+        IdentityFixtures.Change(fam.Main, "work-a", true);
+        IdentityFixtures.Change(fam.Main, "other-b", true);
+        IdentityFixtures.Change(fam.Main, "grown-c", true);
+        var t = Path.Combine(ws.Root, "t.jsonl");
+        string Use(string tid, string change, int at) => provider == "claude"
+            ? IdentityFixtures.Claude.Write(id, tid, fam.Main, change, at) : null!;
+        if (provider == "codex") { Log("HIST codex fixture builders: see IdentityFixtures.Codex"); }
+        if (provider == "claude")
+        {
+            File.WriteAllLines(t, new[]
+            {
+                Use("a1", "work-a", 1), IdentityFixtures.Claude.Result(id, "a1", 2),
+                IdentityFixtures.Claude.Chatter(id, 3, 600_000),
+                // newest read-only inspection of B (status) as a shell call
+                IdentityFixtures.Claude.Use(id, "b1", "Bash", new { command = "openspec status --change other-b --json" }, fam.Main, 20),
+                IdentityFixtures.Claude.Result(id, "b1", 21),
+            });
+            store.Update(session.Key, fam.Main, i => HistoryState.Bind(i, t));
+            reader.Refresh(session);
+            // growth larger than a tick budget while recovery is in progress
+            File.AppendAllLines(t, new[] { IdentityFixtures.Claude.Chatter(id, 30, 300_000), Use("c1", "grown-c", 40), IdentityFixtures.Claude.Result(id, "c1", 41) });
+            for (var n = 0; n < 8; n++) reader.Refresh(session);
+            var s = store.Get(session.Key, fam.Main);
+            Log($"HIST {provider} after growth active={s.ActiveWork} src={s.WorkSource} weak={s.WorkWeak} off={s.HistoryOffset} len={s.HistoryLength}");
+            // partial trailing line
+            File.AppendAllText(t, "{\"type\":\"assistant\",\"message\":{\"content\":[{\"type\":\"tool_use\"");
+            for (var n = 0; n < 3; n++) reader.Refresh(session);
+            var p = store.Get(session.Key, fam.Main);
+            Log($"HIST {provider} partial-line active={p.ActiveWork} len={p.HistoryLength} fileLen={new FileInfo(t).Length}");
+        }
+    }
+
+    [Fact]
+    public void TakeOwnershipAfterGeneratedTitlePause()
+    {
+        using var ws = new TestWorkspace();
+        var store = new IdentityStore(ws.Paths);
+        var session = IdentityFixtures.Session("claude", "own-1", ws.Root);
+        store.Update(session.Key, ws.Root, i => { i.Role = "PM"; i.ActiveWork = "real-work"; return true; });
+        // what ClaudeNameService does when the helper returns the generated aiTitle as customTitle on first read
+        store.Update(session.Key, ws.Root, i => { Assert.True(NativeNamePolicy.Conflict(i, "Generated summary title")); NativeNamePolicy.Pause(i, "Generated summary title"); return true; });
+        Log($"OWN after pause name='{store.Get(session.Key, ws.Root).Name}' status={store.Get(session.Key, ws.Root).NativeSyncStatus} source={store.Get(session.Key, ws.Root).NativeTitleSource}");
+        NativeNameControl.SetEnabled(ws.Paths, session, true);
+        Log($"OWN after take ownership name='{store.Get(session.Key, ws.Root).Name}'");
+        var reset = store.SetColor(session.Key, ws.Root, null, reset: true);
+        Log($"OWN after reset name='{reset.Name}'");
+    }
+
+    [Fact]
+    public async Task FiveConversationFixture()
+    {
+        using var ws = new TestWorkspace();
+        var fam = WorktreeFamily.Create(ws.Root);
+        var w1 = fam.Add("DEP-7070", "login", "dep-7070-fix", "dep-7070-b");
+        var w2 = fam.Add("DEP-8080", "docs", "dep-8080-docs");
+        var w3 = fam.Add("DEP-9090", "api", "dep-9090-api");
+        IdentityFixtures.Change(fam.Main, "shared-spec", true);
+        var plans = new (string P, string Id, string Role, string Change, string Where)[]
+        {
+            ("claude","c1","PM","dep-7070-fix",w1), ("claude","c2","QA","dep-8080-docs",w2), ("claude","c3","DEV","dep-9090-api",w3),
+            ("codex","x1","PM","dep-7070-b",w1), ("codex","x2","QA","shared-spec",fam.Main)
+        };
+        var now = DateTimeOffset.UtcNow;
+        var events = new EventStore(ws.Paths);
+        var ids = new IdentityStore(ws.Paths);
+        foreach (var p in plans)
+            events.Publish(TestWorkspace.Event(EventKind.Permission, now.AddSeconds(-30)) with { Provider = p.P, SessionId = p.Id, AttachmentId = "att-" + p.Id, Directory = fam.Main });
+        var state = new StateStore(ws.Paths).Drain();
+        var obs = new OpenSpecSelectionObserver(ws.Paths);
+        foreach (var p in plans)
+        {
+            var key = p.P + ":" + p.Id;
+            ids.Update(key, fam.Main, v => { v.Role = p.Role; return true; });
+            string file = Path.Combine(p.Where, "openspec", "changes", p.Change, "proposal.md").Replace('\\', '/');
+            Directory.CreateDirectory(Path.GetDirectoryName(file)!);
+            var tool = p.P == "claude" ? "Write" : "apply_patch";
+            object toolInput = p.P == "claude" ? new { file_path = file, content = "x" } : new { command = "*** Begin Patch\n*** Update File: " + file + "\n@@\n-a\n+b\n*** End Patch" };
+            var json = JsonSerializer.Serialize(new { session_id = p.Id, hook_event_name = "PostToolUse", tool_name = tool, tool_use_id = "w-" + p.Id, cwd = fam.Main, tool_input = toolInput, tool_response = new { } });
+            using (var d = JsonDocument.Parse(json)) obs.Observe(key, fam.Main, d.RootElement);
+            var inspect = JsonSerializer.Serialize(new { session_id = p.Id, hook_event_name = "PostToolUse", tool_name = "Bash", tool_use_id = "i-" + p.Id, cwd = fam.Main, tool_input = new { command = "openspec status --change shared-spec --json" }, tool_response = "{}" });
+            using (var d = JsonDocument.Parse(inspect)) obs.Observe(key, fam.Main, d.RootElement);
+            var inspect2 = JsonSerializer.Serialize(new { session_id = p.Id, hook_event_name = "PostToolUse", tool_name = "Read", tool_use_id = "r-" + p.Id, cwd = fam.Main, tool_input = new { file_path = Path.Combine(w2, "openspec", "changes", "dep-8080-docs", "proposal.md") }, tool_response = "x" });
+            using (var d = JsonDocument.Parse(inspect2)) obs.Observe(key, fam.Main, d.RootElement);
+        }
+        ids.Update("claude:c3", fam.Main, v => { v.NativeTitle = "My own title"; v.NativeTitleSource = "claude-custom-title"; return true; });
+        ids.Update("codex:x2", fam.Main, v => { v.ManualName = "Manual X2"; return true; });
+        var resolver = new IdentityResolver(ws.Paths, new CheckoutCache());
+        var presentations = new IdentityPresentationStore(ws.Paths);
+        var contexts = new Dictionary<string, GitContext>();
+        foreach (var p in plans)
+        {
+            var key = p.P + ":" + p.Id;
+            var g = await resolver.RefreshAsync(state.Sessions[key]);
+            contexts[key] = g;
+            presentations.Save(ids.Get(key, fam.Main), g);
+        }
+        var ids2 = new IdentityStore(ws.Paths);
+        foreach (var p in plans)
+        {
+            var key = p.P + ":" + p.Id;
+            var i = ids2.Get(key, fam.Main);
+            var snap = presentations.Read(key)!;
+            var phrase = AlertPolicy.Phrase(state.Sessions[key], i);
+            Log($"FIVE {key} name='{i.Name}' active={i.ActiveWork} checkout={Path.GetFileName(i.WorkingCheckout)} src={i.CheckoutSource} accent={i.Palette.Accent} title='{SessionPresentation.Title(i.Name, contexts[key])}' speech='{phrase}' snap='{snap.Title}' prov={snap.Provenance}");
+        }
+        var accents = plans.Select(p => ids2.Get(p.P + ":" + p.Id, fam.Main).Palette.Accent).Distinct().Count();
+        Log($"FIVE distinct accents={accents}/5");
+    }
+}

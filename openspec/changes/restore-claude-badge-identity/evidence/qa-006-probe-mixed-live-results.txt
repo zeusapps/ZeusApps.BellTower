@@ -1,0 +1,25 @@
+provider=claude case=mixed-live (synthetic clock: t=N is 12:00:00+N s)
+mixed-live live claude child read        WorkFloorAt= ActiveWork=change-a WorkSource=history:edit WorkBranch=main ForkInheritedFrom=parent-live ForkBoundaryOffset=-1 Subject=change-a
+mixed-live live claude child after parent read WorkFloorAt= ActiveWork=change-a WorkSource=history:edit WorkBranch=main ForkInheritedFrom=parent-live ForkBoundaryOffset=-1 Subject=change-a
+mixed-live live codex child read         WorkFloorAt= ActiveWork=change-a WorkSource=history:edit WorkBranch=main ForkInheritedFrom=parent-live ForkBoundaryOffset=909 Subject=change-a
+mixed-live live codex child after parent read WorkFloorAt= ActiveWork=change-a WorkSource=history:edit WorkBranch=main ForkInheritedFrom=parent-live ForkBoundaryOffset=909 Subject=change-a
+mixed-live stale claude child read       WorkFloorAt= ActiveWork=change-a WorkSource=history:edit WorkBranch=main ForkInheritedFrom=parent-stale ForkBoundaryOffset=-1 Subject=change-a
+mixed-live stale claude child after parent read WorkFloorAt= ActiveWork=change-a WorkSource=history:edit WorkBranch=main ForkInheritedFrom=parent-stale ForkBoundaryOffset=-1 Subject=change-a
+mixed-live stale codex child read        WorkFloorAt= ActiveWork=change-a WorkSource=history:edit WorkBranch=main ForkInheritedFrom=parent-stale ForkBoundaryOffset=912 Subject=change-a
+mixed-live stale codex child after parent read WorkFloorAt= ActiveWork=change-a WorkSource=history:edit WorkBranch=main ForkInheritedFrom=parent-stale ForkBoundaryOffset=912 Subject=change-a
+mixed-live weak claude child read        WorkFloorAt= ActiveWork=change-a WorkSource=history:edit WorkBranch=main ForkInheritedFrom=parent-weak ForkBoundaryOffset=-1 Subject=change-a
+mixed-live weak claude child after parent read WorkFloorAt= ActiveWork=change-a WorkSource=history:edit WorkBranch=main ForkInheritedFrom=parent-weak ForkBoundaryOffset=-1 Subject=change-a
+mixed-live weak codex child read         WorkFloorAt= ActiveWork=change-a WorkSource=history:edit WorkBranch=main ForkInheritedFrom=parent-weak ForkBoundaryOffset=909 Subject=change-a
+mixed-live weak codex child after parent read WorkFloorAt= ActiveWork=change-a WorkSource=history:edit WorkBranch=main ForkInheritedFrom=parent-weak ForkBoundaryOffset=909 Subject=change-a
+mixed-live livedif claude child read     WorkFloorAt= ActiveWork=change-b WorkSource=fork:Write WorkBranch=main ForkInheritedFrom=parent-livedif ForkBoundaryOffset=-1 Subject=change-b
+mixed-live livedif claude child after parent read WorkFloorAt= ActiveWork=change-b WorkSource=fork:Write WorkBranch=main ForkInheritedFrom=parent-livedif ForkBoundaryOffset=-1 Subject=change-b
+mixed-live livedif codex child read      WorkFloorAt= ActiveWork=change-a WorkSource=history:edit WorkBranch=main ForkInheritedFrom=parent-livedif ForkBoundaryOffset=918 Subject=change-a
+mixed-live livedif codex child after parent read WorkFloorAt= ActiveWork=change-a WorkSource=history:edit WorkBranch=main ForkInheritedFrom=parent-livedif ForkBoundaryOffset=918 Subject=change-a
+mixed-live real claude child read        WorkFloorAt= ActiveWork=change-b WorkSource=fork:Write WorkBranch=main ForkInheritedFrom=parent-real ForkBoundaryOffset=-1 Subject=change-b
+mixed-live real claude child after parent read WorkFloorAt= ActiveWork=change-b WorkSource=fork:Write WorkBranch=main ForkInheritedFrom=parent-real ForkBoundaryOffset=-1 Subject=change-b
+mixed-live real codex child read         WorkFloorAt= ActiveWork=change-b WorkSource=history:edit WorkBranch=main ForkInheritedFrom=parent-real ForkBoundaryOffset=1405 Subject=change-b
+mixed-live real codex child after parent read WorkFloorAt= ActiveWork=change-b WorkSource=history:edit WorkBranch=main ForkInheritedFrom=parent-real ForkBoundaryOffset=1405 Subject=change-b
+mixed-live newer claude child read       WorkFloorAt= ActiveWork=change-b WorkSource=fork:Write WorkBranch=main ForkInheritedFrom=parent-newer ForkBoundaryOffset=-1 Subject=change-b
+mixed-live newer claude child after parent read WorkFloorAt= ActiveWork=change-b WorkSource=fork:Write WorkBranch=main ForkInheritedFrom=parent-newer ForkBoundaryOffset=-1 Subject=change-b
+mixed-live newer codex child read        WorkFloorAt= ActiveWork=change-b WorkSource=fork:Write WorkBranch=main ForkInheritedFrom=parent-newer ForkBoundaryOffset=912 Subject=change-b
+mixed-live newer codex child after parent read WorkFloorAt= ActiveWork=change-b WorkSource=fork:Write WorkBranch=main ForkInheritedFrom=parent-newer ForkBoundaryOffset=912 Subject=change-b

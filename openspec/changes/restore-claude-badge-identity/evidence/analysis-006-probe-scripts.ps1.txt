@@ -1,0 +1,58 @@
+# Analysis 006 probe scripts (restore-claude-badge-identity). Base script: probe-fork-boundary.ps1 from
+# analysis-005-probe-scripts.ps1.txt, extracted verbatim (from the "##### probe-fork-boundary.ps1" line to the end) into D:\Temp\bt-a6.
+# Run with PowerShell 7: pwsh -NoProfile -File probe-fork-boundary.ps1 -Provider claude|codex -Case <case> -Bin D:\Temp\bt-a6\bin
+# <bin> = copy of src/BellTower/bin/Release/net10.0-windows (bell-tower.dll 2026-10-24T20:54:11, newer than every src/BellTower source,
+# byte-identical to the test-bin copy). TEMP/TMP redirected to D:\Temp\bt-a6\tmp; isolated data dirs under the script folder only.
+# Two edits to the base script, nothing else changed:
+# 1. ValidateSet extended:  ..., 'mixed', 'split-live', 'gap-parent', 'split-gap', 'newer-parent', 'mixed-gap', 'gap-twin')]
+# 2. The switch branches below inserted before the 'mixed' branch.
+# Cases re-run unchanged from Analysis 005: orphan, unread-parent, split, boundary, big, live-parent, stale-parent, weak-parent,
+# split-live, mixed. Added cases probe the developer's reported residual (QA-300 shape).
+    'gap-parent' {
+        # Analysis 006 (QA-300 residual): parent live strong change-b at t=20, newer than Claude's copied stamps (t=10/11), older than
+        # the fork time (t=40, Codex copy restamp). Parent transcript (change-a at t=10) unread.
+        Register-LiveParent 'change-b' $false 20
+        Write-Lines $cf @((Prefix); (Boundary)); Bind-Child $cf; Set-ChildBranch 'main'
+        "ticks=$(Tick $child)"; Show 'fork child first read' $child
+        $null = Tick $parent; Show 'parent after its own read' $parent
+        Append-Lines $cf @(Chatter 'child' 70 10 $null); $null = Tick $child; Show 'fork child after parent read' $child
+        Own-Work $cf 80
+    }
+    'split-gap' {
+        Register-LiveParent 'change-b' $false 20
+        Write-Lines $cf (Prefix); Bind-Child $cf; Set-ChildBranch 'main'
+        "ticks=$(Tick $child)"; Show 'child, prefix only (boundary unwritten)' $child
+        if ($Provider -eq 'codex') { Append-Lines $cf @(Boundary) } else { Append-Lines $cf @(Chatter 'child' 41 10 $null) }
+        "ticks=$(Tick $child)"; Show 'child, boundary appended' $child
+    }
+    'newer-parent' {
+        # Parent live strong change-b at t=90, newer than every copy on both clients.
+        Register-LiveParent 'change-b' $false 90
+        Write-Lines $cf @((Prefix); (Boundary)); Bind-Child $cf; Set-ChildBranch 'main'
+        "ticks=$(Tick $child)"; Show 'fork child first read' $child
+    }
+    'mixed-gap' {
+        # Claude and Codex gap-parent forks interleaved in one store (distinct session ids).
+        foreach ($p in 'claude', 'codex') {
+            $script:Provider = $p
+            $ps = New-Session "parent-$p"; $pf = Join-Path $root "parent-$p.jsonl"
+            Write-Lines $pf $(if ($p -eq 'claude') { @(Work "parent-$p" 'change-a' 'w1' 10 $null) } else { @((Meta "parent-$p" $null 0); (Snap "parent-$p" 0); (Work "parent-$p" 'change-a' 'p1' 10 $null)) })
+            $null = $store.Update($ps.Key, $work, [Func[BellTower.Core.SessionIdentity, bool]] { param($v) $v.ObservedBranch = 'main'; $null = [BellTower.Core.HistoryState]::Bind($v, $pf); [BellTower.Core.WorkPolicy]::Apply($v, [BellTower.Core.WorkEvidence]::new('change-b', $work, 'Write', $false, (T 20), -1)) })
+            $c = Join-Path $root "child-$p.jsonl"; $cid = "child-$p"
+            $prefix = if ($p -eq 'claude') { @(Work $cid 'change-a' 'w1' 10 "parent-$p") } else { @((Meta $cid "parent-$p" 40); (Snap "parent-$p" 40); (Work $cid 'change-a' 'p1' 40 $null); (Snap $cid 40)) }
+            Write-Lines $c $prefix
+            $cs = New-Session $cid
+            $null = $store.Update($cs.Key, $work, [Func[BellTower.Core.SessionIdentity, bool]] { param($v) $v.ObservedBranch = 'main'; [BellTower.Core.HistoryState]::Bind($v, $c) })
+            $null = Tick $cs; Show "mixed-gap $p first read" $cs
+        }
+    }
+    'gap-twin' {
+        # Analysis 006: gap-parent, but the parent's live change-b work (t=20) has its transcript twin, which a full-history fork copies.
+        Register-LiveParent 'change-b' $false 20
+        $pf = Join-Path $root "parent-$Provider.jsonl"
+        if ($Provider -eq 'claude') { Append-Lines $pf @(Work 'parent' 'change-b' 'w2' 20 $null) } else { Append-Lines $pf @(Work 'parent' 'change-b' 'p2' 20 $null) }
+        $twin = if ($Provider -eq 'claude') { @(Work 'child' 'change-b' 'w2' 20 'parent') } else { @(Work 'child' 'change-b' 'p2' 40 $null) }
+        Write-Lines $cf @((Prefix); $twin; (Boundary)); Bind-Child $cf; Set-ChildBranch 'main'
+        "ticks=$(Tick $child)"; Show 'fork child first read' $child
+    }
+

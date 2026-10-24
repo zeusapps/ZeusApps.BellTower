@@ -18,6 +18,7 @@ public sealed record CaptureEnvelope
     public bool Dedicated { get; init; }
     public string? Name { get; init; }
     public string? Change { get; init; }
+    // Legacy field from earlier builds (session roles were removed); read for compatibility and ignored.
     public string? Role { get; init; }
     public OpenSpecSelection? Selection { get; init; }
     public string? SelectionRoot { get; init; }

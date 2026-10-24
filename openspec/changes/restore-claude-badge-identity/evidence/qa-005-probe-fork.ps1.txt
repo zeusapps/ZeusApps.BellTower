@@ -1,0 +1,76 @@
+# QA 004 probe: fork of a conversation whose pre-switch work was invalidated (ANALYSIS-150), Codex and Claude, with boundary-window edge cases.
+# Isolated data dir and synthetic transcripts only (next to this script, under ignored artifacts/); loads the Release build read-only.
+param([ValidateSet('claude','codex')][string]$Provider='codex',
+  [ValidateSet('small','large','growth','growth-large','tailwin','noboundary')][string]$Case='small',[ValidateSet('switch','orphan','nofloor','live','livedif')][string]$Mode='switch',
+  [Parameter(Mandatory)][string]$Bin)
+$ErrorActionPreference='Stop'
+Add-Type -Path (Join-Path $Bin 'bell-tower.dll')
+$root=Join-Path $PSScriptRoot ("data-"+[guid]::NewGuid().ToString('N').Substring(0,8))
+$work=Join-Path $root 'repo'
+foreach($c in 'change-a','change-b'){New-Item -ItemType Directory -Force (Join-Path $work "openspec\changes\$c")|Out-Null}
+$paths=[BellTower.IO.DataPaths]::new((Join-Path $root 'data')); $paths.Ensure()
+$slash=$work.Replace('\','/')
+function T([int]$s){([datetimeoffset]'2026-10-23T12:00:00Z').AddSeconds($s)}
+function Ts([int]$s){(T $s).ToString('yyyy-MM-ddTHH:mm:ss.fffZ')}
+function J($o){$o|ConvertTo-Json -Depth 10 -Compress}
+function Chatter([int]$at,[int]$bytes,[string]$sid){
+  if($Provider -eq 'claude'){J @{isSidechain=$false;type='assistant';timestamp=(Ts $at);sessionId=$sid;message=@{role='assistant';content=@(@{type='text';text=('x'*$bytes)})}}}
+  else{J @{timestamp=(Ts $at);type='response_item';payload=@{type='message';role='assistant';content=@(@{type='output_text';text=('x'*$bytes)})}}}}
+function Work([string]$sid,[string]$change,[string]$call,[int]$at,[string]$from){
+  if($Provider -eq 'claude'){
+    $a=@{isSidechain=$false;type='assistant';timestamp=(Ts $at);cwd=$slash;sessionId=$sid;message=@{role='assistant';content=@(@{type='tool_use';id=$call;name='Write';input=@{file_path="$slash/openspec/changes/$change/proposal.md";content='x'}})}}
+    $b=@{isSidechain=$false;type='user';timestamp=(Ts ($at+1));sessionId=$sid;message=@{role='user';content=@(@{type='tool_result';tool_use_id=$call;content='ok'})}}
+    if($from){$a.forkedFrom=@{sessionId=$from;messageUuid='m'};$b.forkedFrom=@{sessionId=$from;messageUuid='m'}}
+    J $a;J $b}
+  else{
+    J @{timestamp=(Ts $at);type='response_item';payload=@{type='custom_tool_call';name='apply_patch';call_id=$call;input="*** Begin Patch`n*** Add File: $slash/openspec/changes/$change/proposal.md`n+x`n*** End Patch"}}
+    J @{timestamp=(Ts ($at+1));type='response_item';payload=@{type='custom_tool_call_output';call_id=$call;output="Exit code: 0`nWall time: 0.1 seconds`nOutput:`nSuccess. Updated the following files:`nA x`n"}}}}
+function Boundary([string]$tid){J @{timestamp=(Ts 40);type='event_msg';payload=@{type='thread_settings_applied';thread_id=$tid}}}
+$utf8=[System.Text.UTF8Encoding]::new($false)
+$store=[BellTower.IO.IdentityStore]::new($paths,$null)
+$reader=[BellTower.Sessions.IdentityHistoryReader]::new($paths)
+function New-Session([string]$sid){$s=[BellTower.Core.SessionState]::new();$s.Key="${Provider}:$sid";$s.Provider=$Provider;$s.SessionId=$sid;$s.AttachmentId="a-$sid";$s.Directory=$work;$s}
+function Show([string]$label,$s){$i=$store.Get($s.Key,$work,$null,$null,$null)
+  "{0,-44} ActiveWork={1} WorkSource={2} Boundary={3} Len={4} Off={5} Floor={6} Subject={7}" -f $label,$i.ActiveWork,$i.WorkSource,$i.ForkBoundaryOffset,$i.HistoryLength,$i.HistoryOffset,$(if($i.WorkFloorAt){([datetimeoffset]$i.WorkFloorAt).ToString('HH:mm:ss')}else{''}),$i.Subject}
+function Ticks($s,[string]$label){ $n=0; do{ $r=$reader.Refresh($s); $n++; Show "$label tick$n (changed=$r)" $s }while($r -and $n -lt 12) }
+"provider=$Provider case=$Case mode=$Mode"
+# parent: pre-switch work t=10, switch detected t=20, none later
+$parent=New-Session 'parent'; $pf=Join-Path $root 'parent.jsonl'
+if($Mode -ne 'orphan'){
+$pl=if($Provider -eq 'claude'){@(Work 'parent' 'change-a' 'w1' 10 $null)}else{@((J @{timestamp=(Ts 0);type='session_meta';payload=@{id='parent';cwd=$slash}});(Work 'parent' 'change-a' 'w1' 10 $null))}
+[IO.File]::WriteAllText($pf,($pl -join "`n")+"`n",$utf8)
+$null=$store.Update($parent.Key,$work,[Func[BellTower.Core.SessionIdentity,bool]]{param($v)$v.ObservedBranch='main';[BellTower.Core.HistoryState]::Bind($v,$pf)})
+if($Mode -notin 'live','livedif'){ $null=$reader.Refresh($parent) }
+else { $null=$store.Update($parent.Key,$work,[Func[BellTower.Core.SessionIdentity,bool]]{param($v)[BellTower.Core.WorkPolicy]::Apply($v,[BellTower.Core.WorkEvidence]::new($(if($Mode -eq 'livedif'){'change-b'}else{'change-a'}),$work,'Write',$false,(T $(if($Mode -eq 'livedif'){30}else{10})),-1))}) }
+if($Mode -eq 'switch'){ $null=$store.Update($parent.Key,$work,[Func[BellTower.Core.SessionIdentity,bool]]{param($v)$c=[BellTower.Core.CheckoutPolicy]::ApplyBranch($v,$work,$work,'feature',(T 20));$v.ObservedBranch='feature';$c}) }
+Show 'parent state' $parent
+} else { 'orphan: parent never stored' }
+$child=New-Session 'child'; $cf=Join-Path $root 'child.jsonl'
+$null=$store.Update($child.Key,$work,[Func[BellTower.Core.SessionIdentity,bool]]{param($v)$v.ObservedBranch='feature';[BellTower.Core.HistoryState]::Bind($v,$cf)})
+# Copied prefix: Claude keeps original timestamps (t=10); Codex restamps at fork time (t=40). Codex prefix ends with the copied parent snapshot.
+function Prefix([int]$chatterBytes){
+  if($Provider -eq 'claude'){ @((Work 'child' 'change-a' 'w1' 10 'parent');(Chatter 11 $chatterBytes 'child')) }
+  else{ @((J @{timestamp=(Ts 40);type='session_meta';payload=@{id='child';forked_from_id='parent';cwd=$slash}});(J @{timestamp=(Ts 40);type='session_meta';payload=@{id='parent';cwd=$slash}});(Work 'child' 'change-a' 'w1' 40 $null);(Chatter 40 $chatterBytes 'child');(Boundary 'parent')) } }
+function Own(){ if($Provider -eq 'codex'){ @((Boundary 'child')) } else { @() } }
+function PostFork(){ @((Work 'child' 'change-b' 'w2' 60 $(if($Provider -eq 'claude'){'parent'}else{$null}))) }
+function Join-Lines($lines){ (($lines) -join "`n")+"`n" }
+switch($Case){
+ 'small'{ [IO.File]::WriteAllText($cf,(Join-Lines (@(Prefix 2000)+@(Own))),$utf8); Ticks $child 'first'
+   [IO.File]::AppendAllText($cf,(Join-Lines (PostFork)),$utf8); Ticks $child 'post-fork work' }
+ 'noboundary'{ [IO.File]::WriteAllText($cf,(Join-Lines (@(Prefix 2000))),$utf8); Ticks $child 'first (no own boundary event)' }
+ 'large'{ [IO.File]::WriteAllText($cf,(Join-Lines (@(Prefix 400000)+@(Own)+@(Chatter 41 500 'child'))),$utf8); Ticks $child 'first'
+   [IO.File]::AppendAllText($cf,(Join-Lines (PostFork)),$utf8); Ticks $child 'post-fork work' }
+ 'tailwin'{ # boundary followed by >256 KiB own chatter: the newest window never sees the boundary
+   [IO.File]::WriteAllText($cf,(Join-Lines (@(Prefix 2000)+@(Own)+@(Chatter 45 600000 'child'))),$utf8); Ticks $child 'first' }
+ 'growth'{ # a tick sees the copied prefix (with work) before the own boundary event is written
+   [IO.File]::WriteAllText($cf,(Join-Lines @(Prefix 2000)),$utf8); Ticks $child 'prefix only'
+   if($Provider -eq 'codex'){ [IO.File]::AppendAllText($cf,(Join-Lines @(Own)),$utf8) }; Ticks $child 'boundary appended'
+   [IO.File]::AppendAllText($cf,(Join-Lines (PostFork)),$utf8); Ticks $child 'post-fork work' }
+ 'growth-large'{ # first tick covers a >256 KiB prefix; the own boundary arrives in a later window
+   [IO.File]::WriteAllText($cf,(Join-Lines @(Prefix 400000)),$utf8); Ticks $child 'large prefix, no own boundary yet'
+   if($Provider -eq 'codex'){ [IO.File]::AppendAllText($cf,(Join-Lines @(Own)),$utf8) }; Ticks $child 'boundary appended'
+   [IO.File]::AppendAllText($cf,(Join-Lines (PostFork)),$utf8); Ticks $child 'post-fork work' }
+}
+Remove-Item -Recurse -Force $root
+
+

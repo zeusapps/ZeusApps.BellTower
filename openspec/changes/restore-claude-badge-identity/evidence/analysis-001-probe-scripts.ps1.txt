@@ -1,0 +1,142 @@
+##### probe-weak.ps1 #####
+param([switch]$WithTitle, [string]$Name = 'probe')
+$ErrorActionPreference = 'Stop'
+$scratch = Split-Path -Parent $MyInvocation.MyCommand.Path
+Add-Type -Path (Join-Path $scratch 'bin\bell-tower.dll')
+$root = Join-Path $scratch ("data-" + $Name + "-" + [guid]::NewGuid().ToString('N').Substring(0, 8))
+$work = Join-Path $root 'repo'
+New-Item -ItemType Directory -Force (Join-Path $work 'openspec\changes\change-a') | Out-Null
+New-Item -ItemType Directory -Force (Join-Path $work 'openspec\changes\change-b') | Out-Null
+$paths = [BellTower.IO.DataPaths]::new((Join-Path $root 'data'))
+$paths.Ensure()
+$id = 'fixture-session'
+$slash = $work.Replace('\', '/')
+function Ts([int]$s) { ([datetimeoffset]'2026-10-23T12:00:00Z').AddSeconds($s).ToString('yyyy-MM-ddTHH:mm:ss.fffZ') }
+function J($o) { $o | ConvertTo-Json -Depth 10 -Compress }
+$lines = [System.Collections.Generic.List[string]]::new()
+$lines.Add((J @{ isSidechain = $false; type = 'assistant'; timestamp = (Ts 1); cwd = $slash; sessionId = $id; message = @{ role = 'assistant'; content = @(@{ type = 'tool_use'; id = 'w1'; name = 'Write'; input = @{ file_path = "$slash/openspec/changes/change-a/proposal.md"; content = 'x' } }) } }))
+$lines.Add((J @{ isSidechain = $false; type = 'user'; timestamp = (Ts 2); sessionId = $id; message = @{ role = 'user'; content = @(@{ type = 'tool_result'; tool_use_id = 'w1'; content = 'ok' }) } }))
+for ($i = 0; $i -lt 10; $i++) { $lines.Add((J @{ isSidechain = $false; type = 'assistant'; timestamp = (Ts (10 + $i)); sessionId = $id; message = @{ role = 'assistant'; content = @(@{ type = 'text'; text = ('x' * 60000) }) } })) }
+if ($WithTitle) { $lines.Add((J @{ type = 'custom-title'; customTitle = 'User title'; sessionId = $id })) }
+$lines.Add((J @{ isSidechain = $false; type = 'assistant'; timestamp = (Ts 50); cwd = $slash; sessionId = $id; message = @{ role = 'assistant'; content = @(@{ type = 'tool_use'; id = 'e1'; name = 'Skill'; input = @{ skill = 'explain-change'; args = 'change-b' } }) } }))
+$lines.Add((J @{ isSidechain = $false; type = 'user'; timestamp = (Ts 51); sessionId = $id; message = @{ role = 'user'; content = @(@{ type = 'tool_result'; tool_use_id = 'e1'; content = 'ok' }) } }))
+$transcript = Join-Path $root 'transcript.jsonl'
+[System.IO.File]::WriteAllText($transcript, ($lines -join "`n") + "`n", [System.Text.UTF8Encoding]::new($false))
+$session = [BellTower.Core.SessionState]::new()
+$session.Key = "claude:$id"; $session.Provider = 'claude'; $session.SessionId = $id; $session.AttachmentId = "attachment-$id"; $session.Directory = $work
+$store = [BellTower.IO.IdentityStore]::new($paths, $null)
+$null = $store.Update($session.Key, $work, [Func[BellTower.Core.SessionIdentity, bool]] { param($v) [BellTower.Core.HistoryState]::Bind($v, $transcript) })
+$reader = [BellTower.Sessions.IdentityHistoryReader]::new($paths)
+$ticks = 0
+while ($ticks -lt 40 -and $reader.Refresh($session)) { $ticks++ }
+$identity = $store.Get($session.Key, $work, $null, $null, $null, $null)
+$size = (Get-Item $transcript).Length
+"withTitle=$WithTitle transcriptBytes=$size ticks=$ticks ActiveWork=$($identity.ActiveWork) WorkWeak=$($identity.WorkWeak) NativeTitle=$($identity.NativeTitle) HistoryOffset=$($identity.HistoryOffset) HistoryWorkOffset=$($identity.HistoryWorkOffset) NativeTitleOffset=$($identity.NativeTitleOffset) Name=$($identity.Name)"
+Remove-Item -Recurse -Force $root
+
+##### probe-size.ps1 #####
+param([int]$Identities = 200)
+$ErrorActionPreference = 'Stop'
+$scratch = Split-Path -Parent $MyInvocation.MyCommand.Path
+Add-Type -Path (Join-Path $scratch 'bin\bell-tower.dll')
+$root = Join-Path $scratch ("data-size-" + [guid]::NewGuid().ToString('N').Substring(0, 8))
+$paths = [BellTower.IO.DataPaths]::new($root)
+$paths.Ensure()
+$store = [BellTower.IO.IdentityStore]::new($paths, $null)
+$dir = 'C:\Code\D360-worktrees\DEP-7070'
+$at = [datetimeoffset]::UtcNow
+function Hash([string]$v) { [BellTower.IO.ContentHash]::Compute($v) }
+$fill = [Func[BellTower.Core.SessionIdentity, bool]] {
+    param($v)
+    for ($i = 0; $i -lt 64; $i++) {
+        $v.HistoryCalls.Add([BellTower.Core.HistoryWork]::new((Hash "c$i"), "dep-7070-change-$i", $dir, 'edit', $at, 1000000 + $i, $false, 'result'))
+        $v.HistoryResults.Add([BellTower.Core.HistoryResult]::new((Hash "r$i"), 2000000 + $i, $false, $true))
+        $v.SelectionReceipts.Add((Hash "s$i"))
+    }
+    for ($i = 0; $i -lt 128; $i++) {
+        $v.SelectionEvidence.Add([BellTower.Core.SelectionEvidence]::new([guid]::NewGuid().ToString('N'), (Hash "e$i"), $at, $false, "dep-7070-change-$i", $dir, $null))
+    }
+    $true
+}
+$sw = [System.Diagnostics.Stopwatch]::StartNew()
+for ($n = 0; $n -lt $Identities; $n++) { $null = $store.Update("claude:session-$n", $dir, $fill) }
+$populate = $sw.Elapsed.TotalMilliseconds
+$file = Get-ChildItem $paths.Identities -Filter *.json | Select-Object -First 1
+"identityFileBytes(full lists)=$($file.Length) identities=$Identities populateMs=$([math]::Round($populate))"
+# Warm-up then time a plain Get (hook/tray read path).
+$null = $store.Get('claude:session-0', $dir, $null, $null, $null, $null)
+$sw.Restart(); for ($k = 0; $k -lt 100; $k++) { $null = $store.Get('claude:session-0', $dir, $null, $null, $null, $null) }
+"getFullIdentityMsAvg=$([math]::Round($sw.Elapsed.TotalMilliseconds / 100, 2))"
+# Creation of a new identity without a launch palette (AllocatePalette under the identity lock).
+$times = @()
+for ($k = 0; $k -lt 10; $k++) { $sw.Restart(); $null = $store.Get("codex:new-$k", $dir, $null, $null, $null, $null); $times += $sw.Elapsed.TotalMilliseconds }
+"createIdentityWithAllocateMs(min/avg/max)=$([math]::Round(($times | Measure-Object -Minimum).Minimum,1))/$([math]::Round(($times | Measure-Object -Average).Average,1))/$([math]::Round(($times | Measure-Object -Maximum).Maximum,1))"
+Remove-Item -Recurse -Force $root
+
+##### probe-write.ps1 #####
+$ErrorActionPreference = 'Stop'
+$scratch = Split-Path -Parent $MyInvocation.MyCommand.Path
+Add-Type -Path (Join-Path $scratch 'bin\bell-tower.dll')
+$root = Join-Path $scratch ("data-write-" + [guid]::NewGuid().ToString('N').Substring(0, 8))
+$paths = [BellTower.IO.DataPaths]::new($root)
+$paths.Ensure()
+$store = [BellTower.IO.IdentityStore]::new($paths, $null)
+$dir = 'C:\Code\D360'
+$sw = [System.Diagnostics.Stopwatch]::StartNew()
+$null = $store.Get('claude:small', $dir, $null, $null, $null, $null)
+$noop = [Func[BellTower.Core.SessionIdentity, bool]] { param($v) $false }
+$i = 0
+$touch = [Func[BellTower.Core.SessionIdentity, bool]] { param($v) $v.ProviderCwd = 'C:\x' + [guid]::NewGuid().ToString('N'); $true }
+for ($k = 0; $k -lt 5; $k++) { $null = $store.Update('claude:small', $dir, $noop) }
+$sw.Restart(); for ($k = 0; $k -lt 50; $k++) { $null = $store.Update('claude:small', $dir, $noop) }
+"updateNoWriteMsAvg=$([math]::Round($sw.Elapsed.TotalMilliseconds / 50, 2))"
+$sw.Restart(); for ($k = 0; $k -lt 50; $k++) { $null = $store.Update('claude:small', $dir, $touch) }
+"updateWithWriteMsAvg=$([math]::Round($sw.Elapsed.TotalMilliseconds / 50, 2))"
+$file = Get-ChildItem $paths.Identities -Filter *.json | Select-Object -First 1
+"smallIdentityBytes=$($file.Length)"
+Remove-Item -Recurse -Force $root
+
+##### probe-tick.ps1 #####
+param([int]$Pairs = 6000)
+$ErrorActionPreference = 'Stop'
+$scratch = Split-Path -Parent $MyInvocation.MyCommand.Path
+Add-Type -Path (Join-Path $scratch 'bin\bell-tower.dll')
+$root = Join-Path $scratch ("data-tick-" + [guid]::NewGuid().ToString('N').Substring(0, 8))
+$work = Join-Path $root 'repo'
+New-Item -ItemType Directory -Force (Join-Path $work 'openspec\changes\change-a') | Out-Null
+$paths = [BellTower.IO.DataPaths]::new((Join-Path $root 'data'))
+$paths.Ensure()
+$id = 'fixture-session'
+$slash = $work.Replace('\', '/')
+$sb = [System.Text.StringBuilder]::new()
+$body = 'y' * 1500
+for ($i = 0; $i -lt $Pairs; $i++) {
+    # Typical non-work tool traffic: Read/Grep/Bash calls with ~1.5 KB results, all matching the "tool_use"/"tool_result" prefilter.
+    $tool = @('Read', 'Grep', 'Bash')[$i % 3]
+    $input = if ($tool -eq 'Bash') { '{"command":"git status"}' } else { '{"file_path":"' + $slash + '/src/file' + $i + '.cs"}' }
+    [void]$sb.Append('{"type":"assistant","isSidechain":false,"timestamp":"2026-10-23T12:00:00.000Z","cwd":"' + $slash + '","sessionId":"' + $id + '","message":{"role":"assistant","content":[{"type":"tool_use","id":"t' + $i + '","name":"' + $tool + '","input":' + $input + '}]}}' + "`n")
+    [void]$sb.Append('{"type":"user","isSidechain":false,"timestamp":"2026-10-23T12:00:01.000Z","sessionId":"' + $id + '","message":{"role":"user","content":[{"type":"tool_result","tool_use_id":"t' + $i + '","content":"' + $body + '"}]}}' + "`n")
+}
+$transcript = Join-Path $root 'transcript.jsonl'
+[System.IO.File]::WriteAllText($transcript, $sb.ToString(), [System.Text.UTF8Encoding]::new($false))
+$session = [BellTower.Core.SessionState]::new()
+$session.Key = "claude:$id"; $session.Provider = 'claude'; $session.SessionId = $id; $session.AttachmentId = "attachment-$id"; $session.Directory = $work
+$store = [BellTower.IO.IdentityStore]::new($paths, $null)
+$null = $store.Update($session.Key, $work, [Func[BellTower.Core.SessionIdentity, bool]] { param($v) [BellTower.Core.HistoryState]::Bind($v, $transcript) })
+$reader = [BellTower.Sessions.IdentityHistoryReader]::new($paths)
+$times = [System.Collections.Generic.List[double]]::new()
+$sw = [System.Diagnostics.Stopwatch]::StartNew()
+$ticks = 0
+while ($ticks -lt 1000) { $sw.Restart(); $more = $reader.Refresh($session); $times.Add($sw.Elapsed.TotalMilliseconds); $ticks++; if (-not $more) { break } }
+$sw.Restart(); $idle = $reader.Refresh($session); $idleMs = $sw.Elapsed.TotalMilliseconds
+$m = $times | Measure-Object -Average -Maximum -Minimum
+$size = (Get-Item $transcript).Length
+"transcriptBytes=$size ticksToFinish=$ticks tickMs(min/avg/max)=$([math]::Round($m.Minimum,1))/$([math]::Round($m.Average,1))/$([math]::Round($m.Maximum,1)) idleTickMs=$([math]::Round($idleMs,2)) idleReturned=$idle"
+Remove-Item -Recurse -Force $root
+
+##### reftable probe (inline PowerShell) #####
+git init -q --ref-format=reftable -b feature/DEP-1 <scratch>\reftable-repo
+Get-Content <scratch>\reftable-repo\.git\HEAD
+git -C <scratch>\reftable-repo symbolic-ref --short -q HEAD
+Add-Type -Path <scratch>\bin\bell-tower.dll
+[BellTower.IO.GitHeadReader]::Read('<scratch>\reftable-repo')

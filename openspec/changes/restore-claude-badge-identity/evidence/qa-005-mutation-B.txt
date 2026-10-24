@@ -1,0 +1,8 @@
+=== variant B ===
+Failed BellTower.Tests.Sessions.IdentityRecoveryPolicyTests.AForkWhoseBoundaryAppearsAfterItsCopiedPrefixWasReadEndsWithNoPreSwitchWork(provider: "codex", large: True) [26 ms]
+Error Message:
+Failed BellTower.Tests.Sessions.IdentityRecoveryPolicyTests.AForkWhoseBoundaryAppearsAfterItsCopiedPrefixWasReadEndsWithNoPreSwitchWork(provider: "codex", large: False) [11 ms]
+Error Message:
+Failed BellTower.Tests.Sessions.IdentityRecoveryPolicyTests.AMixedPairOfGrowingForksRetractsOnlyTheCodexCopiedWorkAndKeepsLiveWork [31 ms]
+Error Message:
+Failed!  - Failed:     3, Passed:    44, Skipped:     0, Total:    47, Duration: 817 ms - BellTower.Tests.dll (net10.0)

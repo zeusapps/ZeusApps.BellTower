@@ -1,0 +1,302 @@
+# Analysis 004 probe scripts (restore-claude-badge-identity). Run from a disposable folder with PowerShell 7.6.6:
+#   pwsh -NoProfile -File probe-fork-floor.ps1 -Provider claude|codex -Bin <bin>   (analysis-003 script, verbatim)
+#   pwsh -NoProfile -File probe-fork-boundary.ps1 -Provider claude|codex -Case <case> -Bin <bin>
+#   pwsh -NoProfile -File probe-legacy-fields.ps1 -Provider claude|codex -Bin <bin>
+# <bin> = src/BellTower/bin/Release/net10.0-windows (reviewed build, loaded read-only). Isolated data dirs only.
+
+##### probe-fork-floor.ps1 (verbatim copy of analysis-003) #####
+# Analysis 003 probe: a fork of a conversation whose pre-switch work was invalidated by a branch switch (WorkFloorAt set,
+# ActiveWork cleared, no post-switch work). The fork shares the parent's checkout, which is now on the new branch.
+# Claude: SDK forkSession copies parent records with their original timestamps, rewrites sessionId, adds forkedFrom
+#   (tests/BellTower.Tests/Fixtures/identity/claude-sdk-0.3.309-fork.jsonl).
+# Codex: the fork's own first line is session_meta{id, forked_from_id}; copied items are written by the rollout recorder,
+#   which stamps every line at write time (JsonlWriter.write_rollout_item uses OffsetDateTime::now_utc(); ForkPersistence::Copied default),
+#   so copied parent work carries the fork time.
+# Isolated data dir and synthetic transcripts only; loads the reviewed Release build read-only.
+param([ValidateSet('claude', 'codex')][string]$Provider = 'claude', [Parameter(Mandatory)][string]$Bin)
+$ErrorActionPreference = 'Stop'
+Add-Type -Path (Join-Path $Bin 'bell-tower.dll')
+$root = Join-Path $PSScriptRoot ("data-fork-" + [guid]::NewGuid().ToString('N').Substring(0, 8))
+$work = Join-Path $root 'repo'
+New-Item -ItemType Directory -Force (Join-Path $work 'openspec\changes\change-a') | Out-Null
+$paths = [BellTower.IO.DataPaths]::new((Join-Path $root 'data'))
+$paths.Ensure()
+$slash = $work.Replace('\', '/')
+function T([int]$s) { ([datetimeoffset]'2026-10-23T12:00:00Z').AddSeconds($s) }
+function Ts([int]$s) { (T $s).ToString('yyyy-MM-ddTHH:mm:ss.fffZ') }
+function J($o) { $o | ConvertTo-Json -Depth 10 -Compress }
+function Work([string]$sid, [int]$at, [string]$forkedFrom) {
+    if ($Provider -eq 'claude') {
+        $a = @{ isSidechain = $false; type = 'assistant'; timestamp = (Ts $at); cwd = $slash; sessionId = $sid; message = @{ role = 'assistant'; content = @(@{ type = 'tool_use'; id = 'w1'; name = 'Write'; input = @{ file_path = "$slash/openspec/changes/change-a/proposal.md"; content = 'x' } }) } }
+        $b = @{ isSidechain = $false; type = 'user'; timestamp = (Ts ($at + 1)); sessionId = $sid; message = @{ role = 'user'; content = @(@{ type = 'tool_result'; tool_use_id = 'w1'; content = 'ok' }) } }
+        if ($forkedFrom) { $a.forkedFrom = @{ sessionId = $forkedFrom; messageUuid = 'm1' }; $b.forkedFrom = @{ sessionId = $forkedFrom; messageUuid = 'm2' } }
+        J $a; J $b
+    }
+    else {
+        J @{ timestamp = (Ts $at); type = 'response_item'; payload = @{ type = 'custom_tool_call'; name = 'apply_patch'; call_id = 'p1'; input = "*** Begin Patch`n*** Add File: $slash/openspec/changes/change-a/proposal.md`n+x`n*** End Patch" } }
+        J @{ timestamp = (Ts ($at + 1)); type = 'response_item'; payload = @{ type = 'custom_tool_call_output'; call_id = 'p1'; output = "Exit code: 0`nWall time: 0.1 seconds`nOutput:`nSuccess. Updated the following files:`nA x`n" } }
+    }
+}
+$utf8 = [System.Text.UTF8Encoding]::new($false)
+$store = [BellTower.IO.IdentityStore]::new($paths, $null)
+$reader = [BellTower.Sessions.IdentityHistoryReader]::new($paths)
+function New-Session([string]$sid) {
+    $s = [BellTower.Core.SessionState]::new(); $s.Key = "${Provider}:$sid"; $s.Provider = $Provider; $s.SessionId = $sid; $s.AttachmentId = "attachment-$sid"; $s.Directory = $work; $s
+}
+function Tick($s) { $n = 0; while ($n -lt 40 -and $reader.Refresh($s)) { $n++ }; $n }
+function Show([string]$label, $s) {
+    $i = $store.Get($s.Key, $work, $null, $null, $null)
+    "{0,-34} WorkFloorAt={1} ActiveWork={2} WorkSource={3} WorkBranch={4} ForkInheritedFrom={5} Subject={6}" -f $label,
+    $(if ($i.WorkFloorAt) { ([datetimeoffset]$i.WorkFloorAt).ToString('HH:mm:ss') } else { '' }), $i.ActiveWork, $i.WorkSource, $i.WorkBranch, $i.ForkInheritedFrom, $i.Subject
+}
+"provider=$Provider (synthetic clock: t=N is 12:00:00+N s)"
+# Parent: pre-switch work at t=10 on main, switch detected at t=20, no later work.
+$parent = New-Session 'parent'
+$parentFile = Join-Path $root 'parent.jsonl'
+$parentLines = if ($Provider -eq 'claude') { @(Work 'parent' 10 $null) } else { @((J @{ timestamp = (Ts 0); type = 'session_meta'; payload = @{ id = 'parent'; cwd = $slash } }); (Work 'parent' 10 $null)) }
+[System.IO.File]::WriteAllText($parentFile, ($parentLines -join "`n") + "`n", $utf8)
+$null = $store.Update($parent.Key, $work, [Func[BellTower.Core.SessionIdentity, bool]] { param($v) $v.ObservedBranch = 'main'; [BellTower.Core.HistoryState]::Bind($v, $parentFile) })
+"ticks=$(Tick $parent)"; Show 'parent after read' $parent
+$null = $store.Update($parent.Key, $work, [Func[BellTower.Core.SessionIdentity, bool]] { param($v) $c = [BellTower.Core.CheckoutPolicy]::ApplyBranch($v, $work, $work, 'feature', (T 20)); $v.ObservedBranch = 'feature'; $c })
+"ticks=$(Tick $parent)"; Show 'parent after switch (t=20)' $parent
+# Fork created at t=40 on the same checkout (now on 'feature').
+$child = New-Session 'child'
+$childFile = Join-Path $root 'child.jsonl'
+$childLines = if ($Provider -eq 'claude') { @(Work 'child' 10 'parent') } else {
+    @((J @{ timestamp = (Ts 40); type = 'session_meta'; payload = @{ id = 'child'; forked_from_id = 'parent'; cwd = $slash } }); (J @{ timestamp = (Ts 40); type = 'session_meta'; payload = @{ id = 'parent'; cwd = $slash } }); (Work 'child' 40 $null)) }
+[System.IO.File]::WriteAllText($childFile, ($childLines -join "`n") + "`n", $utf8)
+$null = $store.Update($child.Key, $work, [Func[BellTower.Core.SessionIdentity, bool]] { param($v) $v.ObservedBranch = 'feature'; [BellTower.Core.HistoryState]::Bind($v, $childFile) })
+"ticks=$(Tick $child)"; Show 'fork child after first read' $child
+Show 'parent (unchanged)' $parent
+Remove-Item -Recurse -Force $root
+
+
+##### probe-fork-boundary.ps1 #####
+# Analysis 004 probe: ANALYSIS-150 recheck (Implementation 007) - inherited WorkFloorAt (Claude) and the Codex fork boundary
+# (first thread_settings_applied event whose thread_id is the fork thread). Extends analysis-003 probe-fork-floor.ps1.
+# Cases:
+#   orig       analysis-003 probe-fork-floor.ps1 shape unchanged (Codex fork without any thread_settings_applied event)
+#   boundary   rust-v0.164.0 Copied shape: copied parent snapshot (parent thread_id) + copied work + fork-owned snapshot; then own work
+#   big        copied prefix and own tail each larger than the 256 KiB window; boundary outside the newest window; multi-tick walk
+#   sweep      'big' with 24 tail paddings, reporting whether the boundary line straddled a backward window start
+#   split      copied prefix visible before the boundary line is written (two incremental windows)
+#   fresh      'boundary', settle, then recreate the file (new fingerprint) and truncate+regrow; boundary re-derived
+#   resume     'boundary' plus a later fork-owned snapshot (resume checkpoint) and own work; boundary stays the first
+#   referenced ForkPersistence::Referenced shape: fork-owned snapshot first, no copied items, own work
+#   orphan     parent identity unknown to Bell Tower (never registered), pre-switch copied work, no invalidation known
+#   unread-parent  parent identity known but its transcript not yet walked (valid work, no switch); fork read first
+# Isolated data dir and synthetic transcripts only; loads the reviewed Release build read-only.
+param([ValidateSet('claude', 'codex')][string]$Provider = 'claude',
+    [ValidateSet('orig', 'boundary', 'big', 'sweep', 'split', 'fresh', 'resume', 'referenced', 'orphan', 'unread-parent')][string]$Case = 'boundary',
+    [Parameter(Mandatory)][string]$Bin)
+$ErrorActionPreference = 'Stop'
+Add-Type -Path (Join-Path $Bin 'bell-tower.dll')
+$utf8 = [System.Text.UTF8Encoding]::new($false)
+function T([int]$s) { ([datetimeoffset]'2026-10-23T12:00:00Z').AddSeconds($s) }
+function Ts([int]$s) { (T $s).ToString('yyyy-MM-ddTHH:mm:ss.fffZ') }
+function J($o) { $o | ConvertTo-Json -Depth 10 -Compress }
+
+function New-Env {
+    $script:root = Join-Path $PSScriptRoot ("data-" + [guid]::NewGuid().ToString('N').Substring(0, 8))
+    $script:work = Join-Path $root 'repo'
+    foreach ($c in 'change-a', 'change-b') { New-Item -ItemType Directory -Force (Join-Path $work "openspec\changes\$c") | Out-Null }
+    $script:paths = [BellTower.IO.DataPaths]::new((Join-Path $root 'data')); $paths.Ensure()
+    $script:slash = $work.Replace('\', '/')
+    $script:store = [BellTower.IO.IdentityStore]::new($paths, $null)
+    $script:reader = [BellTower.Sessions.IdentityHistoryReader]::new($paths)
+}
+function Work([string]$sid, [string]$change, [string]$call, [int]$at, [string]$forkedFrom) {
+    if ($Provider -eq 'claude') {
+        $a = @{ isSidechain = $false; type = 'assistant'; timestamp = (Ts $at); cwd = $slash; sessionId = $sid; message = @{ role = 'assistant'; content = @(@{ type = 'tool_use'; id = $call; name = 'Write'; input = @{ file_path = "$slash/openspec/changes/$change/proposal.md"; content = 'x' } }) } }
+        $b = @{ isSidechain = $false; type = 'user'; timestamp = (Ts ($at + 1)); sessionId = $sid; message = @{ role = 'user'; content = @(@{ type = 'tool_result'; tool_use_id = $call; content = 'ok' }) } }
+        if ($forkedFrom) { $a.forkedFrom = @{ sessionId = $forkedFrom; messageUuid = "m-$call-1" }; $b.forkedFrom = @{ sessionId = $forkedFrom; messageUuid = "m-$call-2" } }
+        J $a; J $b
+    }
+    else {
+        J @{ timestamp = (Ts $at); type = 'response_item'; payload = @{ type = 'custom_tool_call'; name = 'apply_patch'; call_id = $call; input = "*** Begin Patch`n*** Add File: $slash/openspec/changes/$change/proposal.md`n+x`n*** End Patch" } }
+        J @{ timestamp = (Ts ($at + 1)); type = 'response_item'; payload = @{ type = 'custom_tool_call_output'; call_id = $call; output = "Exit code: 0`nWall time: 0.1 seconds`nOutput:`nSuccess. Updated the following files:`nA x`n" } }
+    }
+}
+function Chatter([string]$sid, [int]$at, [int]$bytes, [string]$forkedFrom) {
+    if ($Provider -eq 'claude') {
+        $r = @{ isSidechain = $false; type = 'assistant'; timestamp = (Ts $at); sessionId = $sid; message = @{ role = 'assistant'; content = @(@{ type = 'text'; text = ('x' * $bytes) }) } }
+        if ($forkedFrom) { $r.forkedFrom = @{ sessionId = $forkedFrom; messageUuid = 'mc' } }
+        J $r
+    }
+    else { J @{ timestamp = (Ts $at); type = 'response_item'; payload = @{ type = 'message'; role = 'assistant'; content = @(@{ type = 'output_text'; text = ('x' * $bytes) }) } } }
+}
+function Pad([string]$sid, [int]$at, [int]$total, [int]$line, [string]$forkedFrom) { $n = [math]::Ceiling($total / $line); for ($i = 0; $i -lt $n; $i++) { Chatter $sid $at $line $forkedFrom } }
+function Meta([string]$id, [string]$from, [int]$at) { $p = @{ id = $id; cwd = $slash; originator = 'codex_cli_rs'; cli_version = '0.164.0' }; if ($from) { $p.forked_from_id = $from }; J @{ timestamp = (Ts $at); type = 'session_meta'; payload = $p } }
+function Snap([string]$thread, [int]$at) { J @{ timestamp = (Ts $at); type = 'event_msg'; payload = @{ type = 'thread_settings_applied'; thread_id = $thread; thread_settings = @{ model = 'gpt-x'; model_provider_id = 'openai' } } } }
+function New-Session([string]$sid) { $s = [BellTower.Core.SessionState]::new(); $s.Key = "${Provider}:$sid"; $s.Provider = $Provider; $s.SessionId = $sid; $s.AttachmentId = "attachment-$sid"; $s.Directory = $work; $s }
+function Tick($s) { $n = 0; while ($n -lt 60 -and $reader.Refresh($s)) { $n++ }; $n }
+function Get-I($s) { $store.Get($s.Key, $work, $null, $null, $null) }
+function Show([string]$label, $s) {
+    $i = Get-I $s
+    "{0,-40} WorkFloorAt={1} ActiveWork={2} WorkSource={3} WorkBranch={4} ForkInheritedFrom={5} ForkBoundaryOffset={6} Subject={7}" -f $label,
+    $(if ($i.WorkFloorAt) { ([datetimeoffset]$i.WorkFloorAt).ToString('HH:mm:ss') } else { '' }), $i.ActiveWork, $i.WorkSource, $i.WorkBranch, $i.ForkInheritedFrom, $i.ForkBoundaryOffset, $i.Subject
+}
+function Write-Lines([string]$path, $lines) { [System.IO.File]::WriteAllText($path, (($lines | ForEach-Object { $_ }) -join "`n") + "`n", $utf8) }
+function Append-Lines([string]$path, $lines) { [System.IO.File]::AppendAllText($path, (($lines | ForEach-Object { $_ }) -join "`n") + "`n", $utf8) }
+
+# Parent: pre-switch work at t=10 on main, switch detected at t=20, no later work (analysis-003 sequence).
+function New-InvalidatedParent([switch]$Unregistered) {
+    $script:parent = New-Session 'parent'
+    if ($Unregistered) { return }
+    $file = Join-Path $root 'parent.jsonl'
+    $lines = if ($Provider -eq 'claude') { @(Work 'parent' 'change-a' 'w1' 10 $null) } else { @((Meta 'parent' $null 0); (Snap 'parent' 0); (Work 'parent' 'change-a' 'p1' 10 $null)) }
+    Write-Lines $file $lines
+    $null = $store.Update($parent.Key, $work, [Func[BellTower.Core.SessionIdentity, bool]] { param($v) $v.ObservedBranch = 'main'; [BellTower.Core.HistoryState]::Bind($v, $file) })
+    $null = Tick $parent; Show 'parent after read' $parent
+    $null = $store.Update($parent.Key, $work, [Func[BellTower.Core.SessionIdentity, bool]] { param($v) $c = [BellTower.Core.CheckoutPolicy]::ApplyBranch($v, $work, $work, 'feature', (T 20)); $v.ObservedBranch = 'feature'; $c })
+    $null = Tick $parent; Show 'parent after switch (t=20)' $parent
+}
+# Copied prefix of the fork child (fork at t=40). Claude copies keep original stamps and get forkedFrom; Codex copies are restamped.
+function Prefix([int]$copiedPad = 0) {
+    if ($Provider -eq 'claude') { @(Work 'child' 'change-a' 'w1' 10 'parent'); if ($copiedPad) { Pad 'child' 11 $copiedPad 4000 'parent' } }
+    else { @((Meta 'child' 'parent' 40); (Snap 'parent' 40); (Work 'child' 'change-a' 'p1' 40 $null)); if ($copiedPad) { Pad 'child' 40 $copiedPad 4000 $null } }
+}
+function Boundary { if ($Provider -eq 'codex') { Snap 'child' 40 } }
+function Bind-Child([string]$file) {
+    $script:child = New-Session 'child'
+    $null = $store.Update($child.Key, $work, [Func[BellTower.Core.SessionIdentity, bool]] { param($v) $v.ObservedBranch = 'feature'; [BellTower.Core.HistoryState]::Bind($v, $file) })
+}
+function Own-Work([string]$file, [int]$at) { Append-Lines $file @(Work 'child' 'change-b' "own$at" $at $null); "ticks=$(Tick $child)"; Show "child after own work (t=$at)" $child }
+
+"provider=$Provider case=$Case (synthetic clock: t=N is 12:00:00+N s)"
+New-Env
+$cf = Join-Path $root 'child.jsonl'
+switch ($Case) {
+    'orig' {
+        New-InvalidatedParent
+        $lines = if ($Provider -eq 'claude') { @(Work 'child' 'change-a' 'w1' 10 'parent') } else { @((Meta 'child' 'parent' 40); (J @{ timestamp = (Ts 40); type = 'session_meta'; payload = @{ id = 'parent'; cwd = $slash } }); (Work 'child' 'change-a' 'p1' 40 $null)) }
+        Write-Lines $cf $lines; Bind-Child $cf
+        "ticks=$(Tick $child)"; Show 'fork child after first read' $child; Show 'parent (unchanged)' $parent
+    }
+    'boundary' {
+        New-InvalidatedParent
+        Write-Lines $cf @((Prefix); (Boundary)); Bind-Child $cf
+        "ticks=$(Tick $child)"; Show 'fork child after first read' $child; Show 'parent (unchanged)' $parent
+        Own-Work $cf 60
+    }
+    'big' {
+        New-InvalidatedParent
+        Write-Lines $cf @((Prefix -copiedPad 600000); (Boundary); (Pad 'child' 50 600000 4000 $null)); Bind-Child $cf
+        "file bytes=$((Get-Item $cf).Length)"
+        "ticks=$(Tick $child)"; Show 'fork child after walk' $child
+        "HistoryOffset=$((Get-I $child).HistoryOffset) HistoryLength=$((Get-I $child).HistoryLength)"
+        Own-Work $cf 60
+    }
+    'sweep' {
+        $bad = 0; $straddles = 0
+        Remove-Item -Recurse -Force $root
+        # The tail after the tracked line is sized so the fresh (newest) window [len-262144, len) starts at bStart+delta:
+        # delta in (0, lineLength] cuts the tracked line (boundary for Codex, the copied tool_use line for Claude).
+        $deltas = @(-200, -1, 0, 1, 2, 60, 120, 'mid', 'end-1', 'end', 'end+1', 400)
+        foreach ($d in $deltas) {
+            New-Env; $cf = Join-Path $root 'child.jsonl'
+            $null = New-InvalidatedParent
+            $head = ((@((Prefix -copiedPad 300000); (Boundary)) | ForEach-Object { $_ }) -join "`n") + "`n"
+            # All-ASCII content: character index == byte offset.
+            $b = if ($Provider -eq 'codex') { $head.IndexOf('"thread_id":"child"') } else { $head.IndexOf('"tool_use"') }
+            $bStart = $head.LastIndexOf("`n", $b) + 1; $bEnd = $head.IndexOf("`n", $b)
+            $lineLen = $bEnd - $bStart
+            $delta = switch ($d) { 'mid' { [int]($lineLen / 2) } 'end-1' { $lineLen - 1 } 'end' { $lineLen } 'end+1' { $lineLen + 1 } default { [int]$d } }
+            $len = $bStart + 262144 + $delta
+            $need = $len - $head.Length
+            $overhead = (Chatter 'child' 50 0 $null).Length + 1
+            $tail = New-Object System.Text.StringBuilder
+            while ($need - $tail.Length -gt 8000) { [void]$tail.Append((Chatter 'child' 50 4000 $null)).Append("`n") }
+            [void]$tail.Append((Chatter 'child' 50 ($need - $tail.Length - $overhead) $null)).Append("`n")
+            [System.IO.File]::WriteAllText($cf, $head + $tail.ToString(), $utf8)
+            $text = [System.IO.File]::ReadAllText($cf); if ($text.Length -ne $len) { throw "length $($text.Length) != $len" }
+            Bind-Child $cf
+            $starts = @(); $prev = -1; $n = 0
+            while ($n -lt 60 -and $reader.Refresh($child)) { $starts += $(if ($prev -lt 0) { [math]::Max(0, $len - 262144) } else { [math]::Max(0, $prev - 262144) }); $prev = (Get-I $child).HistoryOffset; $n++ }
+            $s = @($starts | Where-Object { $_ -gt $bStart -and $_ -le $bEnd }).Count; if ($s) { $straddles++ }
+            $i = Get-I $child
+            if ($i.ActiveWork) { $bad++ }
+            "delta={0,-6} trackedLine=[{1},{2}) straddle={3} ticks={4} ActiveWork={5} ForkBoundaryOffset={6}" -f $delta, $bStart, $bEnd, ($s -gt 0), $n, $i.ActiveWork, $i.ForkBoundaryOffset
+            Remove-Item -Recurse -Force $root
+        }
+        "sweep: runs=$($deltas.Count) activeWorkLeaks=$bad straddledRuns=$straddles"
+        New-Env
+    }
+    'split' {
+        New-InvalidatedParent
+        Write-Lines $cf (Prefix); Bind-Child $cf
+        "ticks=$(Tick $child)"; Show 'child, prefix only (boundary unwritten)' $child
+        if ($Provider -eq 'codex') { Append-Lines $cf @(Boundary) }
+        "ticks=$(Tick $child)"; Show 'child, boundary appended' $child
+    }
+    'fresh' {
+        New-InvalidatedParent
+        Write-Lines $cf @((Prefix); (Boundary)); Bind-Child $cf
+        $null = Tick $child; Show 'fork child settled' $child
+        $content = [System.IO.File]::ReadAllBytes($cf); Remove-Item $cf; Start-Sleep -Milliseconds 50; [System.IO.File]::WriteAllBytes($cf, $content)
+        [System.IO.File]::SetCreationTimeUtc($cf, [datetime]::UtcNow.AddMinutes(1))
+        "ticks=$(Tick $child)"; Show 'after recreate (new fingerprint)' $child
+        $fs = [System.IO.File]::Open($cf, 'Open', 'ReadWrite'); $fs.SetLength(10); $fs.Dispose()
+        "ticks=$(Tick $child)"; Show 'after truncation' $child
+        [System.IO.File]::WriteAllBytes($cf, $content)
+        "ticks=$(Tick $child)"; Show 'after regrow' $child
+        Own-Work $cf 60
+    }
+    'resume' {
+        New-InvalidatedParent
+        Write-Lines $cf @((Prefix); (Boundary)); Bind-Child $cf
+        $null = Tick $child; Show 'fork child settled' $child
+        $first = (Get-I $child).ForkBoundaryOffset
+        if ($Provider -eq 'codex') { Append-Lines $cf @(Snap 'child' 70) }
+        Own-Work $cf 80
+        "boundaryUnchanged=$((Get-I $child).ForkBoundaryOffset -eq $first)"
+    }
+    'referenced' {
+        New-InvalidatedParent
+        if ($Provider -eq 'codex') { Write-Lines $cf @((Meta 'child' 'parent' 40); (Snap 'child' 40)) } else { Write-Lines $cf @((J @{ type = 'user'; sessionId = 'child'; timestamp = (Ts 40); message = @{ role = 'user'; content = 'x' }; forkedFrom = @{ sessionId = 'parent'; messageUuid = 'm' } })) }
+        Bind-Child $cf
+        "ticks=$(Tick $child)"; Show 'referenced fork child' $child
+        Own-Work $cf 60
+    }
+    'unread-parent' {
+        # Parent identity exists (hook seen) but its transcript has not been walked yet; its history holds valid work (no switch).
+        $script:parent = New-Session 'parent'
+        $pf = Join-Path $root 'parent.jsonl'
+        Write-Lines $pf $(if ($Provider -eq 'claude') { @(Work 'parent' 'change-a' 'w1' 10 $null) } else { @((Meta 'parent' $null 0); (Snap 'parent' 0); (Work 'parent' 'change-a' 'p1' 10 $null)) })
+        $null = $store.Update($parent.Key, $work, [Func[BellTower.Core.SessionIdentity, bool]] { param($v) $v.ObservedBranch = 'main'; [BellTower.Core.HistoryState]::Bind($v, $pf) })
+        Show 'parent known, history not yet read' $parent
+        Write-Lines $cf @((Prefix); (Boundary)); Bind-Child $cf
+        $null = $store.Update($child.Key, $work, [Func[BellTower.Core.SessionIdentity, bool]] { param($v) $v.ObservedBranch = 'main'; $true })
+        "ticks=$(Tick $child)"; Show 'fork child first read' $child
+        $null = Tick $parent; Show 'parent after its own read' $parent
+        Append-Lines $cf @(Chatter 'child' 70 10 $null); $null = Tick $child; Show 'fork child after parent read' $child
+    }
+    'orphan' {
+        New-InvalidatedParent -Unregistered
+        Write-Lines $cf @((Prefix); (Boundary)); Bind-Child $cf
+        "ticks=$(Tick $child)"; Show 'fork child, parent unknown' $child
+    }
+}
+Remove-Item -Recurse -Force $root
+
+##### probe-legacy-fields.ps1 #####
+# Analysis 004 probe: ANALYSIS-102 - removed PendingForkTitle/NativeTitleAt values in an identity file written by an earlier
+# development build survive a read-modify-write by the reviewed build (JsonExtensionData). Isolated data dir only.
+param([Parameter(Mandatory)][string]$Bin, [ValidateSet('claude', 'codex')][string]$Provider = 'claude')
+$ErrorActionPreference = 'Stop'
+Add-Type -Path (Join-Path $Bin 'bell-tower.dll')
+$root = Join-Path $PSScriptRoot ("data-legacy-" + [guid]::NewGuid().ToString('N').Substring(0, 8))
+$work = Join-Path $root 'repo'; New-Item -ItemType Directory -Force $work | Out-Null
+$paths = [BellTower.IO.DataPaths]::new((Join-Path $root 'data')); $paths.Ensure()
+$store = [BellTower.IO.IdentityStore]::new($paths, $null)
+$key = "${Provider}:legacy"
+$null = $store.Update($key, $work, [Func[BellTower.Core.SessionIdentity, bool]] { param($v) $v.ManualName = 'before'; $true })
+$file = Get-ChildItem $paths.Identities -Filter *.json | Select-Object -First 1
+$json = Get-Content $file.FullName -Raw | ConvertFrom-Json -AsHashtable
+"keys: $(($json.Keys | Sort-Object) -join ',')" | Select-Object -First 1 | Out-Host; $json['pendingForkTitle'] = 'Old (fork)'; $json['nativeTitleAt'] = '2026-10-23T12:00:00+00:00'
+$json | ConvertTo-Json -Depth 20 | Set-Content $file.FullName -Encoding utf8NoBOM
+$null = $store.Update($key, $work, [Func[BellTower.Core.SessionIdentity, bool]] { param($v) $v.ManualName = 'after'; [BellTower.Core.HistoryState]::Reset($v); $true })
+$after = Get-Content $file.FullName -Raw | ConvertFrom-Json -AsHashtable
+"provider=$Provider manualName=$($after['manualName']) pendingForkTitle=$($after['pendingForkTitle']) nativeTitleAt=$($after['nativeTitleAt']) PascalLeftovers=$($after.ContainsKey('PendingForkTitle'))"
+Remove-Item -Recurse -Force $root
+

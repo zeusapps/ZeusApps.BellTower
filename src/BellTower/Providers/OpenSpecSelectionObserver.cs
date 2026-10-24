@@ -16,17 +16,8 @@ public sealed class OpenSpecSelectionObserver(DataPaths paths)
         var root = envelope.SelectionRoot;
         if (root is null && envelope.CreatedScaffold)
         {
-            for (var current = new DirectoryInfo(envelope.Observation.Directory); current is not null; current = current.Parent)
-            {
-                if (Directory.Exists(Path.Combine(current.FullName, "openspec")))
-                {
-                    if (File.Exists(Path.Combine(current.FullName, "openspec", "changes", selection.Change, ".openspec.yaml")))
-                    {
-                        root = current.FullName;
-                    }
-                    break;
-                }
-            }
+            root = ScaffoldLocator.Root(selection.Directory ?? envelope.Observation.Directory, selection.Change,
+                selection.Redirected ? envelope.Observation.At : null);
         }
         Apply(envelope.Observation.Key, envelope.Observation.Directory, selection, root,
             envelope.SelectionPre, envelope.Observation.At, envelope.Id);
@@ -46,12 +37,17 @@ public sealed class OpenSpecSelectionObserver(DataPaths paths)
 
     private void Apply(string key, string directory, OpenSpecSelection selection, string? root, bool pre, DateTimeOffset at, string id)
     {
-        if (!pre && root is null)
-        {
-            return;
-        }
+        // Older capture helpers may still publish inspection candidates. They remain readable,
+        // but never establish work under the shared identity policy.
+        if (selection.Verb is "status" or "instructions")
+        { return; }
+        if (!pre && (root is null || !Directory.Exists(Path.Combine(root, "openspec", "changes", selection.Change))))
+        { return; }
         new IdentityStore(paths).Update(key, directory, identity =>
         {
+            // Weak (explain/explore) evidence may only fill an empty association.
+            if (selection.Weak && (ChangeOrigin.Holds(identity) || identity.ActiveWork is not null))
+            { return false; }
             if (identity.SelectionFloorAt >= at || identity.SelectionEvidence.Any(e => e.Operation == selection.Operation && e.Pre == pre))
             {
                 return false;
@@ -93,12 +89,13 @@ public sealed class OpenSpecSelectionObserver(DataPaths paths)
                     identity.SelectionReceipts.RemoveAt(0);
                 }
             }
-            if (selected is not null)
+            if (selected is not null && selected.Root is not null)
             {
-                identity.SelectionAt = selected.At;
+                // The selected receipt may be an earlier operation than the current event, so its own
+                // weakness is that of the current selection only when it is the same operation.
+                var weak = selection.Weak && selected.Operation == selection.Operation;
+                WorkPolicy.Apply(identity, new(selected.Change, selected.Root, selection.Verb, weak, selected.At));
                 identity.SelectionEvent = selected.Id;
-                identity.Change = selected.Change;
-                identity.SelectionRoot = selected.Root;
                 identity.SelectionStore = selected.Store;
             }
             return true;

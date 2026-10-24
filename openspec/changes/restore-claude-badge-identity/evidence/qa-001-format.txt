@@ -1,0 +1,5 @@
+D:\Code\ZeusApps.BellTower\src\BellTower\Core\IdentityPresentation.cs(1,26): error ENDOFLINE: Fix end of line marker. Replace 1 characters with '\r\n'. [D:\Code\ZeusApps.BellTower\src\BellTower\BellTower.csproj]
+D:\Code\ZeusApps.BellTower\src\BellTower\Core\IdentityPresentation.cs(2,1): error ENDOFLINE: Fix end of line marker. Replace 1 characters with '\r\n'. [D:\Code\ZeusApps.BellTower\src\BellTower\BellTower.csproj]
+D:\Code\ZeusApps.BellTower\src\BellTower\Core\IdentityPresentation.cs(3,117): error ENDOFLINE: Fix end of line marker. Replace 1 characters with '\r\n'. [D:\Code\ZeusApps.BellTower\src\BellTower\BellTower.csproj]
+D:\Code\ZeusApps.BellTower\src\BellTower\Core\IdentityPresentation.cs(4,91): error ENDOFLINE: Fix end of line marker. Replace 1 characters with '\r\n'. [D:\Code\ZeusApps.BellTower\src\BellTower\BellTower.csproj]
+

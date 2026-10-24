@@ -1,0 +1,6 @@
+codex: after switch ActiveWork=null floor=0 len=0
+codex: after first history read ActiveWork=change-a source=history:edit
+claude: after switch ActiveWork=null floor=0 len=0
+claude: after first history read ActiveWork=change-a source=history:edit
+title '(fork)' then plain: NativeTitle=Fix the login
+user-typed 'Release plan (fork)' newer: NativeTitle=null

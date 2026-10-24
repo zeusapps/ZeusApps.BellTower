@@ -14,7 +14,8 @@ public sealed class DiagnosticsReporter(DataPaths paths)
         Claude = new
         {
             HookStatus = Observed("claude") ? "observed; see timestamp" : "not observed; check setup/trust",
-            Footer = "bundled ANSI status line",
+            Footer = "bundled ANSI status line; without a fresh tray snapshot it reads this conversation's checkout from Git metadata files without starting a process",
+            NameSynchronization = BellTower.Core.NativeNamePolicy.ClaudeWriteStatus + "; native titles are only read from custom-title transcript records (generated, Bell Tower and SDK fork titles never count as user titles)",
             Background = "managed desktop sessions apply the stored dark palette through scoped OSC colors; -NoBackground disables it",
             TrustStatus = "not independently verified; review /hooks"
         },
@@ -40,10 +41,15 @@ public sealed class DiagnosticsReporter(DataPaths paths)
             Titles = "shared change-driven isolated title writes; tray-owned five-second checkout cache; bounded failure backoff and owned-writer cleanup; live host acceptance pending",
             AttachmentHealth = "both providers: verified-live, confirmed-ended, unverified or unavailable; shell liveness alone does not verify an agent; shared-runtime mode remains explicitly classified",
             Background = "new local managed launches apply colors before agent startup; resets configured colors on exit; -NoBackground opts out",
-            Naming = "manual Name > session-selected OpenSpec change > directory; successful literal OpenSpec CLI operations observed through main-session Bash hooks",
-            SelectionCoverage = "new change, status --change and instructions --change; bounded causal receipts; sufficient successful post-only evidence is accepted; JSON success or verified local scaffold; shell programs and hidden nested orchestration are ignored",
+            Naming = "shared: Bell Tower title > verified native user title > pinned change / active work / unique branch change / ticket / branch / directory",
+            SelectionCoverage = "both providers: successful main-session change edits, patches, supported workflow skills and literal new-change commands; inspection never selects work; bounded history recovery and separate working-checkout controls",
+            Checkout = "user pin > provider hook cwd verified against the launch repository's Git worktree list > unique work mapping (ticket-named worktree first) > launch directory; ambiguity stays explicit; a cwd in an unrelated repository is not used (unverified policy)",
+            IdentityControls = "rename --name/--change/--checkout/--color/--reset; Sessions offers equivalent controls for both providers",
+            History = "bounded read-only history with separate backward and tail cursors; derived-only receipts; " + BellTower.Sessions.IdentityHistoryReader.Capabilities,
             Tone = new ConfigStore(paths).Read().ToneName ?? "bundled event tones"
         },
+        CapabilityMatrix = new { Claude = CapabilityMatrix.ClaudeVersion, Codex = CapabilityMatrix.CodexVersion, Rows = CapabilityMatrix.Rows },
+        IdentityDocumentation = "docs/session-identity.md",
         CapabilitiesFile = "docs/compatibility.md"
     };
     private bool Observed(string provider) => File.Exists(Path.Combine(paths.Root, provider + "-observed.json"));

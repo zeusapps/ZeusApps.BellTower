@@ -42,9 +42,15 @@ public sealed class AlertPolicy(DateTimeOffset startedAt)
         return $"{(int)elapsed.TotalHours:00}:{elapsed.Minutes:00}:{elapsed.Seconds:00}";
     }
 
+    public const int SpokenSubjectWords = 4;
+
+    // One shared spoken form for both providers: at most four subject words, then the reason. Bell Tower has no
+    // session role; hyphens, underscores and colons become spaces.
     public static string Phrase(SessionState session, SessionIdentity identity)
     {
-        var subject = string.Join(" ", identity.Name.Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(4));
-        return string.Join(", ", new[] { identity.Role, subject, ReasonText(session.Reason) }.Where(value => !string.IsNullOrWhiteSpace(value)));
+        var subject = identity.Name;
+        var words = subject.Replace('-', ' ').Replace('_', ' ').Replace(':', ' ').Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        return string.Join(", ", new[] { string.Join(" ", words.Take(SpokenSubjectWords)), ReasonText(session.Reason) }
+            .Where(value => !string.IsNullOrWhiteSpace(value)));
     }
 }

@@ -38,6 +38,15 @@ public sealed class GitReader
         return new GitContext(branch, worktree);
     }
 
+    public string? Toplevel(string directory) => Run(directory, "rev-parse", "--show-toplevel");
+
+    public IReadOnlyList<string> Worktrees(string directory)
+    {
+        var output = Run(directory, "worktree", "list", "--porcelain");
+        return output?.Split('\n').Where(line => line.StartsWith("worktree ", StringComparison.Ordinal))
+            .Select(line => line[9..].TrimEnd('\r')).Where(Directory.Exists).Take(128).ToArray() ?? [];
+    }
+
     private string? Run(string directory, params string[] arguments)
     {
         if (!Directory.Exists(directory))

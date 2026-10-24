@@ -14,6 +14,10 @@
     <Compile Include="../BellTower/IO/ContentHash.cs" Link="IO/ContentHash.cs" />
     <Compile Include="../BellTower/Providers/HookInput.cs" Link="Providers/HookInput.cs" />
     <Compile Include="../BellTower/Providers/HookAdapter.cs" Link="Providers/HookAdapter.cs" />
+    <Compile Include="../BellTower/Core/ShellGrammar.cs" Link="Core/ShellGrammar.cs" />
+    <Compile Include="../BellTower/Core/WorkClassifier.cs" Link="Core/WorkClassifier.cs" />
+    <Compile Include="../BellTower/Providers/OpenSpecOperation.cs" Link="Providers/OpenSpecOperation.cs" />
+    <Compile Include="../BellTower/Providers/ScaffoldLocator.cs" Link="Providers/ScaffoldLocator.cs" />
     <Compile Include="../BellTower/Providers/OpenSpecSelection.cs" Link="Providers/OpenSpecSelection.cs" />
     <Compile Include="../BellTower/Providers/OpenSpecSelectionReader.cs" Link="Providers/OpenSpecSelectionReader.cs" />
   </ItemGroup>

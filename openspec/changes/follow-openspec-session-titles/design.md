@@ -1,5 +1,9 @@
 # Design
 
+## Superseding policy (2026-10-23)
+
+`restore-claude-badge-identity` now controls shared naming, work evidence, history recovery and checkout policy. In particular, the read-only selection convention and `ManualName > Change > DefaultName` rule below describe the original implementation and are superseded by the current change's resolver and inspection scenarios. Keep the existing authenticated per-session transport, native rename conflict handling, reversible setup and process ownership boundaries. The four overlapping delta blocks have been reconciled to the approved newer requirements; the native/runtime presentation block remains intact. Future sync/archive must preserve the newer requirements and separately assess this change's still-unchecked authenticated/host acceptance. Historical trial records remain evidence only for their recorded versions, modes and targets.
+
 ## Context
 
 See `proposal.md` for motivation and `specs/session-identity/spec.md` for the behavior contract.

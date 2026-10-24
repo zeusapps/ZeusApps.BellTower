@@ -17,7 +17,9 @@ internal sealed class LaunchCommand : Command
         var executable = CommonOptions.Text("--executable", "Agent executable path.");
         var name = CommonOptions.Text("--name", "Initial session display name.");
         var change = CommonOptions.Text("--change", "Explicit change association.");
-        var role = CommonOptions.Text("--role", "Role used in announcements.");
+        // Deprecated: Bell Tower has no session role. Accepted and ignored so existing scripts keep working.
+        var role = CommonOptions.Text("--role", "Deprecated and ignored.");
+        role.Hidden = true;
         var silent = CommonOptions.Silent();
         Arguments.Add(provider);
         Options.Add(providerOption);
@@ -42,6 +44,6 @@ internal sealed class LaunchCommand : Command
         });
         SetAction(result => new AgentLauncher(CommonOptions.Paths(result, dataDirectory)).Launch(new LaunchOptions(
             result.GetValue(provider) ?? result.GetValue(providerOption)!, result.GetValue(executable),
-            result.GetValue(name), result.GetValue(change), result.GetValue(role), result.GetValue(silent), agentArguments)));
+            result.GetValue(name), result.GetValue(change), result.GetValue(silent), agentArguments)));
     }
 }

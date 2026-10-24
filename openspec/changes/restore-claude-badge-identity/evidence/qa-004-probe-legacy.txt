@@ -1,0 +1,2 @@
+claude: loaded ManualName=kept name extensionKeys=pendingForkTitle,nativeTitleAt diskHasPendingForkTitle=True diskHasNativeTitleAt=True
+codex: loaded ManualName=kept name extensionKeys=pendingForkTitle,nativeTitleAt diskHasPendingForkTitle=True diskHasNativeTitleAt=True

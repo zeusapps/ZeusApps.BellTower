@@ -45,7 +45,13 @@ public sealed class CaptureConsumer(DataPaths paths)
                 var launches = new LaunchPresentationStore(paths);
                 var palette = envelope.Dedicated ? launches.Consume(attachment.Id, attachment.Host.Shell, envelope.IngressAt, requireLive: false) : null;
                 new IdentityStore(paths).Get(observation.Key, observation.Directory,
-                    IdentityText.Optional(envelope.Name), IdentityText.Optional(envelope.Change), IdentityText.Optional(envelope.Role), palette);
+                    IdentityText.Optional(envelope.Name), IdentityText.Optional(envelope.Change), palette);
+                var transcript = envelope.TranscriptPath is { } candidate && Path.IsPathFullyQualified(candidate) ? candidate : null;
+                new IdentityStore(paths).Update(observation.Key, observation.Directory, value =>
+                {
+                    var bound = transcript is not null && HistoryState.Bind(value, transcript);
+                    return CheckoutEvidence.Observe(value, observation.Directory, observation.IsMainThread) | bound;
+                });
                 new OpenSpecSelectionObserver(paths).Observe(envelope);
                 SessionReducer.Apply(state, observation);
                 AtomicFile.Write(Path.Combine(paths.Root, observation.Provider + "-observed.json"), IO.Json.Encode(new

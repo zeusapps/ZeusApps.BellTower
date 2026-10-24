@@ -26,8 +26,10 @@ public sealed class TrayApplication : ApplicationContext
     private readonly CheckoutCache checkout = new();
     private readonly Navigator navigation;
     private readonly SessionViewFactory views;
+    private readonly IdentityResolver identityResolver;
+    private readonly IdentityHistoryReader history;
     private readonly TerminalTitlePump titles;
-    private readonly CodexNamePump nativeNames;
+    private readonly NativeNamePump nativeNames;
     private readonly CodexPermissionPump permissions;
     private readonly AlertPolicy policy = new(DateTimeOffset.UtcNow);
     private readonly AudioQueue audio;
@@ -50,6 +52,8 @@ public sealed class TrayApplication : ApplicationContext
         configuration = new(paths);
         navigation = new(paths);
         views = new(identities, attachments, navigation);
+        identityResolver = new(paths, checkout);
+        history = new(paths);
         titles = new(paths, checkout);
         nativeNames = new(paths, checkout);
         permissions = new(paths);
@@ -142,7 +146,8 @@ public sealed class TrayApplication : ApplicationContext
         strip.Acknowledge += key => store.Acknowledge(key);
         strip.Navigate += key => Navigate(key, hideTimer: true);
         overview.Navigate += key => Navigate(key, hideTimer: false);
-        overview.SaveIdentity += (key, name, change, role) => new SessionCatalog(paths).Rename(key, name, change, role);
+        overview.SaveIdentity += (key, name, change) => new SessionCatalog(paths).Rename(key, name, change);
+        overview.ConfigureIdentity += (key, checkoutPath, color, reset) => new SessionCatalog(paths).Configure(key, checkoutPath, color, reset);
         overview.SetNativeSync += (key, enabled) =>
         {
             if (state.Sessions.TryGetValue(key, out var session))
@@ -151,15 +156,16 @@ public sealed class TrayApplication : ApplicationContext
                 {
                     try
                     {
-                        new CodexNameService(paths).SetEnabled(session, enabled);
+                        NativeNameControl.SetEnabled(paths, session, enabled);
                     }
-                    catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or System.Text.Json.JsonException)
+                    catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or System.Text.Json.JsonException or NotSupportedException)
                     {
                         new LocalLog(paths).Write("native-name-control-failed");
                     }
                 });
             }
         };
+        overview.UseBellTowerName += key => new SessionCatalog(paths).UseBellTowerName(key);
         var position = AtomicFile.Read<StripPosition>(paths.Position);
         strip.Location = position is null ? new Point(30, 30) : new Point(position.X, position.Y);
         strip.PositionChanged += p => AtomicFile.Write(paths.Position, Json.Encode(p));
@@ -259,7 +265,10 @@ public sealed class TrayApplication : ApplicationContext
             var details = new List<(string Key, GitContext Git)>();
             foreach (var session in live)
             {
-                details.Add((session.Key, await checkout.ReadAsync(session.Directory, updateCancellation.Token)));
+                await Task.Run(() => history.Refresh(session), updateCancellation.Token);
+                var git = await identityResolver.RefreshAsync(session, updateCancellation.Token);
+                new IdentityPresentationStore(paths).Save(identities.Get(session.Key, session.Directory), git);
+                details.Add((session.Key, git));
             }
             if (disposed)
             {

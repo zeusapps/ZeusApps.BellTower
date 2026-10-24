@@ -36,8 +36,8 @@ Code organization and formatting follow the [development conventions](docs/devel
 - Completion waits 20 seconds. Managed Codex permissions use verified human-approval status with a 5-second grace; other permission paths use a 15-second debounce. Questions and terminal failures remain immediate.
 - Background subagent/workflow/monitor activity suppresses completion, while foreground questions remain visible.
 - Left-click requests focus; successful chip navigation hides only its timer for the current wait. Right-click dismisses the chip.
-- The tray Sessions overview includes working sessions and allows manual name, change association, and role editing.
-- Supported successful OpenSpec operations update each session's change-derived title independently. Manual names take precedence; [session-title coverage and Codex limitations](docs/session-titles.md) describe the current trial.
+- The tray Sessions overview includes working sessions and allows manual name and change association editing.
+- Successful edits, patches and literal new-change commands update each Claude Code or Codex session's title independently; read-only OpenSpec inspection never renames a session. Bell Tower titles and native user titles take precedence. [Session identity](docs/session-identity.md) covers evidence tiers, history recovery, checkout, color/reset and legacy import, native names (Codex sync shipped; Claude's native title write is unfinished, deferred to `sync-native-session-titles`) and provider limits; the [capability matrix](docs/compatibility.md#session-identity-capability-matrix) states what is supported, restricted or unverified per client.
 - Branch and linked-worktree names are supplementary context, shown in detail and tooltips.
 - Chips show `name · reason · HH:mm:ss` in one row. Time is elapsed waiting for that reason, including the completion grace.
 - Bundled default tones distinguish permission, question, completion and error. Choose a custom WAV or the classic chime from the tray, or restore event tones with `bell-tower tone --reset`.

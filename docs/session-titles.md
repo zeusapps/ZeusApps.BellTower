@@ -1,5 +1,7 @@
 # Session titles
 
+> The naming and selection policy on this page is superseded by [session identity](session-identity.md): read-only `status`/`instructions` operations no longer select a change, Claude Code follows the same rules as Codex, and a verified native user title takes precedence over derived names. This page remains the record of the Codex name transport and its trials.
+
 Bell Tower resolves **manual name > session-selected OpenSpec change > project directory**. Two sessions in one repository can select different changes and keep separate titles. Selection updates preserve the palette, wait episode, elapsed time, acknowledgment, and viewed state.
 
 ## Normal launch and resume
@@ -43,7 +45,7 @@ Updated local **Start-Codex** launches create one dedicated app-server with a ra
 
 Existing sessions and explicit remote connections are unchanged. An explicit `--no-daemon` agent argument retains standalone operation, whose native name cannot be updated externally. Dedicated-startup failures fall back to standalone tracking. Native executables and the official npm bootstrap are supported; custom shims may require standalone mode.
 
-A pre-existing explicit native name or native `/rename` pauses automatic writes. **Sessions > Use name in Codex** explicitly takes ownership/resumes; **Pause Codex names** disables writes. CLI equivalents:
+A pre-existing explicit native name or native `/rename` pauses automatic writes. **Sessions > Use name in native chat** (or **Use Bell Tower name**) explicitly takes ownership/resumes; **Pause native names** disables writes. These switches act on Codex sessions only; Claude Code's native title write is deferred to `sync-native-session-titles`. CLI equivalents:
 
 ```text
 bell-tower native-sync --session "codex:SESSION_ID" --mode enable
