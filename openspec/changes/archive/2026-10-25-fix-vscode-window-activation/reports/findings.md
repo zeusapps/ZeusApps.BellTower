@@ -62,3 +62,4 @@ Recheck 2 (final cycle) completed 2026-10-25. All fix-round findings verified in
 - Tasks: 14/14. Task 4.2 accepted by the user on 2026-10-25 from a user-performed live run (`../evidence/live-4.2.md`); minimized, fullscreen, duplicate-name, floating-window and activity sub-checks were not separately reported and remain unverified live.
 - No open blocking finding apart from ANALYSIS-003's live consequence. Deferred suggestions: ANALYSIS-103 (pending 4.2), ANALYSIS-150.
 - 2026-10-25: Dev build 0.1.9011 switched and setup applied with user authorization. User performed live 4.2 and accepted it; LIVE-001..003 recorded as follow-ups. Change complete for commit.
+- Commit: `54f0ab3` on `add-claude-repository-subagents` (implementation identity `diff=3a6df874e2c9 untracked=9/7e8916580128` at commit time). Not pushed or archived.
