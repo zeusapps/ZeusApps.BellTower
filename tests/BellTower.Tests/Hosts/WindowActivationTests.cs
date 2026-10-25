@@ -6,7 +6,7 @@ namespace BellTower.Tests.Hosts;
 
 public sealed class WindowActivationTests
 {
-    private sealed class RecordingWindows(bool minimized, bool foregroundAllowed = true) : IWindowActivationApi
+    private sealed class RecordingWindows(bool minimized, bool foregroundAllowed = true, bool confirmed = true) : IWindowActivationApi
     {
         public List<(string Call, IntPtr Window)> Calls { get; } = [];
         public bool IsMinimized(IntPtr window)
@@ -21,6 +21,37 @@ public sealed class WindowActivationTests
             Calls.Add(("foreground", window));
             return foregroundAllowed;
         }
+
+        public bool IsForeground(IntPtr window)
+        {
+            Calls.Add(("is-foreground", window));
+            return foregroundAllowed && confirmed;
+        }
+    }
+
+    [Fact]
+    public async Task ConfirmedActivationRequiresTheWindowToBecomeForeground()
+    {
+        var handle = new IntPtr(42);
+        var granted = new RecordingWindows(minimized: false);
+        Assert.True(await new WindowActivator(granted).ActivateConfirmedAsync(handle, _ => Task.CompletedTask));
+        Assert.DoesNotContain(granted.Calls, call => call.Call == "restore");
+
+        // SetForegroundWindow reporting success is not proof; the window must actually be foreground.
+        var ignored = new RecordingWindows(minimized: false, confirmed: false);
+        Assert.False(await new WindowActivator(ignored).ActivateConfirmedAsync(handle, _ => Task.CompletedTask));
+        Assert.Equal(WindowActivator.ConfirmationAttempts + 1, ignored.Calls.Count(call => call.Call == "is-foreground"));
+    }
+
+    [Fact]
+    public async Task DeniedConfirmedActivationNeverRestoresAVisibleWindowAndRestoresOnlyIconicOnes()
+    {
+        var denied = new RecordingWindows(minimized: false, foregroundAllowed: false);
+        Assert.False(await new WindowActivator(denied).ActivateConfirmedAsync(new IntPtr(7), _ => Task.CompletedTask));
+        Assert.DoesNotContain(denied.Calls, call => call.Call == "restore");
+        var minimized = new RecordingWindows(minimized: true);
+        Assert.True(await new WindowActivator(minimized).ActivateConfirmedAsync(new IntPtr(8), _ => Task.CompletedTask));
+        Assert.Single(minimized.Calls, call => call.Call == "restore");
     }
 
     [Fact]
@@ -52,6 +83,7 @@ public sealed class WindowActivationTests
     [Theory]
     [InlineData("window only", "window only; select the session's tab or pane.")]
     [InlineData("exact terminal", "focus this terminal.")]
+    [InlineData("terminal only", "not yet verified")]
     [InlineData("unavailable", "navigation is unavailable.")]
     public void ChipExplainsItsActualNavigationCapability(string precision, string expected)
     {

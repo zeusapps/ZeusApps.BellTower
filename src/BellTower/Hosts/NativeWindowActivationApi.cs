@@ -8,6 +8,7 @@ public sealed class NativeWindowActivationApi : IWindowActivationApi
     public bool IsMinimized(IntPtr window) => IsIconic(window);
     public void Restore(IntPtr window) => ShowWindow(window, RestoreMinimizedWindow);
     public bool SetForeground(IntPtr window) => GetForegroundWindow() == window || SetForegroundWindow(window);
+    public bool IsForeground(IntPtr window) => GetForegroundWindow() == window;
 
     [DllImport("user32.dll")]
     private static extern bool IsIconic(IntPtr window);

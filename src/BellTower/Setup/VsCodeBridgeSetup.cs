@@ -46,6 +46,10 @@ public static class VsCodeBridgeSetup
         }
         actions.Add(new(remove ? "Remove the owned VS Code focus bridge" : "Install the bundled VS Code focus bridge",
             installation.Executable, arguments));
+        if (!remove)
+        {
+            notes.Add("VS Code focus bridge installs without restarting VS Code or any agent; reload open VS Code windows when ready to load it. Until then an older bridge stays loaded and its chips read terminal only (partial): the terminal is revealed but the window is not brought forward.");
+        }
         ownership.BridgeInstalled = !remove;
     }
 }

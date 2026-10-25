@@ -14,4 +14,17 @@ async function focusTerminal(vscode, terminal, wait = ms => new Promise(resolve 
   return false;
 }
 
-module.exports = { focusTerminal };
+// Reveals the exact terminal (panel or editor area) in a window the host has already brought forward.
+// activeTerminal records the most recent terminal, so the window must also report focus; neither proves
+// keyboard input focus, which the public API cannot observe. The global terminal.focus command is never used.
+async function revealTerminal(vscode, terminal, wait = ms => new Promise(resolve => setTimeout(resolve, ms))) {
+  terminal.show(false);
+  for (let attempt = 0; attempt < 20; attempt++) {
+    if (vscode.window.state.focused && vscode.window.activeTerminal === terminal) return true;
+    if (attempt === 9) terminal.show(false);
+    await wait(50);
+  }
+  return false;
+}
+
+module.exports = { focusTerminal, revealTerminal };

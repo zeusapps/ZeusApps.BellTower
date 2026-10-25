@@ -35,7 +35,7 @@ public sealed class DiagnosticsReporter(DataPaths paths)
             Navigation = "live marked-console tab selection through UI Automation, with verified-window fallback; exact split-pane focus unavailable",
             Note = "no saved tab index, display-name matching, keyboard input, or terminal creation"
         },
-        VsCode = "requires bundled focus bridge",
+        VsCode = new VsCodeBridgeReporter(paths).Report(),
         Desktop = new
         {
             ShellModule = File.Exists(Path.Combine(paths.Root, "shell", "BellTower.psm1")) ? "installed; open a new terminal tab" : "not installed; use setup --desktop",

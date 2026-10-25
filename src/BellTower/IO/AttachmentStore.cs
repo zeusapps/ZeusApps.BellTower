@@ -5,6 +5,33 @@ namespace BellTower.IO;
 public sealed class AttachmentStore(DataPaths paths)
 {
     public Attachment? Get(string id) => AtomicFile.Read<Attachment>(FilePath(id));
+    /// <summary>Read-only listing of every readable attachment, in a stable order. Unreadable files are skipped.</summary>
+    public IReadOnlyList<Attachment> List()
+    {
+        var result = new List<Attachment>();
+        if (!Directory.Exists(paths.Attachments))
+        {
+            return result;
+        }
+
+        foreach (var file in Directory.EnumerateFiles(paths.Attachments, "*.json").Order(StringComparer.Ordinal))
+        {
+            try
+            {
+                if (AtomicFile.Read<Attachment>(file) is { } attachment)
+                {
+                    result.Add(attachment);
+                }
+            }
+            catch (Exception exception) when (exception is IOException or System.Text.Json.JsonException or InvalidDataException or UnauthorizedAccessException)
+            {
+                // A partial file is not a session.
+            }
+        }
+
+        return result;
+    }
+
     public void Save(Attachment attachment) => AtomicFile.Write(FilePath(attachment.Id), Json.Encode(attachment));
     public Attachment Adopt(Attachment captured, DateTimeOffset observedAt, bool resume = false)
     {

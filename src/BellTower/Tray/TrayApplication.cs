@@ -312,18 +312,18 @@ public sealed class TrayApplication : ApplicationContext
         }
 
         overview.SetStatus(result.Message);
-        if (result.Success && hideTimer && episode is not null)
+        try
         {
-            try
+            // NavigationOutcome is the single decision point: only a confirmed chip-click success hides the timer.
+            if (NavigationOutcome.ApplyViewed(store, key, episode, result, hideTimer))
             {
-                store.MarkViewed(key, episode);
                 Tick();
             }
-            catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or System.Text.Json.JsonException)
-            {
-                new LocalLog(paths).Write("viewed-wait-save-failed");
-                overview.SetStatus("Session focused; the timer preference could not be saved.");
-            }
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or System.Text.Json.JsonException)
+        {
+            new LocalLog(paths).Write("viewed-wait-save-failed");
+            overview.SetStatus("Session focused; the timer preference could not be saved.");
         }
         if (!result.Success)
         {

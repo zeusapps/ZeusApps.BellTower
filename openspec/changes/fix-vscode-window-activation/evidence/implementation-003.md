@@ -1,0 +1,17 @@
+# Implementation 003 (fix round 2): fix-vscode-window-activation
+
+Target: Implementation 002 plus these fixes, baseline `9b26088`, uncommitted. Shared host policy; no provider transport change. All items await independent verification.
+
+- **ANALYSIS-100 (blocking): fixed.** The multiple-handle guard stays permanent and nothing re-enables evidence. `service.js` publishes the additive field `windowUnavailable: "multiple"` with the null window once the guard trips (omitted otherwise, so a protocol 2 registration that has not observed its window carries no reason). `HostRegistration` reads it (`WindowUnavailable`, optional, older records unaffected). `VsCodeWindowOwnership.Verify` maps it to "More than one top-level window was observed for this VS Code window (for example a floating editor), so it cannot be verified. Run Developer: Reload Window in VS Code to re-verify it." A registration without the field still reads "has not been seen in the foreground ... Focus it once". The chip `terminal only` tooltip, the failed-click message, `doctor` (windows and sessions, via the same `Explain`/`Verify`) and `docs/installation.md` name Developer: Reload Window. Tests: Node (two handles publish the reason; three later focus gains keep `window` null with the reason; no reason when never observed) and `MultipleWindowsGuardReadsAsReloadRecoveryForClaudeAndCodexInNavigationAndDoctor` (matched Claude and Codex sessions in navigation, precision and doctor, plus the no-reason case and zero native calls). Setup wording aligned: the setup note now says older bridges read `terminal only (partial)`, matching doctor's `partial`; installation.md ties the two terms together.
+- **ANALYSIS-101: fixed.** The inline `if` in `TrayApplication.Navigate` is removed; `NavigationOutcome.ApplyViewed` is the single decision point, called inside the existing try/catch, `Tick()` still conditional on its result. Behavior is identical (a non-success, non-chip or episode-less call changes nothing).
+- **ANALYSIS-102: fixed.** New `AttachmentStore.List()` (read-only, stable order, unreadable files skipped); `VsCodeBridgeReporter` uses it, no file enumeration and no 200 item truncation. A session whose shell or agent process has ended (`ProcessProbe.Inspect` is `Ended`) is reported as `session process has ended`. `DoctorReportsWindowVerificationEquallyForClaudeAndCodex` gained an unended attachment with a killed shell for each provider and asserts the same reason for both.
+- **ANALYSIS-005 residual: fixed.** `service.js` treats `ENOENT` when unlinking the request as done (no retry log); other errors (for example `EPERM`) still leave the request queued and are logged. Both are tested.
+- **QA-100: fixed.** `doctor` `vsCode` is `{ bridge, states, windows[], sessions[], error }`: arrays are always arrays and a read failure sets `error` (null otherwise). Test `DoctorKeepsArrayTypesAndSetsErrorWhenRegistrationsCannotBeRead`; the happy-path test asserts the types. The change from the old string is documented in `docs/compatibility.md`.
+
+## Checks
+
+- `dotnet build -c Release --no-restore`: 0 warnings, 0 errors.
+- `dotnet test -c Release --no-build --no-restore` twice: 870 passed both times; no flake observed.
+- `node --test vscode/service.test.js vscode/focus.test.js`: 39 passed.
+- `dotnet format --verify-no-changes` on all changed `.cs` files: passed (format removed one unused using in `VsCodeBridgeReporter.cs`).
+- Not run: live task 4.2.

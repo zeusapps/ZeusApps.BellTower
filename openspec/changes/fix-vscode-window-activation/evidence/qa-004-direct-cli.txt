@@ -1,0 +1,7 @@
+== direct CLI install (same invocation SetupAction uses), disposable user-data/extensions dirs
+settings.json sha256 before=67478df9664da314f8fd0c2655616d5249ba7e20b606511123f067312bd4aca6 after=67478df9664da314f8fd0c2655616d5249ba7e20b606511123f067312bd4aca6 same=true
+extensions: extensions.json zeusapps.bell-tower-0.1.8 
+extension.js identical to source
+service.js identical to source
+focus.js identical to source
+Code.exe count before=15 after=15

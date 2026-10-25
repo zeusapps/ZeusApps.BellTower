@@ -30,6 +30,7 @@ internal static class CliApplication
         root.Subcommands.Add(new SetupCommand(dataDirectory));
         root.Subcommands.Add(new ImportCommand(dataDirectory));
         root.Subcommands.Add(new ProcessInfoCommand());
+        root.Subcommands.Add(new ForegroundWindowCommand());
         root.Subcommands.Add(new PreviewCommand());
         root.Subcommands.Add(new DoctorCommand(dataDirectory));
         root.Subcommands.Add(new LaunchCommand(dataDirectory, agentArguments));

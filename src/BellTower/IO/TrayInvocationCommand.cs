@@ -14,7 +14,7 @@ public static class TrayInvocationCommand
     {
         "__apply-update", "--distribution-info", "--help", "-h", "--version", "-v", "help", "version",
         "start", "exit", "update", "test-sound", "toggle-voice", "event", "statusline", "list", "rename",
-        "native-sync", "focus", "setup", "import", "process-info", "preview", "doctor", "launch", "detach",
+        "native-sync", "focus", "setup", "import", "process-info", "foreground-window", "preview", "doctor", "launch", "detach",
         "sync-title", "focus-terminal", "prepare-session", "prepare-codex-runtime", "codex-runtime-host",
         "stop-codex-runtime", "tone"
     };

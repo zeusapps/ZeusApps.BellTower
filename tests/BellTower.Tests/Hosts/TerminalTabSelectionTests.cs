@@ -37,6 +37,7 @@ public sealed class TerminalTabSelectionTests
         public bool IsMinimized(IntPtr window) => false;
         public void Restore(IntPtr window) => throw new InvalidOperationException("A visible window must not be restored.");
         public bool SetForeground(IntPtr window) { Activations++; return true; }
+        public bool IsForeground(IntPtr window) => true;
     }
 
     private static void SaveAttachment(TestWorkspace workspace, bool ended = false)

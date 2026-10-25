@@ -9,6 +9,7 @@ public sealed record ChipView(string Key, string Episode, string Name, Palette P
     {
         "window only" => "Left-click to focus the window only; select the session's tab or pane.",
         "exact terminal" => "Left-click to focus this terminal.",
+        "terminal only" => "Left-click to select this terminal. Its VS Code window is not yet verified, so it cannot be brought forward. Focus the window once; if it stays unverified (for example after a floating editor window was used) or the extension was just updated, run Developer: Reload Window.",
         "tab or window" => "Left-click to locate the session's tab; falls back to the window if it cannot be identified.",
         "exact tab" => "Left-click to select this tab. Split-pane focus is unchanged.",
         _ => "Terminal navigation is unavailable."

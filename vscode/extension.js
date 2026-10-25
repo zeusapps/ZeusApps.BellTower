@@ -8,7 +8,7 @@ const { execFile } = require('node:child_process');
 const { promisify } = require('node:util');
 const execute = promisify(execFile);
 const { Bridge } = require('./service');
-const { focusTerminal } = require('./focus');
+const { focusTerminal, revealTerminal } = require('./focus');
 
 function activate(context) {
   const settings = vscode.workspace.getConfiguration('bellTower');
@@ -31,6 +31,25 @@ function activate(context) {
       return null;
     }
   }
+  async function sampleWindow() {
+    try {
+      const result = await execute(executable, ['foreground-window', '--data-dir', root], {
+        windowsHide: true,
+        timeout: 3000,
+        maxBuffer: 4096
+      });
+      const value = JSON.parse(result.stdout);
+      return {
+        handle: String(value.handle),
+        className: value.className,
+        ownerPid: value.ownerPid,
+        ownerStartedUtcTicks: String(value.ownerStartedUtcTicks)
+      };
+    } catch {
+      // Spawn failure, timeout, unstable foreground or malformed output: no evidence either way.
+      return { unavailable: true };
+    }
+  }
   async function start() {
     if (process.platform !== 'win32' || vscode.env.remoteName) {
       output.appendLine('This bridge currently supports local Windows terminals (including RDP), not remote SSH/WSL extension contexts.');
@@ -50,9 +69,18 @@ function activate(context) {
       terminals: async () => Promise.all(vscode.window.terminals
         .filter(terminal => !terminal.exitStatus)
         .map(async terminal => ({ pid: await terminal.processId, terminal }))),
-      focus: terminal => focusTerminal(vscode, terminal)
+      focus: terminal => focusTerminal(vscode, terminal),
+      reveal: terminal => revealTerminal(vscode, terminal),
+      sampleWindow,
+      isFocused: () => vscode.window.state.focused,
+      expectedOwnerPid: process.ppid,
+      log: line => output.appendLine(line)
     });
-    timer = setInterval(() => bridge.tick().catch(() => output.appendLine('Local bridge refresh failed.')), 1500);
+    // Both focus and blur events feed the bridge so a sample straddling a focus change is discarded.
+    context.subscriptions.push(vscode.window.onDidChangeWindowState(state => {
+      bridge.noteWindowState(state).catch(() => {});
+    }));
+    timer = setInterval(() => bridge.tick().catch(() => bridge.report('tick', 'Local bridge refresh failed.')), 1500);
     await bridge.tick();
   }
   start().catch(() => output.appendLine('Bridge registration failed.'));

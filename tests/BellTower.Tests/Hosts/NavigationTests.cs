@@ -52,7 +52,8 @@ public sealed class NavigationTests
         })
         {
             var attachment = new Attachment(provider, provider, process, new("vscode", process), w.Root, DateTimeOffset.UtcNow);
-            Assert.Equal("exact terminal", new Navigator(w.Paths).Precision(attachment));
+            // A registration from a bridge without window evidence is explicitly partial for both clients.
+            Assert.Equal("terminal only", new Navigator(w.Paths).Precision(attachment));
         }
     }
 
@@ -70,7 +71,8 @@ public sealed class NavigationTests
         var focus = new Navigator(w.Paths).FocusAsync(attachment);
         var request = AtomicFile.Read<FocusRequest>(Directory.GetFiles(w.Paths.Requests, "*.json").Single())!;
         AtomicFile.Write(Path.Combine(w.Paths.Requests, request.Id + ".result"), BellTower.IO.Json.Encode(new FocusResult(true, "exact terminal", "revealed")));
-        Assert.True((await focus).Success);
+        // The legacy bridge claims success, but a reveal without a verified, activated window is not navigation success.
+        Assert.False((await focus).Success);
         var state = store.Read().Sessions["claude:session-1"];
         Assert.Null(state.AcknowledgedEpisode);
         Assert.True(state.RequiresAttention(DateTimeOffset.UtcNow));
