@@ -80,7 +80,7 @@ Claude Code and Codex may be used alternately or concurrently. Each change has a
 
 ## Commits
 
-Specialists never commit, push, create branches, or rewrite history. After the completion criteria hold, the orchestrator commits the scoped implementation paths together with the change's artifacts and excludes unrelated user changes. When the checkout is on the default branch, create a change branch first. Push and publication need separate user authorization. Record the commit SHA in the ledger's completion assessment. Until the commit, the review identity is the dirty-tree identity above.
+Specialists never commit, push, create branches, or rewrite history. Your own artifacts (planning files, `tasks.md`, `reports/findings.md`, saved fallback reports, handoffs) follow [committable content hygiene](../roles/project-facts.md#committable-content-hygiene). Before committing, confirm the current QA report has a passing hygiene check over the committed change files, and re-run the same search over anything written after that report. A hygiene finding blocks the commit. Redact it yourself in change artifacts, including earlier immutable reports and screenshots, as the one permitted edit to that history, and record the redaction in the ledger without the value; route hits in implementation docs to the developer. After the completion criteria hold, the orchestrator commits the scoped implementation paths together with the change's artifacts and excludes unrelated user changes. When the checkout is on the default branch, create a change branch first. Push and publication need separate user authorization. Record the commit SHA in the ledger's completion assessment. Until the commit, the review identity is the dirty-tree identity above.
 
 ## Completion
 

@@ -21,7 +21,7 @@ Template only: replace placeholders with observed evidence. Do not describe this
 | --- | --- | --- | --- | --- |
 | <scenario> | <exact command or manual steps> | <fixture / installed native / live> | <passed / failed / not performed / not applicable> | <relative evidence link or reason> |
 
-Cover the assignment's applicable provider, concurrent-session, and error cases, and state which client (Claude Code, Codex, or both) each check covers. Explain unavailable/non-applicable checks. A source inspection is not an executed functional test. Screenshot links use `../screenshots/<reserved-name>.png`; omit them when no useful visual scenario applies.
+Cover the assignment's applicable provider, concurrent-session, and error cases, and state which client (Claude Code, Codex, or both) each check covers. Include a committable content hygiene row naming the searched paths and patterns, with the result. Explain unavailable/non-applicable checks. A source inspection is not an executed functional test. Screenshot links use `../screenshots/<reserved-name>.png`; omit them when no useful visual scenario applies.
 
 ## Findings
 

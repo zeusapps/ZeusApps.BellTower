@@ -32,3 +32,13 @@ Provider-specific behavior belongs in provider adapters (`Providers`, `Setup/Pro
 - Use isolated data and settings, fake providers, and silent audio sinks. Record a check that needs the live instance as not performed.
 - Your inspection must not change or take over the main session's OpenSpec association or selection.
 - Fetch current primary library or API documentation through the repository documentation workflow when you depend on it.
+
+## Committable content hygiene
+
+Everything you write that Git would commit (OpenSpec artifacts, reports, evidence, screenshots, handoffs, findings, docs, and other Markdown or text files that are not ignored) must contain no secrets and no information identifying the user or their machine.
+
+- Secrets: API keys, tokens, passwords, cookies, private keys, signing material, webhook URLs or connection strings with embedded credentials, and authorization headers.
+- Machine and personal information: account or user names, home-directory absolute paths (for example `C:\Users\<name>\...`), host or computer names, email addresses, IP or MAC addresses, network names, device or hardware identifiers and serials, environment-variable dumps, and verbatim personal configuration (`~/.claude`, `~/.codex`).
+- Use repository-relative paths and placeholders such as `%USERPROFILE%`, `%LOCALAPPDATA%`, `~`, `<user>`, `<host>`, or `<redacted>`. Redact command output, logs, and transcripts before quoting them, and crop or blur screenshots that show such details.
+- Public project identities already in the repository, Git commit attribution, and opaque client session IDs used for ledger ownership are allowed.
+- Never repeat a found secret or personal value in a report or finding; cite the file, line, and category only.
