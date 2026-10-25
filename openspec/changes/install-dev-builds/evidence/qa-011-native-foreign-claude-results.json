@@ -1,0 +1,23 @@
+{
+  "case": "foreign",
+  "provider": "claude",
+  "root": "D:\\Code\\ZeusApps.BellTower\\artifacts\\qa-011\\foreign-claude-e4d0b700",
+  "original": "0.1.9008",
+  "startedUtc": "2026-10-25T12:35:01.7908934Z",
+  "foreign": {
+    "barrierEntered": true,
+    "foreignExitedWithinBarrier": true,
+    "foreignExitCode": 0,
+    "presenceDuringBarrier": false,
+    "switchExit": 0,
+    "switchPipeClosed": true,
+    "trayAfter": "0.1.9001",
+    "trayOwnerActivation": "9bce2e8c53034a178cb420ea3d020a12",
+    "state": "running-candidate",
+    "rollbackExit": 0,
+    "rollbackTray": "0.1.9008",
+    "passed": true
+  },
+  "sweptProcesses": [],
+  "endedUtc": "2026-10-25T12:35:15.6185585Z"
+}

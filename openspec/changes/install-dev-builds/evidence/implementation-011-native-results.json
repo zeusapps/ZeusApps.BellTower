@@ -1,0 +1,121 @@
+{
+  "root": "D:\\Code\\ZeusApps.BellTower\\artifacts\\implementation-011\\native-7066eb28d8",
+  "cycles": [
+    {
+      "candidate": "0.1.9001",
+      "switch": {
+        "exit": 0,
+        "pipeClosed": true,
+        "seconds": 4.8,
+        "tail": "{\r\n  \"status\": \"running-candidate\",\r\n  \"operationManifest\": \"D:\\\\Code\\\\ZeusApps.BellTower\\\\artifacts\\\\implementation-011\\\\native-7066eb28d8\\\\private\\\\bell-tower-dev-60fdfdcee5a6420c9649e1d4eaa19f7c\\\\operation.json\",\r\n  \"selectedVersion\": \"0.1.9001\",\r\n  \"trayPid\": 12060,\r\n  \"trayRestarted\": true,\r\n  \"originalBytesPreserved\": true,\r\n  \"restoredFiles\": \"none\",\r\n  \"configurationAndRuntimeFiles\": \"untouched\"\r\n}"
+      },
+      "switchTrayRunning": true,
+      "switchTrayVersion": "0.1.9001",
+      "rollback": {
+        "exit": 0,
+        "pipeClosed": true,
+        "seconds": 3.7,
+        "tail": "{\r\n  \"status\": \"running-original\",\r\n  \"operationManifest\": \"D:\\\\Code\\\\ZeusApps.BellTower\\\\artifacts\\\\implementation-011\\\\native-7066eb28d8\\\\private\\\\bell-tower-dev-60fdfdcee5a6420c9649e1d4eaa19f7c\\\\operation.json\",\r\n  \"selectedVersion\": \"0.1.9003\",\r\n  \"trayPid\": 35720,\r\n  \"trayRestarted\": true,\r\n  \"originalBytesPreserved\": true,\r\n  \"restoredFiles\": \"state.json, state.json.bak, current.json only\",\r\n  \"configurationAndRuntimeFiles\": \"untouched\"\r\n}"
+      },
+      "rollbackTrayVersion": "0.1.9003",
+      "passed": true
+    },
+    {
+      "candidate": "0.1.9002",
+      "switch": {
+        "exit": 0,
+        "pipeClosed": true,
+        "seconds": 5.2,
+        "tail": "{\r\n  \"status\": \"running-candidate\",\r\n  \"operationManifest\": \"D:\\\\Code\\\\ZeusApps.BellTower\\\\artifacts\\\\implementation-011\\\\native-7066eb28d8\\\\private\\\\bell-tower-dev-b48e8b82bb814f7999f6ea2d4569ca77\\\\operation.json\",\r\n  \"selectedVersion\": \"0.1.9002\",\r\n  \"trayPid\": 44008,\r\n  \"trayRestarted\": true,\r\n  \"originalBytesPreserved\": true,\r\n  \"restoredFiles\": \"none\",\r\n  \"configurationAndRuntimeFiles\": \"untouched\"\r\n}"
+      },
+      "switchTrayRunning": true,
+      "switchTrayVersion": "0.1.9002",
+      "rollback": {
+        "exit": 0,
+        "pipeClosed": true,
+        "seconds": 3.8,
+        "tail": "{\r\n  \"status\": \"running-original\",\r\n  \"operationManifest\": \"D:\\\\Code\\\\ZeusApps.BellTower\\\\artifacts\\\\implementation-011\\\\native-7066eb28d8\\\\private\\\\bell-tower-dev-b48e8b82bb814f7999f6ea2d4569ca77\\\\operation.json\",\r\n  \"selectedVersion\": \"0.1.9003\",\r\n  \"trayPid\": 29092,\r\n  \"trayRestarted\": true,\r\n  \"originalBytesPreserved\": true,\r\n  \"restoredFiles\": \"state.json, state.json.bak, current.json only\",\r\n  \"configurationAndRuntimeFiles\": \"untouched\"\r\n}"
+      },
+      "rollbackTrayVersion": "0.1.9003",
+      "passed": true
+    },
+    {
+      "candidate": "0.1.9004",
+      "switch": {
+        "exit": 0,
+        "pipeClosed": true,
+        "seconds": 5.1,
+        "tail": "{\r\n  \"status\": \"running-candidate\",\r\n  \"operationManifest\": \"D:\\\\Code\\\\ZeusApps.BellTower\\\\artifacts\\\\implementation-011\\\\native-7066eb28d8\\\\private\\\\bell-tower-dev-4434dd53f67a4e75b91f1d1b6bd4f55f\\\\operation.json\",\r\n  \"selectedVersion\": \"0.1.9004\",\r\n  \"trayPid\": 38212,\r\n  \"trayRestarted\": true,\r\n  \"originalBytesPreserved\": true,\r\n  \"restoredFiles\": \"none\",\r\n  \"configurationAndRuntimeFiles\": \"untouched\"\r\n}"
+      },
+      "switchTrayRunning": true,
+      "switchTrayVersion": "0.1.9004",
+      "rollback": {
+        "exit": 0,
+        "pipeClosed": true,
+        "seconds": 3.7,
+        "tail": "{\r\n  \"status\": \"running-original\",\r\n  \"operationManifest\": \"D:\\\\Code\\\\ZeusApps.BellTower\\\\artifacts\\\\implementation-011\\\\native-7066eb28d8\\\\private\\\\bell-tower-dev-4434dd53f67a4e75b91f1d1b6bd4f55f\\\\operation.json\",\r\n  \"selectedVersion\": \"0.1.9003\",\r\n  \"trayPid\": 37856,\r\n  \"trayRestarted\": true,\r\n  \"originalBytesPreserved\": true,\r\n  \"restoredFiles\": \"state.json, state.json.bak, current.json only\",\r\n  \"configurationAndRuntimeFiles\": \"untouched\"\r\n}"
+      },
+      "rollbackTrayVersion": "0.1.9003",
+      "passed": true
+    },
+    {
+      "candidate": "0.1.9005",
+      "switch": {
+        "exit": 0,
+        "pipeClosed": true,
+        "seconds": 4.8,
+        "tail": "{\r\n  \"status\": \"running-candidate\",\r\n  \"operationManifest\": \"D:\\\\Code\\\\ZeusApps.BellTower\\\\artifacts\\\\implementation-011\\\\native-7066eb28d8\\\\private\\\\bell-tower-dev-69dcab85680548ba93944b3ba98d31e0\\\\operation.json\",\r\n  \"selectedVersion\": \"0.1.9005\",\r\n  \"trayPid\": 39856,\r\n  \"trayRestarted\": true,\r\n  \"originalBytesPreserved\": true,\r\n  \"restoredFiles\": \"none\",\r\n  \"configurationAndRuntimeFiles\": \"untouched\"\r\n}"
+      },
+      "switchTrayRunning": true,
+      "switchTrayVersion": "0.1.9005",
+      "rollback": {
+        "exit": 0,
+        "pipeClosed": true,
+        "seconds": 3.6,
+        "tail": "{\r\n  \"status\": \"running-original\",\r\n  \"operationManifest\": \"D:\\\\Code\\\\ZeusApps.BellTower\\\\artifacts\\\\implementation-011\\\\native-7066eb28d8\\\\private\\\\bell-tower-dev-69dcab85680548ba93944b3ba98d31e0\\\\operation.json\",\r\n  \"selectedVersion\": \"0.1.9003\",\r\n  \"trayPid\": 14056,\r\n  \"trayRestarted\": true,\r\n  \"originalBytesPreserved\": true,\r\n  \"restoredFiles\": \"state.json, state.json.bak, current.json only\",\r\n  \"configurationAndRuntimeFiles\": \"untouched\"\r\n}"
+      },
+      "rollbackTrayVersion": "0.1.9003",
+      "passed": true
+    },
+    {
+      "candidate": "0.1.9006",
+      "switch": {
+        "exit": 0,
+        "pipeClosed": true,
+        "seconds": 5.0,
+        "tail": "{\r\n  \"status\": \"running-candidate\",\r\n  \"operationManifest\": \"D:\\\\Code\\\\ZeusApps.BellTower\\\\artifacts\\\\implementation-011\\\\native-7066eb28d8\\\\private\\\\bell-tower-dev-a51bc2c0fc8843fd87f04338f8049e94\\\\operation.json\",\r\n  \"selectedVersion\": \"0.1.9006\",\r\n  \"trayPid\": 39724,\r\n  \"trayRestarted\": true,\r\n  \"originalBytesPreserved\": true,\r\n  \"restoredFiles\": \"none\",\r\n  \"configurationAndRuntimeFiles\": \"untouched\"\r\n}"
+      },
+      "switchTrayRunning": true,
+      "switchTrayVersion": "0.1.9006",
+      "rollback": {
+        "exit": 0,
+        "pipeClosed": true,
+        "seconds": 3.6,
+        "tail": "{\r\n  \"status\": \"running-original\",\r\n  \"operationManifest\": \"D:\\\\Code\\\\ZeusApps.BellTower\\\\artifacts\\\\implementation-011\\\\native-7066eb28d8\\\\private\\\\bell-tower-dev-a51bc2c0fc8843fd87f04338f8049e94\\\\operation.json\",\r\n  \"selectedVersion\": \"0.1.9003\",\r\n  \"trayPid\": 36992,\r\n  \"trayRestarted\": true,\r\n  \"originalBytesPreserved\": true,\r\n  \"restoredFiles\": \"state.json, state.json.bak, current.json only\",\r\n  \"configurationAndRuntimeFiles\": \"untouched\"\r\n}"
+      },
+      "rollbackTrayVersion": "0.1.9003",
+      "passed": true
+    },
+    {
+      "candidate": "0.1.9007",
+      "switch": {
+        "exit": 0,
+        "pipeClosed": true,
+        "seconds": 5.2,
+        "tail": "{\r\n  \"status\": \"running-candidate\",\r\n  \"operationManifest\": \"D:\\\\Code\\\\ZeusApps.BellTower\\\\artifacts\\\\implementation-011\\\\native-7066eb28d8\\\\private\\\\bell-tower-dev-268b5cf1e33f47578147b6cf45ff90ca\\\\operation.json\",\r\n  \"selectedVersion\": \"0.1.9007\",\r\n  \"trayPid\": 17852,\r\n  \"trayRestarted\": true,\r\n  \"originalBytesPreserved\": true,\r\n  \"restoredFiles\": \"none\",\r\n  \"configurationAndRuntimeFiles\": \"untouched\"\r\n}"
+      },
+      "switchTrayRunning": true,
+      "switchTrayVersion": "0.1.9007",
+      "rollback": {
+        "exit": 0,
+        "pipeClosed": true,
+        "seconds": 3.9,
+        "tail": "{\r\n  \"status\": \"running-original\",\r\n  \"operationManifest\": \"D:\\\\Code\\\\ZeusApps.BellTower\\\\artifacts\\\\implementation-011\\\\native-7066eb28d8\\\\private\\\\bell-tower-dev-268b5cf1e33f47578147b6cf45ff90ca\\\\operation.json\",\r\n  \"selectedVersion\": \"0.1.9003\",\r\n  \"trayPid\": 39576,\r\n  \"trayRestarted\": true,\r\n  \"originalBytesPreserved\": true,\r\n  \"restoredFiles\": \"state.json, state.json.bak, current.json only\",\r\n  \"configurationAndRuntimeFiles\": \"untouched\"\r\n}"
+      },
+      "rollbackTrayVersion": "0.1.9003",
+      "passed": true
+    }
+  ],
+  "passedCycles": 6,
+  "totalCycles": 6
+}

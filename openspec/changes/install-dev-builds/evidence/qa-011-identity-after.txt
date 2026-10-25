@@ -1,0 +1,11 @@
+HEAD: 84dac987669ab34b9f07709a9480684621ce9901
+Baseline: 84dac987669ab34b9f07709a9480684621ce9901
+Paths: .agents/skills/install-dev-build .claude/skills/install-dev-build docs/development.md docs/installation.md docs/releases.md scripts src tests
+Manifest (A added, M modified, D deleted, ? untracked):
+  M docs/development.md
+  M scripts/install-dev.ps1
+  M tests/BellTower.Tests/Scripts/InstallDevFunctionHarness.ps1
+  M tests/BellTower.Tests/Scripts/InstallDevScriptTests.Recovery.cs
+Tracked diff SHA-256: b9d93bc99de21dac04a3e9d5d8a1f1341f19a4f73bd4ffdf3487414e9e98b933
+Untracked file SHA-256:
+Summary: head=84dac98 baseline=84dac98 files=4 diff=b9d93bc99de2 untracked=0/e3b0c44298fc

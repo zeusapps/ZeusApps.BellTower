@@ -1,0 +1,41 @@
+{
+  "case": "held",
+  "provider": "codex",
+  "root": "D:\\Code\\ZeusApps.BellTower\\artifacts\\qa-012\\held-codex-7540f07e",
+  "original": "0.1.9009",
+  "startedUtc": "2026-10-25T13:18:45.7119143Z",
+  "heldFamily": [
+    {
+      "pid": 39180,
+      "parent": 28876,
+      "image": "\\bell-tower.exe"
+    },
+    {
+      "pid": 9880,
+      "parent": 39180,
+      "image": "\\versions\\0.1.9009\\bell-tower.exe"
+    }
+  ],
+  "held": {
+    "switchExit": 0,
+    "switchSeconds": 4.7,
+    "pipeClosed": true,
+    "message": "{ \"status\": \"running-candidate\", \"operationManifest\": \"D:\\\\Code\\\\ZeusApps.BellTower\\\\artifacts\\\\qa-012\\\\held-codex-7540f07e\\\\private\\\\bell-tower-dev-b2d2ed8870364e87a1ee7ca04f377c2d\\\\operation.json\", \"selectedVersion\": \"0.1.9001\", \"trayPid\": 40912, \"trayRestarted\": true, \"originalBytesPreserved\": true, \"restoredFiles\": \"none\", \"configurationAndRuntimeFiles\": \"untouched\" }",
+    "heldStillAlive": true,
+    "trayVersion": "0.1.9001",
+    "rollbackExit": 0,
+    "rollbackSeconds": 3.3,
+    "rollbackTray": "0.1.9009",
+    "recordsLeft": null,
+    "passed": true
+  },
+  "sweptProcesses": [],
+  "ownedPids": [
+    39180,
+    9880,
+    4256,
+    34064,
+    33800
+  ],
+  "endedUtc": "2026-10-25T13:19:00.9442775Z"
+}

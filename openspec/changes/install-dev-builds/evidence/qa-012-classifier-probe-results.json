@@ -1,0 +1,158 @@
+{
+  "registeredCount": 26,
+  "commands": [
+    {
+      "type": "TrayCommand",
+      "name": "tray",
+      "kind": "THROWS: Tray command line contains an unknown or malformed argument."
+    },
+    {
+      "type": "StartCommand",
+      "name": "start",
+      "kind": "NotTray"
+    },
+    {
+      "type": "ExitCommand",
+      "name": "exit",
+      "kind": "NotTray"
+    },
+    {
+      "type": "UpdateCommand",
+      "name": "update",
+      "kind": "NotTray"
+    },
+    {
+      "type": "TestSoundCommand",
+      "name": "test-sound",
+      "kind": "NotTray"
+    },
+    {
+      "type": "ToggleVoiceCommand",
+      "name": "toggle-voice",
+      "kind": "NotTray"
+    },
+    {
+      "type": "EventCommand",
+      "name": "event",
+      "kind": "NotTray"
+    },
+    {
+      "type": "StatusLineCommand",
+      "name": "statusline",
+      "kind": "NotTray"
+    },
+    {
+      "type": "ListCommand",
+      "name": "list",
+      "kind": "NotTray"
+    },
+    {
+      "type": "RenameCommand",
+      "name": "rename",
+      "kind": "NotTray"
+    },
+    {
+      "type": "NativeSyncCommand",
+      "name": "native-sync",
+      "kind": "NotTray"
+    },
+    {
+      "type": "FocusCommand",
+      "name": "focus",
+      "kind": "NotTray"
+    },
+    {
+      "type": "SetupCommand",
+      "name": "setup",
+      "kind": "NotTray"
+    },
+    {
+      "type": "ImportCommand",
+      "name": "import",
+      "kind": "NotTray"
+    },
+    {
+      "type": "ProcessInfoCommand",
+      "name": "process-info",
+      "kind": "NotTray"
+    },
+    {
+      "type": "PreviewCommand",
+      "name": "preview",
+      "kind": "NotTray"
+    },
+    {
+      "type": "DoctorCommand",
+      "name": "doctor",
+      "kind": "NotTray"
+    },
+    {
+      "type": "LaunchCommand",
+      "name": "launch",
+      "kind": "NotTray"
+    },
+    {
+      "type": "DetachCommand",
+      "name": "detach",
+      "kind": "NotTray"
+    },
+    {
+      "type": "SyncTitleCommand",
+      "name": "sync-title",
+      "kind": "NotTray"
+    },
+    {
+      "type": "FocusTerminalCommand",
+      "name": "focus-terminal",
+      "kind": "NotTray"
+    },
+    {
+      "type": "PrepareSessionCommand",
+      "name": "prepare-session",
+      "kind": "NotTray"
+    },
+    {
+      "type": "PrepareCodexRuntimeCommand",
+      "name": "prepare-codex-runtime",
+      "kind": "NotTray"
+    },
+    {
+      "type": "CodexRuntimeHostCommand",
+      "name": "codex-runtime-host",
+      "kind": "NotTray"
+    },
+    {
+      "type": "StopCodexRuntimeCommand",
+      "name": "stop-codex-runtime",
+      "kind": "NotTray"
+    },
+    {
+      "type": "ToneCommand",
+      "name": "tone",
+      "kind": "NotTray"
+    }
+  ],
+  "statuslineProbe": [
+    {
+      "verb": "statusline",
+      "provider": "claude",
+      "kind": "NotTray"
+    },
+    {
+      "verb": "statusline",
+      "provider": "codex",
+      "kind": "NotTray"
+    },
+    {
+      "verb": "status-line",
+      "provider": "claude",
+      "kind": "THROWS: Process command line has an unknown Bell Tower command."
+    },
+    {
+      "verb": "status-line",
+      "provider": "codex",
+      "kind": "THROWS: Process command line has an unknown Bell Tower command."
+    }
+  ],
+  "nonTrayMisclassified": []
+}

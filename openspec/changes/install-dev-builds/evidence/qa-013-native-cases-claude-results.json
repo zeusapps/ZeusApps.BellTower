@@ -1,0 +1,50 @@
+{
+  "case": "cases",
+  "provider": "claude",
+  "root": "D:\\Code\\ZeusApps.BellTower\\artifacts\\qa-013\\cases-claude-32880856",
+  "original": "0.1.9009",
+  "startedUtc": "2026-10-25T13:42:09.5539656Z",
+  "B": {
+    "switchExit": 0,
+    "switchTray": "0.1.9001",
+    "stateAfterSwitch": "running-candidate",
+    "selectionAfterSwitch": "0.1.9001",
+    "flagPlanted": true,
+    "rollbackExit": 0,
+    "rollbackClosed": true,
+    "rollbackSeconds": 3.7,
+    "rollbackMessage": "{ \"status\": \"running-original\", \"operationManifest\": \"D:\\\\Code\\\\ZeusApps.BellTower\\\\artifacts\\\\qa-013\\\\cases-claude-32880856\\\\private\\\\bell-tower-dev-b8a46844a971455eb321e98ba6d71576\\\\operation.json\", \"selectedVersion\": \"0.1.9009\", \"trayPid\": 40708, \"trayRestarted\": true, \"originalBytesPreserved\": true, \"restoredFiles\": \"state.json, state.json.bak, current.json only\", \"configurationAndRuntimeFiles\": \"untouched\" }",
+    "rollbackTray": "0.1.9009",
+    "stateAfterRollback": "running-original",
+    "selectionAfterRollback": "0.1.9009",
+    "recordsAfter": null,
+    "passed": true
+  },
+  "C": {
+    "exit": 1,
+    "pipeClosed": true,
+    "message": "\u001b[31;1mException: \u001b[0mD:\\Code\\ZeusApps.BellTower\\scripts\\install-dev.ps1:778:5\u001b[0m \u001b[31;1m\u001b[0m\u001b[36;1mLine |\u001b[0m \u001b[31;1m\u001b[0m\u001b[36;1m\u001b[36;1m 778 | \u001b[0m \u001b[36;1mthrow ($reason + ' ' + $note)\u001b[0m \u001b[31;1m\u001b[0m\u001b[36;1m\u001b[36;1m\u001b[0m\u001b[36;1m\u001b[0m\u001b[36;1m | \u001b[31;1m ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\u001b[0m \u001b[31;1m\u001b[0m\u001b[36;1m\u001b[36;1m\u001b[0m\u001b[36;1m\u001b[0m\u001b[36;1m\u001b[31;1m\u001b[31;1m\u001b[36;1m | \u001b[31;1mDisposable test injection: 'after-switch-stop' refused after the tray stop. The tray this operation stopped\u001b[0m \u001b[31;1m\u001b[0m\u001b[36;1m\u001b[36;1m\u001b[0m\u001b[36;1m\u001b[0m\u001b[36;1m\u001b[31;1m\u001b[31;1m\u001b[36;1m\u001b[31;1m\u001b[36;1m | \u001b[31;1m(version 0.1.9009) was restarted (pid 39224) and the selection and monitoring state were left intact. This\u001b[0m \u001b[31;1m\u001b[0m\u001b[36;1m\u001b[36;1m\u001b[0m\u001b[36;1m\u001b[0m\u001b[36;1m\u001b[31;1m\u001b[31;1m\u001b[36;1m\u001b[31;1m\u001b[36;1m\u001b[31;1m\u001b[36;1m | \u001b[31;1moperation cannot be retried; run Preflight again.\u001b[0m",
+    "trayVersion": "0.1.9009",
+    "manifestState": "original-stopped",
+    "terminalFlag": true,
+    "selection": "0.1.9009",
+    "recordsLeft": null,
+    "rollbackExit": 1,
+    "rollbackSeconds": 1.0,
+    "rollbackMessage": "\u001b[31;1mException: \u001b[0mD:\\Code\\ZeusApps.BellTower\\scripts\\install-dev.ps1:899:5\u001b[0m \u001b[31;1m\u001b[0m\u001b[36;1mLine |\u001b[0m \u001b[31;1m\u001b[0m\u001b[36;1m\u001b[36;1m 899 | \u001b[0m \u001b[36;1mthrow ('This operation already ended: the original tray was resta\u001b[0m .\u001b[0m \u001b[31;1m\u001b[0m\u001b[36;1m\u001b[36;1m\u001b[0m\u001b[36;1m\u001b[0m\u001b[36;1m | \u001b[31;1m ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\u001b[0m \u001b[31;1m\u001b[0m\u001b[36;1m\u001b[36;1m\u001b[0m\u001b[36;1m\u001b[0m\u001b[36;1m\u001b[31;1m\u001b[31;1m\u001b[36;1m | \u001b[31;1mThis operation already ended: the original tray was restarted after a failed Switch and the selection and\u001b[0m \u001b[31;1m\u001b[0m\u001b[36;1m\u001b[36;1m\u001b[0m\u001b[36;1m\u001b[0m\u001b[36;1m\u001b[31;1m\u001b[31;1m\u001b[36;1m\u001b[31;1m\u001b[36;1m | \u001b[31;1mmonitoring state were never changed. Nothing to roll back; run Preflight again (state original-stopped).\u001b[0m",
+    "rollbackRefusedAtOnce": true,
+    "trayAfterRollback": "0.1.9009",
+    "recordsAfter": null,
+    "passed": true
+  },
+  "sweptProcesses": [],
+  "ownedPids": [
+    33108,
+    40316,
+    27052,
+    4788,
+    23792,
+    42792
+  ],
+  "endedUtc": "2026-10-25T13:42:29.7795988Z"
+}

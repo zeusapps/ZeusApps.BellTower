@@ -1,0 +1,23 @@
+# Implementation 011 (LIVE-001, LIVE-002, LIVE-003)
+
+Awaiting independent verification; nothing here is closed. Baseline 84dac98.
+
+## Changes (scripts/install-dev.ps1)
+- LIVE-001: `Get-InstallationTrayScan` (replaces `Get-InstallationTrayStarts`) returns tray starts for this data directory plus live processes not yet classifiable (key = PID/CIM start ticks; reason kept, command line never emitted). `Wait-InstallationTrayStartsDrained` re-scans within the existing 30 s deadline (`$script:trayDrainSeconds` is a test-only shorter override). A process that ended (existing proof), disappeared or became a non-tray invocation is dropped. Refusal only when the same PID/start identity is unclassifiable in the last two scans at the deadline ("stayed unclassifiable until the drain deadline"), or a verified tray start does not drain (unchanged). Tray-classified processes are handled exactly as before. Shared by Claude and Codex (same images).
+- LIVE-002: `Stop-VerifiedTray` records the stopped owner; Switch saves state `original-stopped` before the drain. The main try now catches into `$operationFailure`; the finally keeps the coordination records when a tray was stopped and neither selection nor monitoring changed, then `Restore-StoppedTrayAfterFailure` restarts the stopped tray via `Start-SelectedTray` (same verified `Assert-OwnedRestart` path, under the restart marker), updates the manifest (`originalTray`, `preflightTray` keeps the old one; for a stopped candidate in Rollback `candidateTray`/`candidateActivation`), sets Switch back to `prepared` when no snapshot or payload copy exists (retryable), removes owned records and rethrows with an accurate message. If the restart fails: "stopped ... could not be restarted automatically ... Monitoring is stopped. Recover it with -Action Rollback -OperationManifest '<path>'", records removed when nothing was launched. A Switch on a non-`prepared` manifest now fails early with an explicit instruction instead of an owner-mismatch error. New disposable-only injections `fail-after-switch-stop` / `fail-after-rollback-stop` in the barrier directory.
+- LIVE-003: `Start-SelectedTray` uses shell-execute semantics (as the product's `TrayController`), so no stdin/stdout/stderr or other inheritable handle reaches the launcher/tray; `BELLTOWER_UPDATE_ACTIVATION` is set in the installer process only for the launch and restored. Launch still goes through the stable launcher with the same arguments; `Assert-OwnedRestart` unchanged and passing. No `src/` change.
+- docs/development.md Recovery bullet updated. Skill copies unchanged (no recovery text change needed; they stay identical).
+
+## Tests (tests/BellTower.Tests/Scripts, CRLF in .cs)
+Harness scenarios: `tray-classification-transient`, `-churn` (changing start identity), `-unreadable-live` (now expects deadline refusal), `-ended`, `-reused`; `stopped-tray-restarted`, `stopped-tray-restart-fails`.
+Mutations (scratch copy, deleted): refuse-immediately fails transient+churn; never-refuse fails unreadable-live; no-restart fails restarted (+restart-fails); no-recovery-text fails restart-fails.
+
+## Native disposable evidence
+- `implementation-011-native.ps1` / `-results.json`: churn process spawning `<install>\bell-tower.exe statusline --provider claude --data-dir <data>` every ~200 ms; installer run through captured pipes read to the end; 6 Switch->Rollback cycles (0.1.9001/2/4/5/6/7 over original 0.1.9003): 6/6 passed, every pipe closed (Switch ~5 s, Rollback ~4 s), no Switch ended with the tray stopped.
+- `implementation-011-native-faults.ps1` / `-results.json`: A) refusal after Switch stop -> original tray restarted (new pid), retry Switch on same manifest succeeded, Rollback ok. B) refusal plus failed restart -> tray stopped, message gives Rollback command, Switch retry gives clear instruction, Rollback recovered. C) Rollback refusal after candidate stop -> candidate restarted, same-manifest Rollback then finished.
+- The pre-fix script was not re-run against the churn loop; the live failure is a non-deterministic race, so the churn run shows no regression/pass rather than a reproduced pre-fix failure.
+
+## Checks
+Release build 0 warnings/0 errors; InstallDevScriptTests|HookMaintenanceTests|DataLockTests|InstallDevBuildSkillTests 77/77; `./scripts/format.ps1 -Verify` exit 0; full suite 823/824, the single failure CaptureTests.ConsumerBatchIsBounded... (known QA-451, passes in isolation 25/25). Real installation, tray and user processes untouched.
+
+Identity: `head=84dac98 baseline=84dac98 files=4 diff=b9d93bc99de2 untracked=0/e3b0c44298fc` (evidence files are under openspec/, outside the scoped paths).

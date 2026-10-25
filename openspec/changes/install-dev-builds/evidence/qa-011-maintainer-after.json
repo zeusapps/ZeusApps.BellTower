@@ -1,0 +1,216 @@
+{
+  "selectedVersion": "0.1.10",
+  "selectionSha256": "6ff7f02412db22c7799399835db8c62804ce6c5ee41537d4e0581b67059a7d7a",
+  "launcherSha256": "fca9827f3a8fc2a7cde246b074affb92c02a01c8cc990b178e4a9d93cb3da272",
+  "payloads": [
+    {
+      "version": "0.1.10",
+      "files": [
+        {
+          "relative": "bell-tower-focus-0.1.10.vsix",
+          "sha256": "896abc3df89dd0808d0abc36b5cdc2dbef8b7d65afff3fae5a01e2cd6dbfa545"
+        },
+        {
+          "relative": "bell-tower-ingress.exe",
+          "sha256": "beaab6cd39786d5f521b4dd2e4cb40abbf85b31e3053b9a96f3c2dda0234efc9"
+        },
+        {
+          "relative": "bell-tower.exe",
+          "sha256": "710a9d0f99bcf0f10a253cf2da7499f3fd289a6e5100bc68001af0d921c9811a"
+        },
+        {
+          "relative": "docs/agent-workflow.md",
+          "sha256": "abe1e7f910cb6ce5618d3a3c8dc2754b6e483d7471b36a10e7f6bd7241b935a7"
+        },
+        {
+          "relative": "docs/architecture.md",
+          "sha256": "fd498660f3e6fb285716216d6c3a7e90d22aef4d98a439e7c01b4d89a492d610"
+        },
+        {
+          "relative": "docs/assets.md",
+          "sha256": "4a6748b00b23fe8ee25c73527c945310a300870e4d11df92c2002d5ab078917d"
+        },
+        {
+          "relative": "docs/attachment-health.md",
+          "sha256": "6275a45ecda41b0c8e469ee10dccc006753b372f77549c4276f62bb02472a0c4"
+        },
+        {
+          "relative": "docs/compatibility.md",
+          "sha256": "d0e7aab5571d176ba90131471007f590445b1a64a063762e7a11a0dee9a705ee"
+        },
+        {
+          "relative": "docs/development.md",
+          "sha256": "818345087fdfdcc147a611e30142bb93b66a3b51790351c5f88bad5b125ef37d"
+        },
+        {
+          "relative": "docs/distribution-validation.md",
+          "sha256": "ebc5d8e0e5992506d2c86a999db2756fcd54fcbe28fbeaefa87735054ad909ab"
+        },
+        {
+          "relative": "docs/follow-ups.md",
+          "sha256": "7d99d570655849d6588d666529186c24a6ac3ec61567a079f0f8aa2ea1ed6203"
+        },
+        {
+          "relative": "docs/handoffs/claude-field-reports-0.1.8.md",
+          "sha256": "ad883237efa2b45140b5b7c936c9b198669e41722a7d1c8fe87a0d77928e7513"
+        },
+        {
+          "relative": "docs/handoffs/next-release-plan.md",
+          "sha256": "11e038198ce1dbfe442f34dab6171a31d887391e51c6f918314a4e4405e947d8"
+        },
+        {
+          "relative": "docs/hook-ingress.md",
+          "sha256": "c543a8c3f3649486217ef08f7d167bf96d69c0aae2566211cc4d25d883333b06"
+        },
+        {
+          "relative": "docs/installation.md",
+          "sha256": "83118d1e1157b1e7327260dd716fe60852fa7bfc7121560cd60dd395e6583a2f"
+        },
+        {
+          "relative": "docs/live-acceptance.md",
+          "sha256": "657d953db9d95fea52abbe7153236cde0934cf7611ecb0b20ff7f5cc083dd50e"
+        },
+        {
+          "relative": "docs/releases.md",
+          "sha256": "8dbf26e3ebe56756f8046fbed9e75aeeb76dec160dbf925753300af21ccebac7"
+        },
+        {
+          "relative": "docs/session-identity.md",
+          "sha256": "69ba4cd69ee4060559148b5f4b596f220ab5ccb75bd6d4d32319c842b825af86"
+        },
+        {
+          "relative": "docs/session-titles.md",
+          "sha256": "1b770d1bdc365ab4b1bd0b1ce13280b81d17bf4157f959209a8f802c88d96963"
+        },
+        {
+          "relative": "docs/validation.md",
+          "sha256": "f8334072242d95d3028500df61f960bcbc5e4cbbb0fd44cae4ac65310aec6729"
+        },
+        {
+          "relative": "docs/verification.md",
+          "sha256": "5cf588cc0718f9583e1c3ff6025d37810907e70189acee34d3b5ac458b1a27b4"
+        },
+        {
+          "relative": "helpers/Invoke-BellTower.ps1",
+          "sha256": "0309deab00a4983eefb9f29560a181be1bf39979940622f6b6bd5e0a33733f90"
+        },
+        {
+          "relative": "README.md",
+          "sha256": "9e2e0046c615b5aa324b1cdd0f935c40575a20b1585fe25a7f6e9645337c08fa"
+        },
+        {
+          "relative": "release.json",
+          "sha256": "0bcba8064ceaebe13375bb2e0b181fce8d9cbf5cc5dda9f1c3b93958af124748"
+        }
+      ]
+    },
+    {
+      "version": "0.1.9",
+      "files": [
+        {
+          "relative": "bell-tower-focus-0.1.9.vsix",
+          "sha256": "2fa588ad0944857d1aecabcbf9125951acc2e80edc4084f51d2d922f0b41f52c"
+        },
+        {
+          "relative": "bell-tower-ingress.exe",
+          "sha256": "c5f0cebe6a83a1fbdf7f55dd148b303bdd3f6f1587dd864dee22af439deb6610"
+        },
+        {
+          "relative": "bell-tower.exe",
+          "sha256": "33367ae1e586d867d512a5ad2d13ad2a4cca990e07e00958b2ee55a6da48fca0"
+        },
+        {
+          "relative": "docs/agent-workflow.md",
+          "sha256": "282628b3ed16fd3fb5199acf5de4d52eb67b244c01298ca08776426e1b99faa3"
+        },
+        {
+          "relative": "docs/architecture.md",
+          "sha256": "fd498660f3e6fb285716216d6c3a7e90d22aef4d98a439e7c01b4d89a492d610"
+        },
+        {
+          "relative": "docs/assets.md",
+          "sha256": "4a6748b00b23fe8ee25c73527c945310a300870e4d11df92c2002d5ab078917d"
+        },
+        {
+          "relative": "docs/attachment-health.md",
+          "sha256": "6275a45ecda41b0c8e469ee10dccc006753b372f77549c4276f62bb02472a0c4"
+        },
+        {
+          "relative": "docs/compatibility.md",
+          "sha256": "f2382dc9e001578c1a9766e191c3ef1d39429b63e8e3b02f0adb7e491b91e636"
+        },
+        {
+          "relative": "docs/development.md",
+          "sha256": "818345087fdfdcc147a611e30142bb93b66a3b51790351c5f88bad5b125ef37d"
+        },
+        {
+          "relative": "docs/distribution-validation.md",
+          "sha256": "ebc5d8e0e5992506d2c86a999db2756fcd54fcbe28fbeaefa87735054ad909ab"
+        },
+        {
+          "relative": "docs/follow-ups.md",
+          "sha256": "7d99d570655849d6588d666529186c24a6ac3ec61567a079f0f8aa2ea1ed6203"
+        },
+        {
+          "relative": "docs/handoffs/claude-field-reports-0.1.8.md",
+          "sha256": "ad883237efa2b45140b5b7c936c9b198669e41722a7d1c8fe87a0d77928e7513"
+        },
+        {
+          "relative": "docs/handoffs/next-release-plan.md",
+          "sha256": "11e038198ce1dbfe442f34dab6171a31d887391e51c6f918314a4e4405e947d8"
+        },
+        {
+          "relative": "docs/hook-ingress.md",
+          "sha256": "b5ceff2c44385ca32c4f301efe2930b55183543e355465504c899e5e26d2ced4"
+        },
+        {
+          "relative": "docs/installation.md",
+          "sha256": "756c3ac65f0475e2a601c13c799a97f1c1fc001007f1076826c7e487b6f16b7a"
+        },
+        {
+          "relative": "docs/live-acceptance.md",
+          "sha256": "657d953db9d95fea52abbe7153236cde0934cf7611ecb0b20ff7f5cc083dd50e"
+        },
+        {
+          "relative": "docs/releases.md",
+          "sha256": "8dbf26e3ebe56756f8046fbed9e75aeeb76dec160dbf925753300af21ccebac7"
+        },
+        {
+          "relative": "docs/session-titles.md",
+          "sha256": "684dd118a31666a413b45a2dd4123cc34233a34053ace7d546e92b85dc5214c3"
+        },
+        {
+          "relative": "docs/validation.md",
+          "sha256": "f8334072242d95d3028500df61f960bcbc5e4cbbb0fd44cae4ac65310aec6729"
+        },
+        {
+          "relative": "docs/verification.md",
+          "sha256": "5cf588cc0718f9583e1c3ff6025d37810907e70189acee34d3b5ac458b1a27b4"
+        },
+        {
+          "relative": "helpers/Invoke-BellTower.ps1",
+          "sha256": "0309deab00a4983eefb9f29560a181be1bf39979940622f6b6bd5e0a33733f90"
+        },
+        {
+          "relative": "README.md",
+          "sha256": "8fbe7adae6cab4457f846abe204205835a6536da9d13e74dcfc34fa5005587e4"
+        },
+        {
+          "relative": "release.json",
+          "sha256": "6eb44dca0bbf4a8d4c483173b59b4fcc708f390bc9621f3481f06dab2a78a082"
+        }
+      ]
+    }
+  ],
+  "trayRecordSha256": "8c249ed8731f9978a5951005c3bce62235ac97c166a99da19b8e8e83bed4875d",
+  "trayRecordProcess": {
+    "pid": 30328,
+    "startedUtcTicks": 639285246545338310
+  },
+  "liveTray": {
+    "pid": 30328,
+    "creationUtcTicks": 639285246545338310,
+    "image": "bell-tower.exe"
+  },
+  "capturedUtc": "2026-10-25T12:47:36.2009547+00:00"
+}

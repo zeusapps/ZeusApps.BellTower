@@ -38,7 +38,18 @@ public sealed partial class InstallDevScriptTests
     [InlineData("candidate-unrecorded-activation", "activation was not recorded")]
     [InlineData("tray-classification-ended", null)]
     [InlineData("tray-classification-reused", null)]
-    [InlineData("tray-classification-unreadable-live", "could not be safely classified")]
+    [InlineData("tray-classification-unreadable-live", "stayed unclassifiable until the drain deadline")]
+    [InlineData("tray-classification-transient", null)]
+    [InlineData("tray-classification-churn", null)]
+    [InlineData("stopped-tray-restarted", "was restarted (pid 5151)")]
+    [InlineData("stopped-tray-restart-fails", "could not be restarted automatically")]
+    [InlineData("stopped-tray-still-running", "did not stop and is still running")]
+    [InlineData("stopped-tray-foreign-owner", "now owns monitoring and was not touched")]
+    [InlineData("stopped-tray-launched-unverified", "A tray may be running unverified")]
+    [InlineData("stopped-tray-partial-snapshot", "cannot be retried; run Preflight again")]
+    [InlineData("stopped-tray-prepared-retryable", "can be retried")]
+    [InlineData("stopped-tray-leftover-launcher-property", "Monitoring is stopped")]
+    [InlineData("recovery-contract-without-candidate-payload", null)]
     public void InstallerFunctionsReleaseEveryResourceAndKeepThePrimaryError(string scenario, string? expectedError)
     {
         var root = Path.Combine(workspace.Root, "harness-" + scenario);
@@ -257,6 +268,75 @@ public sealed partial class InstallDevScriptTests
         Assert.Equal("running-original", State(manifest));
         Assert.Equal(selection, File.ReadAllBytes(SelectionPath));
         Assert.False(File.Exists(PendingPath) || File.Exists(RestartPath));
+    }
+
+    [Fact]
+    public void RollbackOfASwitchInterruptedBeforeThePayloadCopyDerivesTheContractFromThePreparedPayload()
+    {
+        // ANALYSIS-552: a Switch stopped before the payload copy has no installed candidate release.json to hash.
+        var package = BuildPackage("0.1.9001", Marked());
+        var manifest = Manifest(Run("Preflight", package));
+        var selection = File.ReadAllBytes(SelectionPath);
+        var barriers = Barriers();
+
+        var installer = StartRun("Switch", package, manifest, barriers);
+        WaitForBarrier(barriers, "switch-before-selection", installer);
+        installer.Interrupt();
+        Directory.Delete(Path.Combine(installationRoot, "versions", "0.1.9001"), true);
+        Assert.True(File.Exists(PendingPath) && File.Exists(RestartPath));
+
+        var result = Run("Rollback", package, manifest);
+
+        Assert.True(result.Succeeded, result.Output);
+        Assert.Equal("running-original", State(manifest));
+        Assert.Equal(selection, File.ReadAllBytes(SelectionPath));
+        Assert.False(File.Exists(PendingPath) || File.Exists(RestartPath));
+    }
+
+    [Fact]
+    public void ATerminalRestartedOperationSaysPreflightAgainAndRollbackRefusesAtOnce()
+    {
+        // ANALYSIS-553: after a restart that cannot be retried, neither Switch nor Rollback has anything left to do.
+        var package = BuildPackage("0.1.9001", Marked());
+        var manifest = Manifest(Run("Preflight", package));
+        var node = JsonNode.Parse(File.ReadAllText(manifest))!.AsObject();
+        node["state"] = "original-stopped";
+        node["trayRestartedAfterFailure"] = true;
+        File.WriteAllText(manifest, node.ToJsonString());
+        var before = Snapshot(installationRoot, dataDirectory);
+
+        var switched = Run("Switch", package, manifest);
+        var rolledBack = Run("Rollback", package, manifest);
+
+        Assert.False(switched.Succeeded);
+        Assert.Contains("run Preflight again", Unwrap(switched.Output));
+        Assert.DoesNotContain("-Action Rollback", Unwrap(switched.Output));
+        Assert.False(rolledBack.Succeeded);
+        Assert.Contains("Nothing to roll back", Unwrap(rolledBack.Output));
+        Assert.Equal(before, Snapshot(installationRoot, dataDirectory));
+        Assert.False(File.Exists(PendingPath) || File.Exists(RestartPath));
+    }
+
+    [Fact]
+    public void RollbackOfASelectedSwitchIgnoresAStaleTerminalFlag()
+    {
+        // ANALYSIS-600: the early "Nothing to roll back" refusal applies only to a never-selected manifest.
+        var package = BuildPackage("0.1.9001", Marked());
+        var manifest = Manifest(Run("Preflight", package));
+        var original = File.ReadAllBytes(SelectionPath);
+        Assert.True(Run("Switch", package, manifest).Succeeded);
+        Assert.NotEqual(original, File.ReadAllBytes(SelectionPath));
+        var node = JsonNode.Parse(File.ReadAllText(manifest))!.AsObject();
+        Assert.False(string.IsNullOrEmpty((string?)node["devSelectionSha256"]));
+        node["trayRestartedAfterFailure"] = true;
+        File.WriteAllText(manifest, node.ToJsonString());
+
+        var result = Run("Rollback", package, manifest);
+
+        Assert.True(result.Succeeded, result.Output);
+        Assert.DoesNotContain("Nothing to roll back", Unwrap(result.Output));
+        Assert.Equal("running-original", State(manifest));
+        Assert.Equal(original, File.ReadAllBytes(SelectionPath));
     }
 
     [Fact]

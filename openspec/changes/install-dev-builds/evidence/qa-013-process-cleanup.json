@@ -1,0 +1,13 @@
+{
+  "generatedLocal": "2026-10-25 about 15:50",
+  "disposableProcessesRemaining": 0,
+  "sweep": "Each native run's finally block swept its disposable root (sweptProcesses empty in every result file). A final CIM scan for ExecutablePath or command line naming artifacts\qa-013 found only shells of this review session (bash.exe, pwsh.exe whose own command line contained the path); three such shells were stopped by exact PID (36460, 34200, 13856), the rest are the live session. No bell-tower process from artifacts\qa-013 remained.",
+  "ownedProcesses": [
+    "cases/timeout/churn runs (Claude and Codex flavors): disposable trays ended through the driver (RequestExit on its own data directory) or killed by exact PID (the suspended tray in the timeout run, which is the intended trigger), churn pwsh killed by the driver, installer pwsh runs exited by themselves"
+  ],
+  "userBellTowerProcessesObservedAtEnd": [18412, 35108, 30328],
+  "userProcessesTouched": false,
+  "fixturesDeleted": ["artifacts/qa-013 (all disposable installations, data, barriers and private workspaces)"],
+  "kept": ["artifacts/dev-builds/bell-tower-0.1.9009-win-x64* (existing package from QA 012, reused; no new package built)"],
+  "maintainerInstallationLiveTraySettingsTouched": false
+}

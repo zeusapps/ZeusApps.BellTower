@@ -1,0 +1,39 @@
+{
+  "case": "negative",
+  "provider": "claude",
+  "root": "D:\\Code\\ZeusApps.BellTower\\artifacts\\qa-011\\negative-claude-7e9d7658",
+  "original": "0.1.9008",
+  "startedUtc": "2026-10-25T12:33:01.8555136Z",
+  "heldFamily": [
+    {
+      "pid": 6236,
+      "parent": 36472,
+      "image": "\\bell-tower.exe"
+    },
+    {
+      "pid": 12140,
+      "parent": 6236,
+      "image": "\\versions\\0.1.9008\\bell-tower.exe"
+    }
+  ],
+  "negative": {
+    "exit": 1,
+    "pipeClosed": true,
+    "seconds": 32.6,
+    "message": "Exception: D:\\Code\\ZeusApps.BellTower\\scripts\\install-dev.ps1:758:5 Line | 758 | throw ($reason + ' ' + $note) | ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ | A Bell Tower process could not be safely classified and stayed unclassifiable until the drain deadline (PID | 12140: Exception calling \"Classify\" with \"3\" argument(s): \"Process command line has an unknown Bell Tower | command.\"); selection and monitoring state were left intact. The tray this operation stopped (version 0.1.9008) | was restarted (pid 15992) and the selection and monitoring state were left intact. This Switch can be retried | with the same manifest.",
+    "heldStillAlive": true,
+    "trayRunning": true,
+    "trayVersion": "0.1.9008",
+    "newTrayPid": true,
+    "manifestState": "prepared",
+    "selection": "0.1.9008",
+    "retryExit": 0,
+    "retryTray": "0.1.9001",
+    "retryState": "running-candidate",
+    "rollbackExit": 0,
+    "rollbackTray": "0.1.9008",
+    "passed": true
+  },
+  "sweptProcesses": [],
+  "endedUtc": "2026-10-25T12:33:49.7138751Z"
+}

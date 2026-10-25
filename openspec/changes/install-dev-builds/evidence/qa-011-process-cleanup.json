@@ -1,0 +1,14 @@
+{
+  "generatedUtc": "2026-10-25T12:50:00Z",
+  "disposableProcessesRemaining": 0,
+  "sweep": "CIM scan for ExecutablePath or command lines naming artifacts\\qa-011 returned none after cleanup",
+  "ownedProcesses": [
+    "churn/faults/negative/foreign runs: disposable trays stopped by the driver finally block (RequestExit); driver-started churn pwsh processes killed; held statusline pair (pids from heldFamily in the negative results) closed at the end of each negative run",
+    "first foreign run (driver bug, variable name collision): a held Switch later restarted a disposable tray; leftover disposable bell-tower.exe pids 26680 (stable launcher) and 17916 (versions\\0.1.9008) under artifacts\\qa-011\\foreign-claude-2c2294ee were stopped by exact PID, then the fixture was deleted"
+  ],
+  "userBellTowerProcessesObservedBeforeAndAfter": [18412, 35108, 30328],
+  "userProcessesTouched": false,
+  "fixturesDeleted": ["artifacts/qa-011 (all disposable installations, data, barriers and the maintainer-preflight workspace)"],
+  "kept": ["artifacts/dev-builds/bell-tower-0.1.9008-win-x64* (fresh package, not installed)"],
+  "maintainerInstallationLiveTraySettingsTouched": false
+}

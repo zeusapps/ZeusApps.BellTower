@@ -1,0 +1,13 @@
+{
+  "status": "preflight-passed",
+  "selectedBefore": "0.1.10",
+  "selectedAfter": "0.1.10",
+  "selectionHashUnchanged": true,
+  "launcherHashUnchanged": true,
+  "payloadHashCount": 47.0,
+  "allPayloadHashesUnchanged": true,
+  "trayRecordIdentityUnchanged": true,
+  "trayLiveIdentityUnchanged": true,
+  "trayPid": 30328,
+  "trayStartedUtcTicks": 639285246545338310
+}

@@ -1,0 +1,83 @@
+{
+  "case": "churn",
+  "provider": "claude",
+  "root": "D:\\Code\\ZeusApps.BellTower\\artifacts\\qa-013\\churn-claude-cf570f9d",
+  "original": "0.1.9009",
+  "startedUtc": "2026-10-25T13:45:49.7475643Z",
+  "cycles": [
+    {
+      "cycle": 1,
+      "candidate": "0.1.9001",
+      "switch": {
+        "exit": 0,
+        "pipeClosed": true,
+        "seconds": 5.3,
+        "message": "{ \"status\": \"running-candidate\", \"operationManifest\": \"D:\\\\Code\\\\ZeusApps.BellTower\\\\artifacts\\\\qa-013\\\\churn-claude-cf570f9d\\\\private\\\\bell-tower-dev-5645e97222dc4c10aefcf116716867ab\\\\operation.json\", \"selectedVersion\": \"0.1.9001\", \"trayPid\": 28804, \"trayRestarted\": true, \"originalBytesPreserved\": true, \"restoredFiles\": \"none\", \"configurationAndRuntimeFiles\": \"untouched\" }",
+        "trayRunning": true,
+        "trayVersion": "0.1.9001",
+        "state": "running-candidate",
+        "recordsLeft": null
+      },
+      "rollback": {
+        "exit": 0,
+        "pipeClosed": true,
+        "seconds": 3.6,
+        "message": "{ \"status\": \"running-original\", \"operationManifest\": \"D:\\\\Code\\\\ZeusApps.BellTower\\\\artifacts\\\\qa-013\\\\churn-claude-cf570f9d\\\\private\\\\bell-tower-dev-5645e97222dc4c10aefcf116716867ab\\\\operation.json\", \"selectedVersion\": \"0.1.9009\", \"trayPid\": 43380, \"trayRestarted\": true, \"originalBytesPreserved\": true, \"restoredFiles\": \"state.json, state.json.bak, current.json only\", \"configurationAndRuntimeFiles\": \"untouched\" }",
+        "trayRunning": true,
+        "trayVersion": "0.1.9009",
+        "state": "running-original",
+        "selection": "0.1.9009",
+        "recordsLeft": null
+      },
+      "passed": true
+    }
+  ],
+  "passedCycles": 1,
+  "totalCycles": 1,
+  "churn": "24 345",
+  "churnAlive": true,
+  "directDrains": [
+    {
+      "seconds": 0.27,
+      "refused": null
+    },
+    {
+      "seconds": 0.14,
+      "refused": null
+    },
+    {
+      "seconds": 0.17,
+      "refused": null
+    },
+    {
+      "seconds": 0.19,
+      "refused": null
+    },
+    {
+      "seconds": 0.18,
+      "refused": null
+    },
+    {
+      "seconds": 0.17,
+      "refused": null
+    },
+    {
+      "seconds": 0.15,
+      "refused": null
+    },
+    {
+      "seconds": 0.18,
+      "refused": null
+    }
+  ],
+  "maxDrainSeconds": 0.27,
+  "churnAfterDrains": "33 345",
+  "sweptProcesses": [],
+  "ownedPids": [
+    39144,
+    32944,
+    28212,
+    43028
+  ],
+  "endedUtc": "2026-10-25T13:46:08.8891084Z"
+}

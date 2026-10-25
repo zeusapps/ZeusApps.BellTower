@@ -1,0 +1,134 @@
+[
+  {
+    "variant": "reviewed",
+    "scenario": "stopped-tray-prepared-retryable",
+    "allChecksPassed": true,
+    "failedChecks": []
+  },
+  {
+    "variant": "reviewed",
+    "scenario": "stopped-tray-leftover-launcher-property",
+    "allChecksPassed": true,
+    "failedChecks": []
+  },
+  {
+    "variant": "reviewed",
+    "scenario": "stopped-tray-restarted",
+    "allChecksPassed": true,
+    "failedChecks": []
+  },
+  {
+    "variant": "reviewed",
+    "scenario": "stopped-tray-restart-fails",
+    "allChecksPassed": true,
+    "failedChecks": []
+  },
+  {
+    "variant": "reviewed",
+    "scenario": "stopped-tray-launched-unverified",
+    "allChecksPassed": true,
+    "failedChecks": []
+  },
+  {
+    "variant": "reviewed",
+    "scenario": "stopped-tray-partial-snapshot",
+    "allChecksPassed": true,
+    "failedChecks": []
+  },
+  {
+    "variant": "reviewed",
+    "scenario": "stopped-tray-still-running",
+    "allChecksPassed": true,
+    "failedChecks": []
+  },
+  {
+    "variant": "mutant-600-guard1",
+    "scenario": "stopped-tray-prepared-retryable",
+    "allChecksPassed": false,
+    "failedChecks": [
+      "stillRetryable",
+      "noTerminalFlag"
+    ]
+  },
+  {
+    "variant": "mutant-600-guard1",
+    "scenario": "stopped-tray-leftover-launcher-property",
+    "allChecksPassed": true,
+    "failedChecks": []
+  },
+  {
+    "variant": "mutant-600-guard1",
+    "scenario": "stopped-tray-restarted",
+    "allChecksPassed": true,
+    "failedChecks": []
+  },
+  {
+    "variant": "mutant-600-guard1",
+    "scenario": "stopped-tray-restart-fails",
+    "allChecksPassed": true,
+    "failedChecks": []
+  },
+  {
+    "variant": "mutant-600-guard1",
+    "scenario": "stopped-tray-launched-unverified",
+    "allChecksPassed": true,
+    "failedChecks": []
+  },
+  {
+    "variant": "mutant-600-guard1",
+    "scenario": "stopped-tray-partial-snapshot",
+    "allChecksPassed": true,
+    "failedChecks": []
+  },
+  {
+    "variant": "mutant-600-guard1",
+    "scenario": "stopped-tray-still-running",
+    "allChecksPassed": true,
+    "failedChecks": []
+  },
+  {
+    "variant": "mutant-552-retention",
+    "scenario": "stopped-tray-prepared-retryable",
+    "allChecksPassed": true,
+    "failedChecks": []
+  },
+  {
+    "variant": "mutant-552-retention",
+    "scenario": "stopped-tray-leftover-launcher-property",
+    "allChecksPassed": false,
+    "failedChecks": [
+      "saysStopped",
+      "recordsRemoved"
+    ]
+  },
+  {
+    "variant": "mutant-552-retention",
+    "scenario": "stopped-tray-restarted",
+    "allChecksPassed": true,
+    "failedChecks": []
+  },
+  {
+    "variant": "mutant-552-retention",
+    "scenario": "stopped-tray-restart-fails",
+    "allChecksPassed": true,
+    "failedChecks": []
+  },
+  {
+    "variant": "mutant-552-retention",
+    "scenario": "stopped-tray-launched-unverified",
+    "allChecksPassed": true,
+    "failedChecks": []
+  },
+  {
+    "variant": "mutant-552-retention",
+    "scenario": "stopped-tray-partial-snapshot",
+    "allChecksPassed": true,
+    "failedChecks": []
+  },
+  {
+    "variant": "mutant-552-retention",
+    "scenario": "stopped-tray-still-running",
+    "allChecksPassed": true,
+    "failedChecks": []
+  }
+]

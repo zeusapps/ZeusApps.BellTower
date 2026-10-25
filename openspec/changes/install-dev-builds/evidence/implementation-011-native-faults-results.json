@@ -1,0 +1,35 @@
+{
+  "A": {
+    "exit": 1,
+    "message": "\u001b[31;1mException: \u001b[0mD:\\Code\\ZeusApps.BellTower\\scripts\\install-dev.ps1:758:5\u001b[0m \u001b[31;1m\u001b[0m\u001b[36;1mLine |\u001b[0m \u001b[31;1m\u001b[0m\u001b[36;1m\u001b[36;1m 758 | \u001b[0m \u001b[36;1mthrow ($reason + ' ' + $note)\u001b[0m \u001b[31;1m\u001b[0m\u001b[36;1m\u001b[36;1m\u001b[0m\u001b[36;1m\u001b[0m\u001b[36;1m | \u001b[31;1m ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\u001b[0m \u001b[31;1m\u001b[0m\u001b[36;1m\u001b[36;1m\u001b[0m\u001b[36;1m\u001b[0m\u001b[36;1m\u001b[31;1m\u001b[31;1m\u001b[36;1m | \u001b[31;1mDisposable test injection: 'after-switch-stop' refused after the tray stop. The tray this operation stopped\u001b[0m \u001b[31;1m\u001b[0m\u001b[36;1m\u001b[36;1m\u001b[0m\u001b[36;1m\u001b[0m\u001b[36;1m\u001b[31;1m\u001b[31;1m\u001b[36;1m\u001b[31;1m\u001b[36;1m | \u001b[31;1m(version 0.1.9003) was restarted (pid 36516) and the selection and monitoring state were left intact. This\u001b[0m \u001b[31;1m\u001b[0m\u001b[36;1m\u001b[36;1m\u001b[0m\u001b[36;1m\u001b[0m\u001b[36;1m\u001b[31;1m\u001b[31;1m\u001b[36;1m\u001b[31;1m\u001b[36;1m\u001b[31;1m\u001b[36;1m | \u001b[31;1mSwitch can be retried with the same manifest.\u001b[0m",
+    "trayRunningAfterRefusal": true,
+    "trayVersion": "0.1.9003",
+    "newTray": true,
+    "recordsLeft": 0,
+    "retryExit": 0,
+    "retryState": "running-candidate",
+    "retryTray": "0.1.9001",
+    "rollbackExit": 0,
+    "rollbackTray": "0.1.9003"
+  },
+  "B": {
+    "exit": 1,
+    "message": "\u001b[31;1mException: \u001b[0mD:\\Code\\ZeusApps.BellTower\\scripts\\install-dev.ps1:756:9\u001b[0m \u001b[31;1m\u001b[0m\u001b[36;1mLine |\u001b[0m \u001b[31;1m\u001b[0m\u001b[36;1m\u001b[36;1m 756 | \u001b[0m \u001b[36;1mthrow ($reason + ' The tray was stopped by this operation and\u001b[0m .\u001b[0m \u001b[31;1m\u001b[0m\u001b[36;1m\u001b[36;1m\u001b[0m\u001b[36;1m\u001b[0m\u001b[36;1m | \u001b[31;1m ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\u001b[0m \u001b[31;1m\u001b[0m\u001b[36;1m\u001b[36;1m\u001b[0m\u001b[36;1m\u001b[0m\u001b[36;1m\u001b[31;1m\u001b[31;1m\u001b[36;1m | \u001b[31;1mDisposable test injection: 'after-switch-stop' refused after the tray stop. The tray was stopped by this\u001b[0m \u001b[31;1m\u001b[0m\u001b[36;1m\u001b[36;1m\u001b[0m\u001b[36;1m\u001b[0m\u001b[36;1m\u001b[31;1m\u001b[31;1m\u001b[36;1m\u001b[31;1m\u001b[36;1m | \u001b[31;1moperation and could not be restarted automatically (Disposable test injection: restart of version 0.1.9003\u001b[0m \u001b[31;1m\u001b[0m\u001b[36;1m\u001b[36;1m\u001b[0m\u001b[36;1m\u001b[0m\u001b[36;1m\u001b[31;1m\u001b[31;1m\u001b[36;1m\u001b[31;1m\u001b[36;1m\u001b[31;1m\u001b[36;1m | \u001b[31;1mrefused before launch.). Monitoring is stopped. Recover it with -Action Rollback -OperationManifest\u001b[0m \u001b[31;1m\u001b[0m\u001b[36;1m\u001b[36;1m\u001b[0m\u001b[36;1m\u001b[0m\u001b[36;1m\u001b[31;1m\u001b[31;1m\u001b[36;1m\u001b[31;1m\u001b[36;1m\u001b[31;1m\u001b[36;1m\u001b[31;1m\u001b[36;1m | \u001b[31;1m'D:\\Code\\ZeusApps.BellTower\\artifacts\\implementation-011\\native-90212903ef\\private\\bell-tower-dev-471d2a39a4fe423c8bf113baed3e3098\\operation.json'.\u001b[0m",
+    "trayStopped": true,
+    "manifestState": "see retryMessage",
+    "retryExit": 1,
+    "retryMessage": "\u001b[31;1mException: \u001b[0mD:\\Code\\ZeusApps.BellTower\\scripts\\install-dev.ps1:878:5\u001b[0m \u001b[31;1m\u001b[0m\u001b[36;1mLine |\u001b[0m \u001b[31;1m\u001b[0m\u001b[36;1m\u001b[36;1m 878 | \u001b[0m \u001b[36;1mthrow ('This Switch operation is not in the prepared state (state\u001b[0m .\u001b[0m \u001b[31;1m\u001b[0m\u001b[36;1m\u001b[36;1m\u001b[0m\u001b[36;1m\u001b[0m\u001b[36;1m | \u001b[31;1m ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\u001b[0m \u001b[31;1m\u001b[0m\u001b[36;1m\u001b[36;1m\u001b[0m\u001b[36;1m\u001b[0m\u001b[36;1m\u001b[31;1m\u001b[31;1m\u001b[36;1m | \u001b[31;1mThis Switch operation is not in the prepared state (state original-stopped). It stopped the original tray and\u001b[0m \u001b[31;1m\u001b[0m\u001b[36;1m\u001b[36;1m\u001b[0m\u001b[36;1m\u001b[0m\u001b[36;1m\u001b[31;1m\u001b[31;1m\u001b[36;1m\u001b[31;1m\u001b[36;1m | \u001b[31;1mdid not finish; recover with -Action Rollback -OperationManifest\u001b[0m \u001b[31;1m\u001b[0m\u001b[36;1m\u001b[36;1m\u001b[0m\u001b[36;1m\u001b[0m\u001b[36;1m\u001b[31;1m\u001b[31;1m\u001b[36;1m\u001b[31;1m\u001b[36;1m\u001b[31;1m\u001b[36;1m | \u001b[31;1m'D:\\Code\\ZeusApps.BellTower\\artifacts\\implementation-011\\native-90212903ef\\private\\bell-tower-dev-471d2a39a4fe423c8bf113baed3e3098\\operation.json', or run Preflight again after recovery.\u001b[0m",
+    "rollbackExit": 0,
+    "rollbackStatus": "running-original",
+    "rollbackTray": "0.1.9003"
+  },
+  "C": {
+    "switchExit": 0,
+    "exit": 1,
+    "message": "\u001b[31;1mException: \u001b[0mD:\\Code\\ZeusApps.BellTower\\scripts\\install-dev.ps1:758:5\u001b[0m \u001b[31;1m\u001b[0m\u001b[36;1mLine |\u001b[0m \u001b[31;1m\u001b[0m\u001b[36;1m\u001b[36;1m 758 | \u001b[0m \u001b[36;1mthrow ($reason + ' ' + $note)\u001b[0m \u001b[31;1m\u001b[0m\u001b[36;1m\u001b[36;1m\u001b[0m\u001b[36;1m\u001b[0m\u001b[36;1m | \u001b[31;1m ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\u001b[0m \u001b[31;1m\u001b[0m\u001b[36;1m\u001b[36;1m\u001b[0m\u001b[36;1m\u001b[0m\u001b[36;1m\u001b[31;1m\u001b[31;1m\u001b[36;1m | \u001b[31;1mDisposable test injection: 'after-rollback-stop' refused after the tray stop. The tray this operation stopped\u001b[0m \u001b[31;1m\u001b[0m\u001b[36;1m\u001b[36;1m\u001b[0m\u001b[36;1m\u001b[0m\u001b[36;1m\u001b[31;1m\u001b[31;1m\u001b[36;1m\u001b[31;1m\u001b[36;1m | \u001b[31;1m(version 0.1.9004) was restarted (pid 7680) and the selection and monitoring state were left intact.\u001b[0m",
+    "trayAfterRefusal": "0.1.9004",
+    "selection": "0.1.9004",
+    "retryRollbackExit": 0,
+    "retryRollbackTray": "0.1.9003"
+  }
+}

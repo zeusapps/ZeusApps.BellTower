@@ -1,0 +1,17 @@
+Test run for D:\Code\ZeusApps.BellTower\tests\BellTower.Tests\bin\Release\net10.0-windows\BellTower.Tests.dll (.NETCoreApp,Version=v10.0)
+VSTest version 18.0.2 (x64)
+
+Starting test execution, please wait...
+A total of 1 test files matched the specified pattern.
+[xUnit.net 00:00:20.66]     BellTower.Tests.Setup.PowerShellModuleTests.SessionFunctionsLaunchNativeChildrenAndRestoreShellEnvironment(provider: "claude", powerShellCore: False, legacyRole: True) [FAIL]
+  Failed BellTower.Tests.Setup.PowerShellModuleTests.SessionFunctionsLaunchNativeChildrenAndRestoreShellEnvironment(provider: "claude", powerShellCore: False, legacyRole: True) [4 s]
+  Error Message:
+   Unrecognized command or argument 'D:\Code\ZeusApps.BellTower\src\BellTower\bin\Release\net10.0-windows\bell-tower.exe'.
+
+
+  Stack Trace:
+     at BellTower.Tests.Setup.PowerShellModuleTests.SessionFunctionsLaunchNativeChildrenAndRestoreShellEnvironment(String provider, Boolean powerShellCore, Boolean legacyRole) in D:\Code\ZeusApps.BellTower\tests\BellTower.Tests\Setup\PowerShellModuleTests.cs:line 122
+   at BellTower.Tests.Setup.PowerShellModuleTests.SessionFunctionsLaunchNativeChildrenAndRestoreShellEnvironment(String provider, Boolean powerShellCore, Boolean legacyRole) in D:\Code\ZeusApps.BellTower\tests\BellTower.Tests\Setup\PowerShellModuleTests.cs:line 150
+--- End of stack trace from previous location ---
+
+Failed!  - Failed:     1, Passed:   823, Skipped:     0, Total:   824, Duration: 2 m 44 s - BellTower.Tests.dll (net10.0)

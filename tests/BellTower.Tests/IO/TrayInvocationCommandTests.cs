@@ -1,3 +1,6 @@
+using System.CommandLine;
+using System.Reflection;
+using BellTower.Cli;
 using BellTower.IO;
 using Xunit;
 
@@ -34,6 +37,55 @@ public sealed class TrayInvocationCommandTests
         var commandLine = $"{Quote(Executable)} --data-dir {Quote(DataDirectory)} event --provider claude --session-id tray";
 
         Assert.Equal(TrayInvocationKind.NotTray, TrayInvocationCommand.Classify(commandLine, Executable, DataDirectory));
+    }
+
+    [Theory]
+    [InlineData("claude")]
+    [InlineData("codex")]
+    public void ClassifiesStatusLineAsNotTrayForEveryProvider(string provider)
+    {
+        var commandLine = $"{Quote(Executable)} statusline --provider {provider} --data-dir {Quote(DataDirectory)}";
+
+        Assert.Equal(TrayInvocationKind.NotTray, TrayInvocationCommand.Classify(commandLine, Executable, DataDirectory));
+    }
+
+    [Fact]
+    public void ClassifiesEveryRegisteredCliCommandExceptTrayAsNotTray()
+    {
+        // The registry is the set of Command types the CLI root registers; a renamed or new verb must not become unclassifiable.
+        var names = RegisteredCommandNames();
+        Assert.Contains("tray", names);
+        Assert.Contains("statusline", names);
+        foreach (var name in names)
+        {
+            var commandLine = $"{Quote(Executable)} {name} --data-dir {Quote(DataDirectory)}";
+            if (name == "tray")
+            {
+                Assert.Equal(TrayInvocationKind.ThisDataDirectory, TrayInvocationCommand.Classify(commandLine, Executable, DataDirectory));
+            }
+            else
+            {
+                Assert.Equal(TrayInvocationKind.NotTray, TrayInvocationCommand.Classify(commandLine, Executable, DataDirectory));
+            }
+        }
+    }
+
+    private static List<string> RegisteredCommandNames()
+    {
+        var names = new List<string>();
+        foreach (var type in typeof(CommonOptions).Assembly.GetTypes().Where(type => type.Namespace == "BellTower.Cli" && !type.IsAbstract && typeof(Command).IsAssignableFrom(type)))
+        {
+            var constructor = type.GetConstructors(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance).Single();
+            var arguments = constructor.GetParameters().Select(parameter => parameter.ParameterType switch
+            {
+                var parameterType when parameterType == typeof(Option<string?>) => (object)CommonOptions.DataDirectory(),
+                var parameterType when parameterType == typeof(IReadOnlyList<string>) => Array.Empty<string>(),
+                var parameterType => throw new InvalidOperationException("Unsupported command constructor parameter " + parameterType + " on " + type.Name + ".")
+            }).ToArray();
+            names.Add(((Command)constructor.Invoke(arguments)).Name);
+        }
+
+        return names;
     }
 
     [Fact]

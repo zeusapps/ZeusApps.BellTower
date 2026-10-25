@@ -1,0 +1,58 @@
+[
+  {
+    "variant": "reviewed",
+    "scenario": "stopped-tray-restart-fails",
+    "allChecksPassed": true,
+    "failedChecks": [],
+    "recordsPresentAfter": 0
+  },
+  {
+    "variant": "reviewed",
+    "scenario": "stopped-tray-launched-unverified",
+    "allChecksPassed": true,
+    "failedChecks": [],
+    "recordsPresentAfter": 2
+  },
+  {
+    "variant": "reviewed",
+    "scenario": "stopped-tray-restarted",
+    "allChecksPassed": true,
+    "failedChecks": [],
+    "recordsPresentAfter": 0
+  },
+  {
+    "variant": "reviewed",
+    "scenario": "stopped-tray-still-running",
+    "allChecksPassed": true,
+    "failedChecks": [],
+    "recordsPresentAfter": 0
+  },
+  {
+    "variant": "mutant-011-retention",
+    "scenario": "stopped-tray-restart-fails",
+    "allChecksPassed": true,
+    "failedChecks": [],
+    "recordsPresentAfter": 0
+  },
+  {
+    "variant": "mutant-011-retention",
+    "scenario": "stopped-tray-launched-unverified",
+    "allChecksPassed": true,
+    "failedChecks": [],
+    "recordsPresentAfter": 2
+  },
+  {
+    "variant": "mutant-011-retention",
+    "scenario": "stopped-tray-restarted",
+    "allChecksPassed": true,
+    "failedChecks": [],
+    "recordsPresentAfter": 0
+  },
+  {
+    "variant": "mutant-011-retention",
+    "scenario": "stopped-tray-still-running",
+    "allChecksPassed": true,
+    "failedChecks": [],
+    "recordsPresentAfter": 0
+  }
+]

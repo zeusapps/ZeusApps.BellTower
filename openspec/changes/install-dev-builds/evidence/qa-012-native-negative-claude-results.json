@@ -1,0 +1,41 @@
+{
+  "case": "negative",
+  "provider": "claude",
+  "root": "D:\\Code\\ZeusApps.BellTower\\artifacts\\qa-012\\negative-claude-118879c5",
+  "original": "0.1.9009",
+  "startedUtc": "2026-10-25T13:23:16.8142241Z",
+  "held": {
+    "pid": 19232,
+    "commandLine": "\"D:\\Code\\ZeusApps.BellTower\\artifacts\\qa-012\\negative-claude-118879c5\\install\\versions\\0.0.1-qa012\\bell-tower.exe\" -n 120 127.0.0.1",
+    "image": "\\versions\\0.0.1-qa012\\bell-tower.exe"
+  },
+  "negative": {
+    "exit": 1,
+    "pipeClosed": true,
+    "seconds": 32.3,
+    "message": "Exception: D:\\Code\\ZeusApps.BellTower\\scripts\\install-dev.ps1:778:5 Line | 778 | throw ($reason + ' ' + $note) | ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ | A Bell Tower process could not be safely classified and stayed unclassifiable until the drain deadline (PID | 19232: Exception calling \"Classify\" with \"3\" argument(s): \"Process command line has an unknown global option.\"); | selection and monitoring state were left intact. The tray this operation stopped (version 0.1.9009) was | restarted (pid 31292) and the selection and monitoring state were left intact. This Switch can be retried with | the same manifest.",
+    "heldStillAlive": true,
+    "trayRunning": true,
+    "trayVersion": "0.1.9009",
+    "newTrayPid": true,
+    "manifestState": "prepared",
+    "selection": "0.1.9009",
+    "recordsLeft": null,
+    "retryExit": 0,
+    "retryTray": "0.1.9001",
+    "retryState": "running-candidate",
+    "rollbackExit": 0,
+    "rollbackTray": "0.1.9009",
+    "recordsAfter": null,
+    "passed": false
+  },
+  "sweptProcesses": [],
+  "ownedPids": [
+    37692,
+    19232,
+    12336,
+    41572,
+    23996
+  ],
+  "endedUtc": "2026-10-25T13:24:03.5332960Z"
+}

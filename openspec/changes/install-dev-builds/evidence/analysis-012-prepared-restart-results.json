@@ -1,0 +1,8 @@
+{
+  "scenario": "a012-prepared-restart",
+  "savedState": "prepared",
+  "savedTerminalFlag": true,
+  "saysCannotRetry": true,
+  "recordsRemoved": true,
+  "error": "Verified tray did not exit; no provider or runtime was signalled. The tray this operation stopped (version 0.1.8) was restarted (pid 5151) and the selection and monitoring state were left intact. This operation cannot be retried; run Preflight again."
+}

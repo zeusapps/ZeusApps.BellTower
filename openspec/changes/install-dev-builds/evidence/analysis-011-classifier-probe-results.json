@@ -1,0 +1,12 @@
+{
+  "statusline": "throws: InvalidDataException: Process command line has an unknown Bell Tower command.",
+  "status-line": "NotTray",
+  "event": "NotTray",
+  "tray": "ThisDataDirectory",
+  "cliCommandsUnknownToClassifier": [
+    "statusline"
+  ],
+  "classifierEntriesWithoutCliCommand": [
+    "status-line"
+  ]
+}

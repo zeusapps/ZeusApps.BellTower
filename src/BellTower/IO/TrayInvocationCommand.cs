@@ -13,7 +13,7 @@ public static class TrayInvocationCommand
     private static readonly HashSet<string> NonTrayCommands = new(StringComparer.OrdinalIgnoreCase)
     {
         "__apply-update", "--distribution-info", "--help", "-h", "--version", "-v", "help", "version",
-        "start", "exit", "update", "test-sound", "toggle-voice", "event", "status-line", "list", "rename",
+        "start", "exit", "update", "test-sound", "toggle-voice", "event", "statusline", "list", "rename",
         "native-sync", "focus", "setup", "import", "process-info", "preview", "doctor", "launch", "detach",
         "sync-title", "focus-terminal", "prepare-session", "prepare-codex-runtime", "codex-runtime-host",
         "stop-codex-runtime", "tone"

@@ -1,0 +1,215 @@
+{
+  "case": "churn",
+  "provider": "codex",
+  "root": "D:\\Code\\ZeusApps.BellTower\\artifacts\\qa-011\\churn-codex-2d4e6978",
+  "original": "0.1.9008",
+  "startedUtc": "2026-10-25T12:30:07.3799767Z",
+  "cycles": [
+    {
+      "cycle": 1,
+      "candidate": "0.1.9001",
+      "switch": {
+        "exit": 0,
+        "pipeClosed": true,
+        "seconds": 5.2,
+        "message": "{ \"status\": \"running-candidate\", \"operationManifest\": \"D:\\\\Code\\\\ZeusApps.BellTower\\\\artifacts\\\\qa-011\\\\churn-codex-2d4e6978\\\\private\\\\bell-tower-dev-43e438e23bed4476bc8724de368c7bf7\\\\operation.json\", \"selectedVersion\": \"0.1.9001\", \"trayPid\": 42252, \"trayRestarted\": true, \"originalBytesPreserved\": true, \"restoredFiles\": \"none\", \"configurationAndRuntimeFiles\": \"untouched\" }",
+        "trayRunning": true,
+        "trayVersion": "0.1.9001",
+        "state": "running-candidate"
+      },
+      "rollback": {
+        "exit": 0,
+        "pipeClosed": true,
+        "seconds": 4.0,
+        "message": "{ \"status\": \"running-original\", \"operationManifest\": \"D:\\\\Code\\\\ZeusApps.BellTower\\\\artifacts\\\\qa-011\\\\churn-codex-2d4e6978\\\\private\\\\bell-tower-dev-43e438e23bed4476bc8724de368c7bf7\\\\operation.json\", \"selectedVersion\": \"0.1.9008\", \"trayPid\": 39324, \"trayRestarted\": true, \"originalBytesPreserved\": true, \"restoredFiles\": \"state.json, state.json.bak, current.json only\", \"configurationAndRuntimeFiles\": \"untouched\" }",
+        "trayRunning": true,
+        "trayVersion": "0.1.9008",
+        "state": "running-original",
+        "selection": "0.1.9008"
+      },
+      "passed": true,
+      "trayRunningEnd": true
+    },
+    {
+      "cycle": 2,
+      "candidate": "0.1.9002",
+      "switch": {
+        "exit": 0,
+        "pipeClosed": true,
+        "seconds": 5.0,
+        "message": "{ \"status\": \"running-candidate\", \"operationManifest\": \"D:\\\\Code\\\\ZeusApps.BellTower\\\\artifacts\\\\qa-011\\\\churn-codex-2d4e6978\\\\private\\\\bell-tower-dev-d29485ee9f1f4ca885d4a2e77a1b202f\\\\operation.json\", \"selectedVersion\": \"0.1.9002\", \"trayPid\": 24896, \"trayRestarted\": true, \"originalBytesPreserved\": true, \"restoredFiles\": \"none\", \"configurationAndRuntimeFiles\": \"untouched\" }",
+        "trayRunning": true,
+        "trayVersion": "0.1.9002",
+        "state": "running-candidate"
+      },
+      "rollback": {
+        "exit": 0,
+        "pipeClosed": true,
+        "seconds": 3.4,
+        "message": "{ \"status\": \"running-original\", \"operationManifest\": \"D:\\\\Code\\\\ZeusApps.BellTower\\\\artifacts\\\\qa-011\\\\churn-codex-2d4e6978\\\\private\\\\bell-tower-dev-d29485ee9f1f4ca885d4a2e77a1b202f\\\\operation.json\", \"selectedVersion\": \"0.1.9008\", \"trayPid\": 38636, \"trayRestarted\": true, \"originalBytesPreserved\": true, \"restoredFiles\": \"state.json, state.json.bak, current.json only\", \"configurationAndRuntimeFiles\": \"untouched\" }",
+        "trayRunning": true,
+        "trayVersion": "0.1.9008",
+        "state": "running-original",
+        "selection": "0.1.9008"
+      },
+      "passed": true,
+      "trayRunningEnd": true
+    },
+    {
+      "cycle": 3,
+      "candidate": "0.1.9003",
+      "switch": {
+        "exit": 0,
+        "pipeClosed": true,
+        "seconds": 5.4,
+        "message": "{ \"status\": \"running-candidate\", \"operationManifest\": \"D:\\\\Code\\\\ZeusApps.BellTower\\\\artifacts\\\\qa-011\\\\churn-codex-2d4e6978\\\\private\\\\bell-tower-dev-ec2b58d7adb94fe4b7de5ba2c9c63544\\\\operation.json\", \"selectedVersion\": \"0.1.9003\", \"trayPid\": 34808, \"trayRestarted\": true, \"originalBytesPreserved\": true, \"restoredFiles\": \"none\", \"configurationAndRuntimeFiles\": \"untouched\" }",
+        "trayRunning": true,
+        "trayVersion": "0.1.9003",
+        "state": "running-candidate"
+      },
+      "rollback": {
+        "exit": 0,
+        "pipeClosed": true,
+        "seconds": 3.8,
+        "message": "{ \"status\": \"running-original\", \"operationManifest\": \"D:\\\\Code\\\\ZeusApps.BellTower\\\\artifacts\\\\qa-011\\\\churn-codex-2d4e6978\\\\private\\\\bell-tower-dev-ec2b58d7adb94fe4b7de5ba2c9c63544\\\\operation.json\", \"selectedVersion\": \"0.1.9008\", \"trayPid\": 32084, \"trayRestarted\": true, \"originalBytesPreserved\": true, \"restoredFiles\": \"state.json, state.json.bak, current.json only\", \"configurationAndRuntimeFiles\": \"untouched\" }",
+        "trayRunning": true,
+        "trayVersion": "0.1.9008",
+        "state": "running-original",
+        "selection": "0.1.9008"
+      },
+      "passed": true,
+      "trayRunningEnd": true
+    },
+    {
+      "cycle": 4,
+      "candidate": "0.1.9004",
+      "switch": {
+        "exit": 0,
+        "pipeClosed": true,
+        "seconds": 5.2,
+        "message": "{ \"status\": \"running-candidate\", \"operationManifest\": \"D:\\\\Code\\\\ZeusApps.BellTower\\\\artifacts\\\\qa-011\\\\churn-codex-2d4e6978\\\\private\\\\bell-tower-dev-9de24622d1d740ffb2a05065eb1ff67e\\\\operation.json\", \"selectedVersion\": \"0.1.9004\", \"trayPid\": 39732, \"trayRestarted\": true, \"originalBytesPreserved\": true, \"restoredFiles\": \"none\", \"configurationAndRuntimeFiles\": \"untouched\" }",
+        "trayRunning": true,
+        "trayVersion": "0.1.9004",
+        "state": "running-candidate"
+      },
+      "rollback": {
+        "exit": 0,
+        "pipeClosed": true,
+        "seconds": 3.3,
+        "message": "{ \"status\": \"running-original\", \"operationManifest\": \"D:\\\\Code\\\\ZeusApps.BellTower\\\\artifacts\\\\qa-011\\\\churn-codex-2d4e6978\\\\private\\\\bell-tower-dev-9de24622d1d740ffb2a05065eb1ff67e\\\\operation.json\", \"selectedVersion\": \"0.1.9008\", \"trayPid\": 10112, \"trayRestarted\": true, \"originalBytesPreserved\": true, \"restoredFiles\": \"state.json, state.json.bak, current.json only\", \"configurationAndRuntimeFiles\": \"untouched\" }",
+        "trayRunning": true,
+        "trayVersion": "0.1.9008",
+        "state": "running-original",
+        "selection": "0.1.9008"
+      },
+      "passed": true,
+      "trayRunningEnd": true
+    },
+    {
+      "cycle": 5,
+      "candidate": "0.1.9005",
+      "switch": {
+        "exit": 0,
+        "pipeClosed": true,
+        "seconds": 5.6,
+        "message": "{ \"status\": \"running-candidate\", \"operationManifest\": \"D:\\\\Code\\\\ZeusApps.BellTower\\\\artifacts\\\\qa-011\\\\churn-codex-2d4e6978\\\\private\\\\bell-tower-dev-73d96a7bb06344a9ba8c65c1474b6244\\\\operation.json\", \"selectedVersion\": \"0.1.9005\", \"trayPid\": 42892, \"trayRestarted\": true, \"originalBytesPreserved\": true, \"restoredFiles\": \"none\", \"configurationAndRuntimeFiles\": \"untouched\" }",
+        "trayRunning": true,
+        "trayVersion": "0.1.9005",
+        "state": "running-candidate"
+      },
+      "rollback": {
+        "exit": 0,
+        "pipeClosed": true,
+        "seconds": 3.7,
+        "message": "{ \"status\": \"running-original\", \"operationManifest\": \"D:\\\\Code\\\\ZeusApps.BellTower\\\\artifacts\\\\qa-011\\\\churn-codex-2d4e6978\\\\private\\\\bell-tower-dev-73d96a7bb06344a9ba8c65c1474b6244\\\\operation.json\", \"selectedVersion\": \"0.1.9008\", \"trayPid\": 42744, \"trayRestarted\": true, \"originalBytesPreserved\": true, \"restoredFiles\": \"state.json, state.json.bak, current.json only\", \"configurationAndRuntimeFiles\": \"untouched\" }",
+        "trayRunning": true,
+        "trayVersion": "0.1.9008",
+        "state": "running-original",
+        "selection": "0.1.9008"
+      },
+      "passed": true,
+      "trayRunningEnd": true
+    },
+    {
+      "cycle": 6,
+      "candidate": "0.1.9006",
+      "switch": {
+        "exit": 0,
+        "pipeClosed": true,
+        "seconds": 5.0,
+        "message": "{ \"status\": \"running-candidate\", \"operationManifest\": \"D:\\\\Code\\\\ZeusApps.BellTower\\\\artifacts\\\\qa-011\\\\churn-codex-2d4e6978\\\\private\\\\bell-tower-dev-eeeee09890644d20a07bd8cd0ee37b2b\\\\operation.json\", \"selectedVersion\": \"0.1.9006\", \"trayPid\": 43688, \"trayRestarted\": true, \"originalBytesPreserved\": true, \"restoredFiles\": \"none\", \"configurationAndRuntimeFiles\": \"untouched\" }",
+        "trayRunning": true,
+        "trayVersion": "0.1.9006",
+        "state": "running-candidate"
+      },
+      "rollback": {
+        "exit": 0,
+        "pipeClosed": true,
+        "seconds": 3.5,
+        "message": "{ \"status\": \"running-original\", \"operationManifest\": \"D:\\\\Code\\\\ZeusApps.BellTower\\\\artifacts\\\\qa-011\\\\churn-codex-2d4e6978\\\\private\\\\bell-tower-dev-eeeee09890644d20a07bd8cd0ee37b2b\\\\operation.json\", \"selectedVersion\": \"0.1.9008\", \"trayPid\": 38484, \"trayRestarted\": true, \"originalBytesPreserved\": true, \"restoredFiles\": \"state.json, state.json.bak, current.json only\", \"configurationAndRuntimeFiles\": \"untouched\" }",
+        "trayRunning": true,
+        "trayVersion": "0.1.9008",
+        "state": "running-original",
+        "selection": "0.1.9008"
+      },
+      "passed": true,
+      "trayRunningEnd": true
+    },
+    {
+      "cycle": 7,
+      "candidate": "0.1.9007",
+      "switch": {
+        "exit": 0,
+        "pipeClosed": true,
+        "seconds": 5.7,
+        "message": "{ \"status\": \"running-candidate\", \"operationManifest\": \"D:\\\\Code\\\\ZeusApps.BellTower\\\\artifacts\\\\qa-011\\\\churn-codex-2d4e6978\\\\private\\\\bell-tower-dev-2edeb1a255184317a26ecd392c2b7008\\\\operation.json\", \"selectedVersion\": \"0.1.9007\", \"trayPid\": 27488, \"trayRestarted\": true, \"originalBytesPreserved\": true, \"restoredFiles\": \"none\", \"configurationAndRuntimeFiles\": \"untouched\" }",
+        "trayRunning": true,
+        "trayVersion": "0.1.9007",
+        "state": "running-candidate"
+      },
+      "rollback": {
+        "exit": 0,
+        "pipeClosed": true,
+        "seconds": 3.6,
+        "message": "{ \"status\": \"running-original\", \"operationManifest\": \"D:\\\\Code\\\\ZeusApps.BellTower\\\\artifacts\\\\qa-011\\\\churn-codex-2d4e6978\\\\private\\\\bell-tower-dev-2edeb1a255184317a26ecd392c2b7008\\\\operation.json\", \"selectedVersion\": \"0.1.9008\", \"trayPid\": 21564, \"trayRestarted\": true, \"originalBytesPreserved\": true, \"restoredFiles\": \"state.json, state.json.bak, current.json only\", \"configurationAndRuntimeFiles\": \"untouched\" }",
+        "trayRunning": true,
+        "trayVersion": "0.1.9008",
+        "state": "running-original",
+        "selection": "0.1.9008"
+      },
+      "passed": true,
+      "trayRunningEnd": true
+    },
+    {
+      "cycle": 8,
+      "candidate": "0.1.9001",
+      "switch": {
+        "exit": 0,
+        "pipeClosed": true,
+        "seconds": 5.3,
+        "message": "{ \"status\": \"running-candidate\", \"operationManifest\": \"D:\\\\Code\\\\ZeusApps.BellTower\\\\artifacts\\\\qa-011\\\\churn-codex-2d4e6978\\\\private\\\\bell-tower-dev-611e99ea4d664a99999a230529dc7bb3\\\\operation.json\", \"selectedVersion\": \"0.1.9001\", \"trayPid\": 37084, \"trayRestarted\": true, \"originalBytesPreserved\": true, \"restoredFiles\": \"none\", \"configurationAndRuntimeFiles\": \"untouched\" }",
+        "trayRunning": true,
+        "trayVersion": "0.1.9001",
+        "state": "running-candidate"
+      },
+      "rollback": {
+        "exit": 0,
+        "pipeClosed": true,
+        "seconds": 4.2,
+        "message": "{ \"status\": \"running-original\", \"operationManifest\": \"D:\\\\Code\\\\ZeusApps.BellTower\\\\artifacts\\\\qa-011\\\\churn-codex-2d4e6978\\\\private\\\\bell-tower-dev-611e99ea4d664a99999a230529dc7bb3\\\\operation.json\", \"selectedVersion\": \"0.1.9008\", \"trayPid\": 21824, \"trayRestarted\": true, \"originalBytesPreserved\": true, \"restoredFiles\": \"state.json, state.json.bak, current.json only\", \"configurationAndRuntimeFiles\": \"untouched\" }",
+        "trayRunning": true,
+        "trayVersion": "0.1.9008",
+        "state": "running-original",
+        "selection": "0.1.9008"
+      },
+      "passed": true,
+      "trayRunningEnd": true
+    }
+  ],
+  "passedCycles": 8,
+  "totalCycles": 8,
+  "churn": "190 366",
+  "churnAlive": true,
+  "sweptProcesses": [],
+  "endedUtc": "2026-10-25T12:31:39.1922954Z"
+}

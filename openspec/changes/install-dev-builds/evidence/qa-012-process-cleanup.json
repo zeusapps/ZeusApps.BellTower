@@ -1,0 +1,14 @@
+{
+  "generatedLocal": "2026-10-25 about 14:55",
+  "disposableProcessesRemaining": 0,
+  "sweep": "CIM scan for ExecutablePath or command lines naming artifacts\\qa-012 returned none after cleanup; each native run's finally block also swept its own disposable root (sweptProcesses was empty in every result)",
+  "ownedProcesses": [
+    "native churn/held/negative/negative-suspended/faults runs (claude and codex flavors): disposable trays ended by the driver (RequestExit on its own data directory), driver-started churn pwsh processes killed, held statusline pair closed, suspended image terminated by TerminateProcess on its own handle, ping.exe stand-in (copied as bell-tower.exe under the disposable installation) killed by exact PID",
+    "a stray python3 launched by a mistyped heredoc of mine (PID 40228) stopped by exact PID"
+  ],
+  "userBellTowerProcessesObservedBeforeAndAfter": [18412, 35108, 30328],
+  "userProcessesTouched": false,
+  "fixturesDeleted": ["artifacts/qa-012 (all disposable installations, data, barriers, private workspaces and the maintainer-preflight workspace)"],
+  "kept": ["artifacts/dev-builds/bell-tower-0.1.9009-win-x64* (fresh package, not installed)"],
+  "maintainerInstallationLiveTraySettingsTouched": false
+}
