@@ -1,0 +1,10 @@
+{
+  "probe": "analysis-007 launch-gate pointer-step proxy",
+  "iterations": 25,
+  "payloadFileEntries": 60,
+  "firstMs": 189.9,
+  "medianMs": 30.7,
+  "maxMs": 189.9,
+  "pwsh": "7.6.6",
+  "manifestBytes": 8989
+}

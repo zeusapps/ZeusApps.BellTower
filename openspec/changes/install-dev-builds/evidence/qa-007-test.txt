@@ -1,0 +1,8 @@
+Test run for D:\Code\ZeusApps.BellTower\tests\BellTower.Tests\bin\Release\net10.0-windows\BellTower.Tests.dll (.NETCoreApp,Version=v10.0)
+VSTest version 18.0.2 (x64)
+
+Starting test execution, please wait...
+A total of 1 test files matched the specified pattern.
+Results File: D:\Code\ZeusApps.BellTower\openspec\changes\install-dev-builds\evidence\qa-007-trx\qa-007-test.trx
+
+Passed!  - Failed:     0, Passed:   815, Skipped:     0, Total:   815, Duration: 2 m 51 s - BellTower.Tests.dll (net10.0)

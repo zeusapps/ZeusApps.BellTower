@@ -1,0 +1,26 @@
+Test run for D:\Code\ZeusApps.BellTower\tests\BellTower.Tests\bin\Release\net10.0-windows\BellTower.Tests.dll (.NETCoreApp,Version=v10.0)
+VSTest version 18.0.2 (x64)
+
+Starting test execution, please wait...
+A total of 1 test files matched the specified pattern.
+[xUnit.net 00:00:07.00]     BellTower.Tests.Providers.CaptureTests.ExecutableCapturesUnicodeAndFailsNeutralWithoutLeakingInput(provider: "codex") [FAIL]
+[xUnit.net 00:00:07.00]     BellTower.Tests.Providers.CaptureTests.ExecutableCapturesUnicodeAndFailsNeutralWithoutLeakingInput(provider: "claude") [FAIL]
+  Failed BellTower.Tests.Providers.CaptureTests.ExecutableCapturesUnicodeAndFailsNeutralWithoutLeakingInput(provider: "codex") [4 ms]
+  Error Message:
+   System.ComponentModel.Win32Exception : An error occurred trying to start process 'D:\Code\ZeusApps.BellTower\src\BellTower.Ingress\bin\Release\net10.0-windows\win-x64\bell-tower-ingress.exe' with working directory 'D:\Code\ZeusApps.BellTower\tests\BellTower.Tests\bin\Release\net10.0-windows'. The system cannot find the file specified.
+  Stack Trace:
+     at System.Diagnostics.Process.StartWithCreateProcess(ProcessStartInfo startInfo)
+   at System.Diagnostics.Process.Start(ProcessStartInfo startInfo)
+   at BellTower.Tests.Providers.CaptureTests.ExecutableCapturesUnicodeAndFailsNeutralWithoutLeakingInput(String provider) in D:\Code\ZeusApps.BellTower\tests\BellTower.Tests\Providers\CaptureTests.cs:line 387
+--- End of stack trace from previous location ---
+  Failed BellTower.Tests.Providers.CaptureTests.ExecutableCapturesUnicodeAndFailsNeutralWithoutLeakingInput(provider: "claude") [2 ms]
+  Error Message:
+   System.ComponentModel.Win32Exception : An error occurred trying to start process 'D:\Code\ZeusApps.BellTower\src\BellTower.Ingress\bin\Release\net10.0-windows\win-x64\bell-tower-ingress.exe' with working directory 'D:\Code\ZeusApps.BellTower\tests\BellTower.Tests\bin\Release\net10.0-windows'. The system cannot find the file specified.
+  Stack Trace:
+     at System.Diagnostics.Process.StartWithCreateProcess(ProcessStartInfo startInfo)
+   at System.Diagnostics.Process.Start(ProcessStartInfo startInfo)
+   at BellTower.Tests.Providers.CaptureTests.ExecutableCapturesUnicodeAndFailsNeutralWithoutLeakingInput(String provider) in D:\Code\ZeusApps.BellTower\tests\BellTower.Tests\Providers\CaptureTests.cs:line 387
+--- End of stack trace from previous location ---
+Results File: D:\Code\ZeusApps.BellTower\openspec\changes\install-dev-builds\evidence/qa-001-test-run4.trx
+
+Failed!  - Failed:     2, Passed:   742, Skipped:     0, Total:   744, Duration: 45 s - BellTower.Tests.dll (net10.0)

@@ -1,0 +1,30 @@
+[
+  {
+    "name": "csrss",
+    "hasExitedIsNull": true,
+    "startTimeIsNull": true,
+    "mainModuleIsNull": true,
+    "reflectionHasExited": "System.ComponentModel.Win32Exception"
+  },
+  {
+    "name": "lsass",
+    "hasExitedIsNull": true,
+    "startTimeIsNull": true,
+    "mainModuleIsNull": true,
+    "reflectionHasExited": "System.ComponentModel.Win32Exception"
+  },
+  {
+    "name": "services",
+    "hasExitedIsNull": true,
+    "startTimeIsNull": true,
+    "mainModuleIsNull": true,
+    "reflectionHasExited": "System.ComponentModel.Win32Exception"
+  },
+  {
+    "name": "wininit",
+    "hasExitedIsNull": true,
+    "startTimeIsNull": true,
+    "mainModuleIsNull": true,
+    "reflectionHasExited": "System.ComponentModel.Win32Exception"
+  }
+]

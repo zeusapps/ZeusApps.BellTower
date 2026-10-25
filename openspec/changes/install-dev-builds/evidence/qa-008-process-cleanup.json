@@ -1,0 +1,9 @@
+{
+  "generatedUtc": "2026-10-25T10:40:13.5865514Z",
+  "processesMatchingQa008Paths": 0,
+  "perCaseResultsRemainingProcesses": 0,
+  "qa008FixtureRootRemains": false,
+  "scratchRemains": false,
+  "maintainerInstallTouched": false,
+  "note": "Each native case ended its own tray via exit request; scratch copy deleted; artifacts/qa-008 deleted."
+}

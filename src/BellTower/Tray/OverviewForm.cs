@@ -1,4 +1,5 @@
 using BellTower.Core;
+using BellTower.Distribution;
 
 namespace BellTower.Tray;
 
@@ -45,7 +46,7 @@ public sealed class OverviewForm : Form
     public event Action<string, string?, string?, bool>? ConfigureIdentity;
     public OverviewForm()
     {
-        Text = "Bell Tower - sessions";
+        Text = "Bell Tower - sessions" + (VersionDisplay.IsDev(Cli.ApplicationInfo.Display) ? " - " + Cli.ApplicationInfo.Display : "");
         Size = new Size(1050, 480);
         MinimumSize = new Size(800, 350);
         Font = new Font("Segoe UI", 10);

@@ -1,0 +1,19 @@
+VSTest version 18.0.2 (x64)
+
+Starting test execution, please wait...
+A total of 1 test files matched the specified pattern.
+[xUnit.net 00:00:03.35]     BellTower.Tests.Scripts.InstallDevScriptTests.RollbackOfASwitchInterruptedBeforeThePointerWriteFinishesWithoutRecordsAndLeavesTheSelection [FAIL]
+  Failed BellTower.Tests.Scripts.InstallDevScriptTests.RollbackOfASwitchInterruptedBeforeThePointerWriteFinishesWithoutRecordsAndLeavesTheSelection [3 s]
+  Error Message:
+   Exception: D:\Code\ZeusApps.BellTower\artifacts\qa-008-scratch\scripts\install-dev.ps1:1064:59
+Line |
+1064 |  . pe Leaf)) { throw 'Operation coordination record disappeared; preserv .
+     |                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     | Operation coordination record disappeared; preserving recovery state.
+
+  Stack Trace:
+     at BellTower.Tests.Scripts.InstallDevScriptTests.RollbackOfASwitchInterruptedBeforeThePointerWriteFinishesWithoutRecordsAndLeavesTheSelection() in D:\Code\ZeusApps.BellTower\tests\BellTower.Tests\Scripts\InstallDevScriptTests.Recovery.cs:line 253
+   at System.Reflection.MethodBaseInvoker.InterpretedInvoke_Method(Object obj, IntPtr* args)
+   at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)
+
+Failed!  - Failed:     1, Passed:     1, Skipped:     0, Total:     2, Duration: 8 s - BellTower.Tests.dll (net10.0)

@@ -10,6 +10,13 @@ public sealed record ReleaseOffer(ReleaseContract Contract, string ArchiveHash)
     public string Page => Releases + "/tag/v" + Version;
     public string Url => Releases + "/download/v" + Version + "/" + Contract.PackageName;
     public string MetadataUrl => Url[..^4] + ".release.json";
+    /// <summary>Published offers never use the reserved dev range; local dev packages are installed by scripts/install-dev.ps1 instead.</summary>
+    public void EnsureStable()
+    {
+        Validate();
+        if (Contract.IsDev)
+        { throw new InvalidDataException("Development builds are not offered as releases."); }
+    }
     public void Validate()
     {
         if (Contract is null || ArchiveHash is null)

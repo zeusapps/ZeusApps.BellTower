@@ -1,0 +1,23 @@
+{
+  "scenario": "marker byte drift during normal Rollback after tray stop while disposable setup lock held",
+  "exit": 1,
+  "expectedFailure": true,
+  "refusalMentionsDrift": true,
+  "selectionUnchanged": true,
+  "selectionSha256Before": "52C15622DC4A2FF04D704D2ED548C2CE8FAA746DB6187526252DD3EA39BF1351",
+  "selectionSha256After": "52C15622DC4A2FF04D704D2ED548C2CE8FAA746DB6187526252DD3EA39BF1351",
+  "selectedVersion": "0.1.9004",
+  "stateBackupSha256Before": "76C32DCFF035834AEF5A8ADE397C6C567D7CBAB516F3AA7695EF03090BB5AE9E",
+  "stateBackupSha256After": "76C32DCFF035834AEF5A8ADE397C6C567D7CBAB516F3AA7695EF03090BB5AE9E",
+  "monitoringBackupRestored": false,
+  "candidateBackupWasDifferent": true,
+  "manifestState": "running-candidate",
+  "restartMarkerStillExists": true,
+  "restartMarkerSha256Before": "51b17ddc7890e1b0ed6685d1dbfaff9cb512d740ddf6b20287dd28f7cf245815",
+  "restartMarkerDriftHash": "F128F7CB9C3ACCFCB23F9B6BC447A682886DE8D4ED906ACABB5110C1762BFF83",
+  "pendingMarkerStillExists": true,
+  "pendingMarkerSha256Before": "51b17ddc7890e1b0ed6685d1dbfaff9cb512d740ddf6b20287dd28f7cf245815",
+  "pendingMarkerSha256After": "51B17DDC7890E1B0ED6685D1DBFAFF9CB512D740DDF6B20287DD28F7CF245815",
+  "trayExited": true,
+  "limitedLog": "An operation coordination record changed bytes; preser .\r\n     |          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\r\n     | An operation coordination record changed bytes; preserving both records.\r\n"
+}

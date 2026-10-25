@@ -1,0 +1,65 @@
+--- next number with installation holding 0.1.9005 and 0.1.9 (folder has 0.1.9001)
+0.1.9006
+--- explicit 0.1.9005 (taken in installation)
+Exception: D:\Code\ZeusApps.BellTower\scripts\package.ps1:87
+Line |
+  87 |  … .')[2]))) { throw "Development version $DevVersion already exists in  …
+     |                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     | Development version 0.1.9005 already exists in D:\Code\ZeusApps.BellTower\artifacts\dev-builds or
+     | artifacts\qa-001-numbering\versions; choose another number.
+
+--- explicit 0.1.10 (outside range)
+Exception: D:\Code\ZeusApps.BellTower\scripts\package.ps1:86
+Line |
+  86 |  … r\.\d+$") { throw "-DevVersion must be $major.$minor.PATCH with PATCH …
+     |                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     | -DevVersion must be 0.1.PATCH with PATCH >= 9000.
+
+--- explicit 0.2.9001 (wrong major.minor)
+Exception: D:\Code\ZeusApps.BellTower\scripts\package.ps1:86
+Line |
+  86 |  … r\.\d+$") { throw "-DevVersion must be $major.$minor.PATCH with PATCH …
+     |                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     | -DevVersion must be 0.1.PATCH with PATCH >= 9000.
+
+--- explicit free 0.1.9777
+0.1.9777
+--- stable -Version 0.1.9001
+Exception: D:\Code\ZeusApps.BellTower\scripts\package.ps1:59
+Line |
+  59 |  … Version)) { throw "Version $Version is in the reserved development ra …
+     |                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     | Version 0.1.9001 is in the reserved development range (PATCH >= 9000); stable packages cannot use it. Use -Dev
+     | for development builds.
+
+--- -Dev -Version 0.1.8
+Exception: D:\Code\ZeusApps.BellTower\scripts\package.ps1:57
+Line |
+  57 |  … Version)) { throw '-Dev cannot be combined with -Version or -FixtureV …
+     |                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     | -Dev cannot be combined with -Version or -FixtureVersion.
+
+--- -Dev output outside dev-builds
+Exception: D:\Code\ZeusApps.BellTower\scripts\package.ps1:66
+Line |
+  66 |  … oreCase)) { throw 'Development packages must stay under artifacts/dev …
+     |                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     | Development packages must stay under artifacts/dev-builds/.
+
+--- bogus vswhere
+Exception: D:\Code\ZeusApps.BellTower\scripts\package.ps1:29
+Line |
+  29 |  … $vswhere) { throw 'vswhere.exe was not found. Install the Visual Stud …
+     |                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     | vswhere.exe was not found. Install the Visual Studio Build Tools with the "Desktop development with C++"
+     | workload (MSVC x64/x86 build tools) and a Windows SDK; NativeAOT cannot link without them and no managed ingress
+     | is packaged.
+
+--- stable plan
+{
+  "version": "0.1.8",
+  "outputDirectory": "D:\\Code\\ZeusApps.BellTower\\artifacts\\releases",
+  "informationalVersion": "0.1.8",
+  "build": null
+}
+

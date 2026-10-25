@@ -1,0 +1,64 @@
+{
+  "at": "2026-10-25T08:46:55.7583781+00:00",
+  "mode": "isolated generated provider-shell commands; synthetic hooks; no authenticated provider trial",
+  "package": "D:\\Code\\ZeusApps.BellTower\\artifacts\\dev-builds\\bell-tower-0.1.9005-win-x64",
+  "helperBytes": 3099136,
+  "durableCaptures": 242,
+  "durableLegacyEvents": 50,
+  "sessionsAfterDrain": 8,
+  "crashReplay": "passed",
+  "reports": [
+    {
+      "provider": "claude",
+      "transport": "legacy-chain",
+      "samples": 25,
+      "parallelism": 8,
+      "firstCaptureMilliseconds": 1046.8808,
+      "medianMilliseconds": 1872.5704,
+      "p95Milliseconds": 2017.2896,
+      "p99Milliseconds": 2018.5539,
+      "maxMilliseconds": 2018.5539,
+      "failed": 0,
+      "overThreeSeconds": 0
+    },
+    {
+      "provider": "claude",
+      "transport": "native-ingress",
+      "samples": 121,
+      "parallelism": 8,
+      "firstCaptureMilliseconds": 105.6348,
+      "medianMilliseconds": 138.8242,
+      "p95Milliseconds": 162.4477,
+      "p99Milliseconds": 181.548,
+      "maxMilliseconds": 192.2377,
+      "failed": 0,
+      "overThreeSeconds": 0
+    },
+    {
+      "provider": "codex",
+      "transport": "legacy-chain",
+      "samples": 25,
+      "parallelism": 8,
+      "firstCaptureMilliseconds": 1037.8691,
+      "medianMilliseconds": 1823.7006,
+      "p95Milliseconds": 1925.5639,
+      "p99Milliseconds": 1935.1877,
+      "maxMilliseconds": 1935.1877,
+      "failed": 0,
+      "overThreeSeconds": 0
+    },
+    {
+      "provider": "codex",
+      "transport": "native-ingress",
+      "samples": 121,
+      "parallelism": 8,
+      "firstCaptureMilliseconds": 69.9634,
+      "medianMilliseconds": 96.5127,
+      "p95Milliseconds": 111.059,
+      "p99Milliseconds": 120.0973,
+      "maxMilliseconds": 127.5758,
+      "failed": 0,
+      "overThreeSeconds": 0
+    }
+  ]
+}

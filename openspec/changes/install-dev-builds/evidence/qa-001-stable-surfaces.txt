@@ -1,0 +1,8 @@
+stable build from new code (fixture 0.1.9):
+--version: [0.1.9]
+Running 0.1.9; selected 0.1.9.
+No update outcome recorded.
+
+doctor version: [0.1.9]
+release.json has build: False
+dev package informational version in exe: 0.1.8+4db8ddaacb5a80a950cc7e3dfe189e54bd4e3ce0

@@ -1,0 +1,59 @@
+{
+  "generatedUtc": "2026-10-25T09:54:19.3528890Z",
+  "evidenceType": "installed native, synthetic disposable installation and data",
+  "package": "D:\\Code\\ZeusApps.BellTower\\artifacts\\dev-builds\\bell-tower-0.1.9006-win-x64.zip",
+  "packageSha256": "5e5258894518e9856de4eef5534bebe8038d827767189e2baf316d6bbe8570d0",
+  "installer": "9ba060a56df708cb4db16d44ee070380a222e11a63a180e8c5cfaa54f0ce22a0",
+  "cases": [
+    {
+      "case": "lifecycle",
+      "root": "D:\\Code\\ZeusApps.BellTower\\artifacts\\qa-007\\native-lifecycle-648be1731a",
+      "passed": true,
+      "freeGBAtStart": 3.83,
+      "initialTray": {
+        "pid": 21400,
+        "version": "0.1.9003"
+      },
+      "preflightReadOnly": true,
+      "switch": {
+        "selected": "0.1.9006",
+        "trayVersion": "0.1.9006",
+        "candidateActivationBound": true,
+        "previous": "0.1.9003"
+      },
+      "rollback": {
+        "exitZero": true,
+        "selectionOriginal": true,
+        "trayOriginal": true,
+        "trayActivationIsOperation": true,
+        "recordsRemoved": true,
+        "noIntent": true,
+        "state": true
+      },
+      "candidateRetainedAfterRollback": false,
+      "retire": {
+        "version": "0.1.9004",
+        "exitCode": 0,
+        "output": "{ \"status\": \"retired\", \"version\": \"0.1.9004\", \"selectedVersion\": \"0.1.9003\", \"record\": \"D:\\\\Code\\\\ZeusApps.BellTower\\\\artifacts\\\\qa-007\\\\native-lifecycle-648be1731a\\\\private\\\\retire-0.1.9004-20261025T095415Z.json\" }",
+        "payloadRemoved": true,
+        "originalKept": true,
+        "selectionUnchanged": true,
+        "launcherUnchanged": true
+      },
+      "retireSelectedRefused": {
+        "refused": true,
+        "selectedStillThere": true,
+        "output": "Exception: D:\\Code\\ZeusApps.BellTower\\scripts\\install-dev.ps1:713:20 Line | 713 |      if ($reason) { throw \"Refused: $reason\" } ~~~~~~~~~~~~~~~~~~~~~~~~ Refused: 0.1.9003 is the selected version."
+      },
+      "seconds": 29.1,
+      "cleanup": {
+        "trayExitRequested": true,
+        "trayEnded": true,
+        "leftovers": [],
+        "remainingAfterCleanup": 0
+      }
+    }
+  ],
+  "allPassed": true,
+  "remainingProcesses": 0.0
+}

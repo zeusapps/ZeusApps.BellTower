@@ -1,0 +1,28 @@
+{
+  "utc": "2026-10-25T10:55:59.0092383Z",
+  "timeZone": "Central European Standard Time",
+  "psVersion": "7.6.6",
+  "lastBootUtc": "2026-10-25T07:14:18.5000000Z",
+  "cimProcesses": 363,
+  "compared": 199,
+  "goneDuringProbe": 0,
+  "accessDenied": 0,
+  "noCreationDate": 0,
+  "otherErrors": 164,
+  "creationDateKinds": {
+    "Local": 363
+  },
+  "startedAfterEnumeration": 0,
+  "diffTicks": {
+    "max": 9,
+    "within10": 199,
+    "over10": 0,
+    "overOneSecond": 0
+  },
+  "protectedProcess": {
+    "pid": 4,
+    "getProcessById": "ok",
+    "hasExited": "",
+    "startTime": "ok"
+  }
+}

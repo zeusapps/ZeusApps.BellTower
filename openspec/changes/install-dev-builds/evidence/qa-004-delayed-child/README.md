@@ -1,0 +1,9 @@
+# QA 004 delayed tray child fixture
+
+This is a deliberately small, evidence-only old-order fixture, **not the original released 0.1.8 binary**. It models the relevant contract from that payload: parse `tray --data-dir <root>`, pass `UpdateTransaction.CanStartTray` semantics, then create `DataPaths.LockName("tray-instance")` with initial ownership. Its test barrier pauses between those operations.
+
+Build only after the implementation target is stable, placing all output under a fresh `artifacts/qa-004-*/delayed-child-build` directory. Copy the resulting `bell-tower.exe` into a disposable fixture installation such as `artifacts/qa-004-*/fixture/versions/0.1.8/bell-tower.exe`; record that it is a simulation. Invoke it through the actual stable launcher as `tray --data-dir <fixture-data-root>` with `QA004_DELAYED_TRAY_CONTROL` pointing to a separate disposable control directory.
+
+The process writes `can-start-passed.json` only after it has passed the gate and before waiting on `release-before-instance-mutex`. The driver must record PID, creation time, image path and parsed command from local process inventory; verify the image is the fixture installation path and the data directory is the disposable root. During a maintenance reservation, release the child and require `mutex-result.json` to report `createdNew: false`, with no `fixture-tray-owner.json`. The installer must not mutate selection while the child is still paused or otherwise undrained. If the implementation refuses a bounded drain, preserve the original selection and do not terminate the child. Release and wait for this fixture process; clean up only the exact child started by the QA driver.
+
+The process remains a normal observable `tray` invocation during the pause, allowing the final process-drain logic to recognize it by executable path, command line, PID and creation time. This fixture does not establish that the user's work-machine timeout had the same cause.

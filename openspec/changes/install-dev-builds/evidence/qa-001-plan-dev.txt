@@ -1,0 +1,12 @@
+{
+  "version": "0.1.9002",
+  "outputDirectory": "D:\\Code\\ZeusApps.BellTower\\artifacts\\dev-builds",
+  "informationalVersion": "0.1.9002-dev+b74a12b.dirty",
+  "build": {
+    "channel": "dev",
+    "commit": "b74a12b",
+    "dirty": true,
+    "builtAt": "2026-10-24T20:18:08Z",
+    "baseVersion": "0.1.8"
+  }
+}

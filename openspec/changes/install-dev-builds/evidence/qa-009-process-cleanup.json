@@ -1,0 +1,13 @@
+{
+  "generatedUtc": "2026-10-25T11:08:38.0640121Z",
+  "leftoverQa009Processes": 0,
+  "userBellTowerProcessesNotTouched": 3,
+  "fixturesRemoved": [
+    "D:\\Code\\ZeusApps.BellTower\\artifacts\\qa-009",
+    "D:\\Code\\ZeusApps.BellTower\\artifacts\\qa-009-scratch"
+  ],
+  "fixtureEntriesBeforeDelete": 1667,
+  "remainingQa009Dirs": 0,
+  "maintainerInstallTrayAndSettingsTouched": false,
+  "note": "Initial scan reported 4 matches that were only the QA shell commands whose own command lines contain the path text; a rescan excluding them found 0 disposable processes. Each case ran Close-Case (exit request to its own disposable tray, scan by disposable root); remainingAfterCleanup 0 in all result files."
+}

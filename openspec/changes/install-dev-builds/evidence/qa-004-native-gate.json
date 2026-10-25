@@ -1,0 +1,76 @@
+{
+  "mode": "generated shell commands during explicit launch-gate hold or idle fixture",
+  "providers": [
+    "Claude Code (Git Bash)",
+    "Codex (cmd.exe)"
+  ],
+  "scenario": "gate-hold",
+  "hookBudgetMilliseconds": 3000,
+  "barrierStillActiveAfterHooks": false,
+  "launchGateHeldForBaselineControl": true,
+  "channel": "Native",
+  "before": {
+    "captures": 19,
+    "inbox": 0
+  },
+  "after": {
+    "captures": 23,
+    "inbox": 0
+  },
+  "completed": 4,
+  "failed": 0,
+  "hooks": [
+    {
+      "provider": "claude",
+      "channel": "Native",
+      "index": 3,
+      "passed": true,
+      "elapsedMilliseconds": 307,
+      "exitCode": 0,
+      "timeout": false,
+      "neutralOutput": true,
+      "silentNativeIngress": true,
+      "stdout": "{}\r\n",
+      "stderr": ""
+    },
+    {
+      "provider": "codex",
+      "channel": "Native",
+      "index": 3,
+      "passed": true,
+      "elapsedMilliseconds": 252,
+      "exitCode": 0,
+      "timeout": false,
+      "neutralOutput": true,
+      "silentNativeIngress": true,
+      "stdout": "{}\r\n",
+      "stderr": ""
+    },
+    {
+      "provider": "claude",
+      "channel": "Native",
+      "index": 4,
+      "passed": true,
+      "elapsedMilliseconds": 237,
+      "exitCode": 0,
+      "timeout": false,
+      "neutralOutput": true,
+      "silentNativeIngress": true,
+      "stdout": "{}\r\n",
+      "stderr": ""
+    },
+    {
+      "provider": "codex",
+      "channel": "Native",
+      "index": 4,
+      "passed": true,
+      "elapsedMilliseconds": 224,
+      "exitCode": 0,
+      "timeout": false,
+      "neutralOutput": true,
+      "silentNativeIngress": true,
+      "stdout": "{}\r\n",
+      "stderr": ""
+    }
+  ]
+}

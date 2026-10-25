@@ -1,0 +1,3 @@
+Exception: D:\Code\ZeusApps.BellTower\scripts\package.ps1:59
+Line |
+  59 |  … Version)) { throw "Version $Version is in the reserved development ra …

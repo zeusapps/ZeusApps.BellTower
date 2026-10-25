@@ -1,0 +1,5 @@
+# QA 005 delayed old-order tray fixture
+
+Copied from the QA004 evidence fixture. It is a simulation of old startup ordering, never the released 0.1.8 executable. It passes the restart-marker start check, writes its own PID/image/data-root identity, pauses before named `tray-instance` mutex creation, then reports `createdNew` and owns a temporary fixture presence file only if it created the mutex.
+
+Build output must stay under a new `artifacts/qa-005-*` directory. Copy the resulting apphost into the disposable installation's `versions/<version>/bell-tower.exe` so the live process image is under that installation's versioned payload and the command has explicit `tray --data-dir <exact disposable root>` arguments. Set `QA005_DELAYED_TRAY_CONTROL` to a separate disposable directory. Never use the helper against maintainer/user data. Only the tracked helper PID may be released or reaped.

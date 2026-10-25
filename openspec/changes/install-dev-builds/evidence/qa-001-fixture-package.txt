@@ -1,0 +1,19 @@
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+  BellTower.Protocol -> D:\Code\ZeusApps.BellTower\src\BellTower.Protocol\bin\Release\net10.0\win-x64\BellTower.Protocol.dll
+  BellTower.Distribution -> D:\Code\ZeusApps.BellTower\src\BellTower.Distribution\bin\Release\net10.0-windows\win-x64\BellTower.Distribution.dll
+  BellTower -> D:\Code\ZeusApps.BellTower\src\BellTower\bin\Release\net10.0-windows\win-x64\bell-tower.dll
+  BellTower -> D:\Code\ZeusApps.BellTower\artifacts\update-acceptance\qa-001-stable\bell-tower-0.1.9-win-x64\versions\0.1.9\
+  BellTower.Protocol -> D:\Code\ZeusApps.BellTower\src\BellTower.Protocol\bin\Release\net10.0\win-x64\BellTower.Protocol.dll
+  BellTower.Ingress -> D:\Code\ZeusApps.BellTower\src\BellTower.Ingress\bin\Release\net10.0-windows\win-x64\bell-tower-ingress.dll
+  Generating native code
+  BellTower.Ingress -> D:\Code\ZeusApps.BellTower\artifacts\update-acceptance\qa-001-stable\bell-tower-0.1.9-win-x64\ingress-publish\
+  BellTower.Distribution -> D:\Code\ZeusApps.BellTower\src\BellTower.Distribution\bin\Release\net10.0-windows\win-x64\BellTower.Distribution.dll
+  BellTower.Launcher -> D:\Code\ZeusApps.BellTower\src\BellTower.Launcher\bin\Release\net10.0-windows\win-x64\bell-tower.dll
+  BellTower.Launcher -> D:\Code\ZeusApps.BellTower\artifacts\update-acceptance\qa-001-stable\bell-tower-0.1.9-win-x64\
+Packaged D:\Code\ZeusApps.BellTower\artifacts\update-acceptance\qa-001-stable\bell-tower-0.1.9-win-x64.zip
+exit 0

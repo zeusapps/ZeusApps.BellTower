@@ -1,0 +1,18 @@
+{
+  "action": "Switch",
+  "fixtureVersion": "0.1.8",
+  "candidateVersion": "0.1.9002",
+  "trayStartedDuringBlockedPhase": true,
+  "trayExitedBeforeRelease": true,
+  "trayExitCodeBeforeRelease": 0,
+  "trayPresenceBeforeRelease": false,
+  "trayStillRunningAfterSwitch": false,
+  "presenceAfterSwitch": false,
+  "trayVersion": null,
+  "trayProcessId": null,
+  "switchExitCode": 0,
+  "switchStdout": "{\r\n  \"status\": \"running-candidate\",\r\n  \"operationManifest\": \"D:\\\\Code\\\\ZeusApps.BellTower\\\\artifacts\\\\qa-010-owner-race\\\\workspace\\\\bell-tower-dev-3a07906a7c1f41d4aee1b0b2526546dc\\\\operation.json\",\r\n  \"selectedVersion\": \"0.1.9002\",\r\n  \"trayPid\": null,\r\n  \"trayRestarted\": false,\r\n  \"originalBytesPreserved\": true,\r\n  \"restoredFiles\": \"none\",\r\n  \"configurationAndRuntimeFiles\": \"untouched\"\r\n}\r\n",
+  "switchStderr": "",
+  "selectedVersionAfterRelease": "0.1.9002",
+  "sourceIdentity": "QA 010; baseline b74a12b, identity in qa-010-identity-before.txt"
+}

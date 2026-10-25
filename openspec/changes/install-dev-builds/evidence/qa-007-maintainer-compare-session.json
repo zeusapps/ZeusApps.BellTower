@@ -1,0 +1,12 @@
+{
+  "selectionSame": true,
+  "launcherSame": true,
+  "payloadsSame": true,
+  "trayPidSame": true,
+  "trayStartSame": true,
+  "pid": 2908,
+  "startTicks": 639285094568443780,
+  "selected": "0.1.10",
+  "launcherSha": "fca9827f3a8fc2a7cde246b074affb92c02a01c8cc990b178e4a9d93cb3da272",
+  "selectionSha": "6ff7f02412db22c7799399835db8c62804ce6c5ee41537d4e0581b67059a7d7a"
+}

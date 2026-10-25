@@ -64,7 +64,7 @@ public sealed class TrayApplication : ApplicationContext
         overview.Icon = appIcon;
         audio = new(silent ? new SilentAudioSink() : new WindowsAudioSink(new ToneLibrary(paths)), IsCurrentAlert, () => config);
         var menu = new ContextMenuStrip();
-        menu.Items.Add(new ToolStripMenuItem("Bell Tower v" + ApplicationInfo.Version) { Enabled = false });
+        menu.Items.Add(new ToolStripMenuItem("Bell Tower v" + ApplicationInfo.Display) { Enabled = false });
         menu.Items.Add("Check for updates", null, async (_, _) => await CheckUpdateAsync(false));
         var installUpdate = new ToolStripMenuItem("Install update");
         installUpdate.Click += async (_, _) => await CheckUpdateAsync(true);
@@ -134,7 +134,7 @@ public sealed class TrayApplication : ApplicationContext
         tray = new NotifyIcon
         {
             Icon = appIcon,
-            Text = "Bell Tower",
+            Text = ApplicationInfo.TrayText,
             Visible = true,
             ContextMenuStrip = menu
         };

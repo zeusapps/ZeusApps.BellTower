@@ -1,0 +1,14 @@
+{
+  "kind": "installed-native disposable probe",
+  "scenario": "failed Switch candidate restart; recovery Rollback original restart also fails; retry same manifest",
+  "recoveryRollbackExitCode": 1,
+  "retryExitCode": 1,
+  "pointerAfterRecoveryFailure": "0.1.9003",
+  "manifestPhase": "restored-monitoring-snapshot",
+  "coordinationPhase": "Switch",
+  "coordinationPhaseTarget": "0.1.9001",
+  "pendingAndRestartRecordsTarget": "0.1.9003",
+  "retryRefusedOwnedRecords": true,
+  "recordsPreserved": true,
+  "kindNote": "candidate/original versions and results are from a QA disposable native fixture; not a maintainer installation"
+}

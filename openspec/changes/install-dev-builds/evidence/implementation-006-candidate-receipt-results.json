@@ -1,0 +1,23 @@
+{
+  "scenario": "candidate tray publishes presence, installer ends before candidateTray receipt, same-manifest Rollback",
+  "interruptedInstallerPid": 30296,
+  "interruptedInstallerStartedTicks": 639285142679112495,
+  "restartLauncher": {
+    "pid": 29056,
+    "ticks": 639285142712116822,
+    "version": "0.1.9001",
+    "activation": "effff9af149a407eb94d4869389140c6"
+  },
+  "candidateTrayReceiptPresent": false,
+  "candidatePresencePid": 12132,
+  "candidatePresenceVersion": "0.1.9001",
+  "candidatePresenceActivation": "effff9af149a407eb94d4869389140c6",
+  "candidatePresenceDataDirectory": "D:\\Code\\ZeusApps.BellTower\\artifacts\\implementation-006-receipt-535dad115962428389aed69cc2261ab4\\data",
+  "retryExit": 0,
+  "retryOutput": "{\r\n  \"status\": \"running-original\",\r\n  \"operationManifest\": \"D:\\\\Code\\\\ZeusApps.BellTower\\\\artifacts\\\\implementation-006-receipt-535dad115962428389aed69cc2261ab4\\\\private\\\\bell-tower-dev-bf52f9eb228d422ba0337e49b17f9959\\\\operation.json\",\r\n  \"selectedVersion\": \"0.1.9003\",\r\n  \"trayPid\": 34176,\r\n  \"trayRestarted\": true,\r\n  \"originalBytesPreserved\": true,\r\n  \"restoredFiles\": \"state.json, state.json.bak, current.json only\",\r\n  \"configurationAndRuntimeFiles\": \"untouched\"\r\n}\r\n ",
+  "selectedAfterRetry": "0.1.9003",
+  "restoredTrayVersion": "0.1.9003",
+  "pendingRemains": false,
+  "restartRemains": false,
+  "disposableRoot": "D:\\Code\\ZeusApps.BellTower\\artifacts\\implementation-006-receipt-535dad115962428389aed69cc2261ab4"
+}

@@ -1,0 +1,6 @@
+  Stack Trace:
+     at BellTower.Tests.IO.GitTests.LinkedWorktreeIsDistinctFromBranchWithoutCommittingAnything() in D:\Code\ZeusApps.BellTower\tests\BellTower.Tests\IO\GitTests.cs:line 61
+   at System.Reflection.MethodBaseInvoker.InterpretedInvoke_Method(Object obj, IntPtr* args)
+   at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)
+
+Failed!  - Failed:     1, Passed:   819, Skipped:     0, Total:   820, Duration: 2 m 42 s - BellTower.Tests.dll (net10.0)

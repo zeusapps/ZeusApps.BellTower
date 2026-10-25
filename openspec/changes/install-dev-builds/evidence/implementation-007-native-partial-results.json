@@ -1,0 +1,186 @@
+{
+  "note": "Partial native run 007: the full matrix was stopped by Claude Code because the system was critically low on memory (not a probe failure), after four cases; the aggregate result file was never written. Values below were recovered from each case's installer logs and final on-disk state before the disposable roots were removed.",
+  "recoveredUtc": "2026-10-25T09:40:23.2820265Z",
+  "cases": [
+    {
+      "root": "implementation-007-native-lifecycle-4f301c248d3a",
+      "runs": [
+        {
+          "run": "Preflight-744762be",
+          "status": "preflight-passed",
+          "trayRestarted": null,
+          "stderr": ""
+        },
+        {
+          "run": "Switch-ea934298",
+          "status": "running-candidate",
+          "trayRestarted": "true",
+          "stderr": ""
+        },
+        {
+          "run": "Rollback-b091f7e0",
+          "status": "running-original",
+          "trayRestarted": "true",
+          "stderr": ""
+        },
+        {
+          "run": "Retire-1a139f04",
+          "status": null,
+          "trayRestarted": null,
+          "stderr": "Exception: D:\\Code\\ZeusApps.BellTower\\scripts\\install-dev.ps1:713:20 Line | 713 | if ($reason) { throw \"Refused: $reason\" } | ~~~~~~~~~~~~~~~~~~~~~~~~ | Refused: 0.1.9002 holds a file Bell Tower did not install (bell-tower.pdb); inspect it privately."
+        }
+      ],
+      "finalState": "running-original",
+      "intentRemaining": false,
+      "candidateActivationRecorded": true,
+      "selected": "0.1.9003",
+      "recordsRemaining": false,
+      "devSnapshots": 1,
+      "liveProcessesUnderRoot": 0
+    },
+    {
+      "root": "implementation-007-native-lifecycle-cf5660bdbafd",
+      "runs": [
+        {
+          "run": "Preflight-8f156bdd",
+          "status": "preflight-passed",
+          "trayRestarted": null,
+          "stderr": ""
+        },
+        {
+          "run": "Switch-b3fc92c5",
+          "status": "running-candidate",
+          "trayRestarted": "true",
+          "stderr": ""
+        },
+        {
+          "run": "Rollback-a037d7e4",
+          "status": "running-original",
+          "trayRestarted": "true",
+          "stderr": ""
+        },
+        {
+          "run": "Retire-9fc22bb6",
+          "status": null,
+          "trayRestarted": null,
+          "stderr": "Exception: D:\\Code\\ZeusApps.BellTower\\scripts\\install-dev.ps1:707:66 Line | 707 | . et -PathType Container)) { throw \"Payload $Version does not exist.\" } | ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ | Payload 0.1.9001 does not exist."
+        }
+      ],
+      "finalState": "running-original",
+      "intentRemaining": false,
+      "candidateActivationRecorded": true,
+      "selected": "0.1.9003",
+      "recordsRemaining": false,
+      "devSnapshots": 1,
+      "liveProcessesUnderRoot": 0
+    },
+    {
+      "root": "implementation-007-native-pointer-intent-saved-8f78eb838f60",
+      "runs": [
+        {
+          "run": "Preflight-497856fb",
+          "status": "preflight-passed",
+          "trayRestarted": null,
+          "stderr": ""
+        },
+        {
+          "run": "Switch-4f94e0d6",
+          "status": "running-candidate",
+          "trayRestarted": "true",
+          "stderr": ""
+        },
+        {
+          "run": "Rollback-38c95e8e",
+          "status": null,
+          "trayRestarted": null,
+          "stderr": ""
+        },
+        {
+          "run": "Rollback-618dcc7c",
+          "status": "running-original",
+          "trayRestarted": "true",
+          "stderr": ""
+        }
+      ],
+      "finalState": "running-original",
+      "intentRemaining": false,
+      "candidateActivationRecorded": true,
+      "selected": "0.1.9003",
+      "recordsRemaining": false,
+      "devSnapshots": 1,
+      "liveProcessesUnderRoot": 0
+    },
+    {
+      "root": "implementation-007-native-pointer-written-25b62ba7f99e",
+      "runs": [
+        {
+          "run": "Preflight-d36a2fc2",
+          "status": "preflight-passed",
+          "trayRestarted": null,
+          "stderr": ""
+        },
+        {
+          "run": "Switch-01ba2fef",
+          "status": "running-candidate",
+          "trayRestarted": "true",
+          "stderr": ""
+        },
+        {
+          "run": "Rollback-bb658c5a",
+          "status": null,
+          "trayRestarted": null,
+          "stderr": ""
+        },
+        {
+          "run": "Rollback-31ed3abc",
+          "status": "running-original",
+          "trayRestarted": "true",
+          "stderr": ""
+        }
+      ],
+      "finalState": "running-original",
+      "intentRemaining": false,
+      "candidateActivationRecorded": true,
+      "selected": "0.1.9003",
+      "recordsRemaining": false,
+      "devSnapshots": 1,
+      "liveProcessesUnderRoot": 0
+    },
+    {
+      "root": "implementation-007-native-restored-monitoring-retry-f6c076e9fd34",
+      "runs": [
+        {
+          "run": "Preflight-d243b92c",
+          "status": "preflight-passed",
+          "trayRestarted": null,
+          "stderr": ""
+        },
+        {
+          "run": "Switch-2520b2ab",
+          "status": "running-candidate",
+          "trayRestarted": "true",
+          "stderr": ""
+        },
+        {
+          "run": "Rollback-d161d40b",
+          "status": null,
+          "trayRestarted": null,
+          "stderr": ""
+        },
+        {
+          "run": "Rollback-436e4ff8",
+          "status": "running-original",
+          "trayRestarted": "true",
+          "stderr": ""
+        }
+      ],
+      "finalState": "running-original",
+      "intentRemaining": false,
+      "candidateActivationRecorded": true,
+      "selected": "0.1.9003",
+      "recordsRemaining": false,
+      "devSnapshots": 1,
+      "liveProcessesUnderRoot": 0
+    }
+  ]
+}

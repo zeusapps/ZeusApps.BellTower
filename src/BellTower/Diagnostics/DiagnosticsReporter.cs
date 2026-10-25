@@ -7,6 +7,7 @@ public sealed class DiagnosticsReporter(DataPaths paths)
 {
     public object Report(string? transcript = null, string transcriptProvider = "claude") => new
     {
+        Version = BellTower.Cli.ApplicationInfo.Display,
         DataDirectory = paths.Root,
         TrayRunning = new TrayController(paths).IsRunning(),
         Capture = new CaptureHealthReporter(paths).Report(),

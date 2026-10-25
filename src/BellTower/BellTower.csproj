@@ -10,6 +10,7 @@
     <ApplicationIcon>Assets/bell-tower.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
+    <InternalsVisibleTo Include="BellTower.Tests" />
     <ProjectReference Include="../BellTower.Protocol/BellTower.Protocol.csproj" />
     <Compile Remove="Core/Observation.cs;Core/EventKind.cs;Core/BackgroundTask.cs;Core/Attachment.cs;Core/HostTarget.cs;Core/ProcessIdentity.cs;IO/ContentHash.cs;Providers/HookInput.cs;Providers/HookAdapter.cs;Providers/OpenSpecSelection.cs;Providers/OpenSpecSelectionReader.cs;Core/ShellGrammar.cs;Core/WorkClassifier.cs;Providers/OpenSpecOperation.cs;Providers/ScaffoldLocator.cs" />
     <ProjectReference Include="../BellTower.Distribution/BellTower.Distribution.csproj" />

@@ -1,0 +1,17 @@
+src/BellTower.Distribution/Installation.cs
+src/BellTower.Distribution/ReleaseContract.cs
+src/BellTower.Distribution/VersionDisplay.cs
+src/BellTower/Cli/ApplicationInfo.cs
+src/BellTower/Cli/ApplicationVersionAction.cs
+src/BellTower/Cli/UpdateCommand.cs
+src/BellTower/Diagnostics/DiagnosticsReporter.cs
+src/BellTower/Tray/OverviewForm.cs
+src/BellTower/Tray/TrayApplication.cs
+src/BellTower/Updates/ReleaseClient.cs
+src/BellTower/Updates/ReleaseOffer.cs
+src/BellTower/Updates/UpdateDiscovery.cs
+src/BellTower/Updates/UpdateTransaction.cs
+tests/BellTower.Tests/Scripts/InstallDevBuildSkillTests.cs
+tests/BellTower.Tests/Scripts/InstallDevScriptTests.cs
+tests/BellTower.Tests/Scripts/PackageScriptTests.cs
+tests/BellTower.Tests/Updates/DevBuildTests.cs

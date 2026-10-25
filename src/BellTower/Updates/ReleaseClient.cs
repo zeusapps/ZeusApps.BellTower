@@ -53,7 +53,7 @@ public sealed class ReleaseClient(HttpClient client)
             metadataResponse.EnsureSuccessStatusCode();
             await CopyAsync(metadataResponse.Content, metadata, 262144, timeout.Token).ConfigureAwait(false);
             var offer = JsonSerializer.Deserialize<ReleaseOffer>(metadata.ToArray(), DistributionJson.Options) ?? throw new InvalidDataException("Missing release metadata.");
-            offer.Validate();
+            offer.EnsureStable();
             if (offer.Version != version)
             { throw new InvalidDataException("Release metadata version mismatch."); }
             return new(offer);

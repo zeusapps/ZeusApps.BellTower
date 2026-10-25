@@ -1,0 +1,5 @@
+{
+  "VsWhere": "C:\\Program Files (x86)\\Microsoft Visual Studio\\Installer\\vswhere.exe",
+  "Instance": "D:\\Tools\\BellTowerBuildTools",
+  "WindowsSdk": "D:\\Windows Kits\\10\\"
+}

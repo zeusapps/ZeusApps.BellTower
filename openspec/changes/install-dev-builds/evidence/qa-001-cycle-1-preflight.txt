@@ -1,0 +1,33 @@
+
+=== extract stable 0.1.8
+D:\Code\ZeusApps.BellTower\artifacts\qa-001-20261024T201914Z\install\versions
+D:\Code\ZeusApps.BellTower\artifacts\qa-001-20261024T201914Z\install\bell-tower.exe
+D:\Code\ZeusApps.BellTower\artifacts\qa-001-20261024T201914Z\install\current.json
+D:\Code\ZeusApps.BellTower\artifacts\qa-001-20261024T201914Z\install\installation.json
+D:\Code\ZeusApps.BellTower\artifacts\qa-001-20261024T201914Z\install\versions\0.1.8
+
+=== stable 0.1.8 start tray (silent, disposable data)
+--version: 0.1.8
+update --status:
+Running 0.1.8; selected 0.1.8.
+No update outcome recorded.
+
+=== Preflight (no mutation check)
+exit=0
+{
+  "status": "preflight-passed",
+  "operationManifest": "D:\\Code\\ZeusApps.BellTower\\artifacts\\qa-001-20261024T201914Z\\workspace\\bell-tower-dev-b8a870ad8b394841b36fcc0c6092aa24\\operation.json",
+  "originalVersion": "0.1.8",
+  "candidateVersion": "0.1.9001",
+  "display": "0.1.9001 dev b74a12b dirty (2026-10-24 20:07 UTC)",
+  "originalFiles": 16,
+  "trayRunning": true,
+  "mutation": "none; only the private operation workspace was written"
+}
+
+snapshot identical: True
+manifest=D:\Code\ZeusApps.BellTower\artifacts\qa-001-20261024T201914Z\workspace\bell-tower-dev-b8a870ad8b394841b36fcc0c6092aa24\operation.json
+
+=== tray still running at 0.1.8?
+Running 0.1.8; selected 0.1.8.
+No update outcome recorded.

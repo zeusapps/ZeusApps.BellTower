@@ -1,0 +1,19 @@
+Test run for D:\Code\ZeusApps.BellTower\tests\BellTower.Tests\bin\Release\net10.0-windows\BellTower.Tests.dll (.NETCoreApp,Version=v10.0)
+VSTest version 18.0.2 (x64)
+
+Starting test execution, please wait...
+A total of 1 test files matched the specified pattern.
+[xUnit.net 00:00:05.89]     BellTower.Tests.Providers.CaptureTests.ConsumerBatchIsBoundedAndCorruptCapturesCannotStarveFollowingDrain [FAIL]
+  Failed BellTower.Tests.Providers.CaptureTests.ConsumerBatchIsBoundedAndCorruptCapturesCannotStarveFollowingDrain [2 s]
+  Error Message:
+   System.UnauthorizedAccessException : Access to the path is denied.
+  Stack Trace:
+     at System.IO.FileSystem.MoveFile(String sourceFullPath, String destFullPath, Boolean overwrite)
+   at BellTower.IO.AtomicFile.Write(String path, String content, Boolean backup) in D:\Code\ZeusApps.BellTower\src\BellTower\IO\AtomicFile.cs:line 26
+   at BellTower.Providers.CaptureConsumer.Prepare(AppState state) in D:\Code\ZeusApps.BellTower\src\BellTower\Providers\CaptureConsumer.cs:line 57
+   at BellTower.IO.StateStore.Drain() in D:\Code\ZeusApps.BellTower\src\BellTower\IO\StateStore.cs:line 27
+   at BellTower.Tests.Providers.CaptureTests.ConsumerBatchIsBoundedAndCorruptCapturesCannotStarveFollowingDrain() in D:\Code\ZeusApps.BellTower\tests\BellTower.Tests\Providers\CaptureTests.cs:line 170
+   at System.Reflection.MethodBaseInvoker.InterpretedInvoke_Method(Object obj, IntPtr* args)
+   at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)
+
+Failed!  - Failed:     1, Passed:   819, Skipped:     0, Total:   820, Duration: 2 m 33 s - BellTower.Tests.dll (net10.0)

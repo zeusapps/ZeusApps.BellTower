@@ -1,0 +1,13 @@
+{
+  "kind": "generated shell hook against installed native helper with synthetic data; not an authenticated Claude Code session",
+  "phase": "Retire",
+  "barrierHeldDuringHook": true,
+  "trial": "LegacyClaude",
+  "budgetMilliseconds": 3000,
+  "elapsedMilliseconds": 1519,
+  "exitCode": 0,
+  "neutralOutput": true,
+  "durableInboxDelta": 1,
+  "durableCaptureDelta": 0,
+  "note": "capture was deferred while Retire barrier remained held; Codex, pair, and NativeMixed trials were not run in the completed attempt"
+}

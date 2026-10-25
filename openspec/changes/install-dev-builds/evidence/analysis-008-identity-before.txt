@@ -1,0 +1,4 @@
+Command (pwsh 7, repository root): ./scripts/review-identity.ps1 -Baseline b74a12b -Paths src tests scripts docs/development.md docs/releases.md docs/installation.md .claude/skills/install-dev-build .agents/skills/install-dev-build
+Run at 2026-10-25T10:29:48Z, before the analysis. The full manifest was printed to the terminal and not saved; the summary line was:
+Summary: head=b74a12b baseline=b74a12b files=34 diff=1eaa17c65cb6 untracked=16/914583263da8
+The after run (analysis-008-identity-after.txt) has the complete manifest and an identical summary line.

@@ -1,0 +1,30 @@
+{
+  "trialExit": 1,
+  "trial": {
+    "hooks": [
+      {
+        "provider": "claude",
+        "passed": false,
+        "timeout": true,
+        "elapsed": 575
+      },
+      {
+        "provider": "codex",
+        "passed": false,
+        "timeout": true,
+        "elapsed": 596
+      }
+    ],
+    "barrierStillActive": true,
+    "harnessError": null
+  },
+  "newShellProcessesAfterTimeout": [
+    39036,
+    42460,
+    7924
+  ],
+  "installerStillHeld": true,
+  "installerFinishedAfterRelease": true,
+  "installerExit": 0,
+  "leftoversStopped": []
+}

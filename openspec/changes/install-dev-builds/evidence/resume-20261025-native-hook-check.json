@@ -1,0 +1,42 @@
+{
+  "Label": "Installed 0.1.10 configured commands; only data root replaced with disposable artifacts directory",
+  "Results": [
+    {
+      "Provider": "claude",
+      "Group": "claude",
+      "Milliseconds": 51,
+      "ExitCode": 127,
+      "Neutral": false,
+      "NoStderr": false,
+      "WithinThreeSeconds": true
+    },
+    {
+      "Provider": "codex",
+      "Group": "codex",
+      "Milliseconds": 41,
+      "ExitCode": 1,
+      "Neutral": false,
+      "NoStderr": false,
+      "WithinThreeSeconds": true
+    },
+    {
+      "Provider": "claude",
+      "Group": "mixed",
+      "Milliseconds": 40,
+      "ExitCode": 127,
+      "Neutral": false,
+      "NoStderr": false,
+      "WithinThreeSeconds": true
+    },
+    {
+      "Provider": "codex",
+      "Group": "mixed",
+      "Milliseconds": 36,
+      "ExitCode": 1,
+      "Neutral": false,
+      "NoStderr": false,
+      "WithinThreeSeconds": true
+    }
+  ],
+  "DurableCaptures": 0
+}

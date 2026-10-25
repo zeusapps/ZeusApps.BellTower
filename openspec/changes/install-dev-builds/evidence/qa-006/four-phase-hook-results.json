@@ -1,0 +1,481 @@
+{
+  "kind": "generated provider-shell and NativeAOT helpers; synthetic install/data; own disposable tray",
+  "phases": [
+    {
+      "phase": "Switch",
+      "exitCode": 0,
+      "output": "{\r\n  \"status\": \"running-candidate\",\r\n  \"operationManifest\": \"D:\\\\Code\\\\ZeusApps.BellTower\\\\artifacts\\\\qa-006\\\\four-phase-435c3c3f6b56443fad1d7c4efbb67ba1\\\\private\\\\bell-tower-dev-9ac087a992cb4e7ea1ffa94371d7e70a\\\\operation.json\",\r\n  \"selectedVersion\": \"0.1.9005\",\r\n  \"trayPid\": 37596,\r\n  \"trayRestarted\": true,\r\n  \"originalBytesPreserved\": true,\r\n  \"restoredFiles\": \"none\",\r\n  \"configurationAndRuntimeFiles\": \"untouched\"\r\n}\r\n",
+      "error": null,
+      "matrix": {
+        "mode": "generated hooks and NativeAOT helper with synthetic provider homes/data",
+        "phase": "Switch",
+        "minimumBlockedMilliseconds": 3500,
+        "barrierElapsedMilliseconds": 3522,
+        "hookBudgetMilliseconds": 3000,
+        "trials": [
+          {
+            "trial": "LegacyClaude",
+            "hookPass": true,
+            "barrierStillHeld": true,
+            "hooks": [
+              {
+                "provider": "claude",
+                "channel": "Legacy",
+                "passed": true,
+                "timeout": false,
+                "elapsedMilliseconds": 1079,
+                "exitCode": 0,
+                "neutralOutput": true,
+                "silentNativeIngress": true
+              }
+            ],
+            "durableCaptureDelta": 0,
+            "durableInboxDelta": 1,
+            "resultFile": "Switch-LegacyClaude-9e183cf019f84317a48c64d21e2cf674.json"
+          },
+          {
+            "trial": "LegacyCodex",
+            "hookPass": true,
+            "barrierStillHeld": true,
+            "hooks": [
+              {
+                "provider": "codex",
+                "channel": "Legacy",
+                "passed": true,
+                "timeout": false,
+                "elapsedMilliseconds": 1093,
+                "exitCode": 0,
+                "neutralOutput": true,
+                "silentNativeIngress": true
+              }
+            ],
+            "durableCaptureDelta": 0,
+            "durableInboxDelta": 1,
+            "resultFile": "Switch-LegacyCodex-0e87eb407eff42eca79bc56f39e8efa4.json"
+          },
+          {
+            "trial": "LegacyMixed",
+            "hookPass": true,
+            "barrierStillHeld": true,
+            "hooks": [
+              {
+                "provider": "claude",
+                "channel": "Legacy",
+                "passed": true,
+                "timeout": false,
+                "elapsedMilliseconds": 1118,
+                "exitCode": 0,
+                "neutralOutput": true,
+                "silentNativeIngress": true
+              },
+              {
+                "provider": "codex",
+                "channel": "Legacy",
+                "passed": true,
+                "timeout": false,
+                "elapsedMilliseconds": 1114,
+                "exitCode": 0,
+                "neutralOutput": true,
+                "silentNativeIngress": true
+              }
+            ],
+            "durableCaptureDelta": 0,
+            "durableInboxDelta": 2,
+            "resultFile": "Switch-LegacyMixed-1764aa9d3a7a4dd49b2b126933017032.json"
+          },
+          {
+            "trial": "NativeMixed",
+            "hookPass": true,
+            "barrierStillHeld": true,
+            "hooks": [
+              {
+                "provider": "claude",
+                "channel": "Native",
+                "passed": true,
+                "timeout": false,
+                "elapsedMilliseconds": 128,
+                "exitCode": 0,
+                "neutralOutput": true,
+                "silentNativeIngress": true
+              },
+              {
+                "provider": "codex",
+                "channel": "Native",
+                "passed": true,
+                "timeout": false,
+                "elapsedMilliseconds": 121,
+                "exitCode": 0,
+                "neutralOutput": true,
+                "silentNativeIngress": true
+              }
+            ],
+            "durableCaptureDelta": 2,
+            "durableInboxDelta": 0,
+            "resultFile": "Switch-NativeMixed-1a74cd7981e346cf9276d203eb0a7998.json"
+          }
+        ],
+        "primaryError": null,
+        "complete": true
+      }
+    },
+    {
+      "phase": "Rollback",
+      "exitCode": 0,
+      "output": "{\r\n  \"status\": \"running-original\",\r\n  \"operationManifest\": \"D:\\\\Code\\\\ZeusApps.BellTower\\\\artifacts\\\\qa-006\\\\four-phase-435c3c3f6b56443fad1d7c4efbb67ba1\\\\private\\\\bell-tower-dev-9ac087a992cb4e7ea1ffa94371d7e70a\\\\operation.json\",\r\n  \"selectedVersion\": \"0.1.10\",\r\n  \"trayPid\": 28104,\r\n  \"trayRestarted\": true,\r\n  \"originalBytesPreserved\": true,\r\n  \"restoredFiles\": \"state.json, state.json.bak, current.json only\",\r\n  \"configurationAndRuntimeFiles\": \"untouched\"\r\n}\r\n",
+      "error": null,
+      "matrix": {
+        "mode": "generated hooks and NativeAOT helper with synthetic provider homes/data",
+        "phase": "Rollback",
+        "minimumBlockedMilliseconds": 3500,
+        "barrierElapsedMilliseconds": 3528,
+        "hookBudgetMilliseconds": 3000,
+        "trials": [
+          {
+            "trial": "LegacyClaude",
+            "hookPass": true,
+            "barrierStillHeld": true,
+            "hooks": [
+              {
+                "provider": "claude",
+                "channel": "Legacy",
+                "passed": true,
+                "timeout": false,
+                "elapsedMilliseconds": 1081,
+                "exitCode": 0,
+                "neutralOutput": true,
+                "silentNativeIngress": true
+              }
+            ],
+            "durableCaptureDelta": 0,
+            "durableInboxDelta": 1,
+            "resultFile": "Rollback-LegacyClaude-da9520d87dbd42eb946e971a2c7ce69d.json"
+          },
+          {
+            "trial": "LegacyCodex",
+            "hookPass": true,
+            "barrierStillHeld": true,
+            "hooks": [
+              {
+                "provider": "codex",
+                "channel": "Legacy",
+                "passed": true,
+                "timeout": false,
+                "elapsedMilliseconds": 1008,
+                "exitCode": 0,
+                "neutralOutput": true,
+                "silentNativeIngress": true
+              }
+            ],
+            "durableCaptureDelta": 0,
+            "durableInboxDelta": 1,
+            "resultFile": "Rollback-LegacyCodex-80d8ff93be364f5e98b59a2e340e4f7d.json"
+          },
+          {
+            "trial": "LegacyMixed",
+            "hookPass": true,
+            "barrierStillHeld": true,
+            "hooks": [
+              {
+                "provider": "claude",
+                "channel": "Legacy",
+                "passed": true,
+                "timeout": false,
+                "elapsedMilliseconds": 1070,
+                "exitCode": 0,
+                "neutralOutput": true,
+                "silentNativeIngress": true
+              },
+              {
+                "provider": "codex",
+                "channel": "Legacy",
+                "passed": true,
+                "timeout": false,
+                "elapsedMilliseconds": 1064,
+                "exitCode": 0,
+                "neutralOutput": true,
+                "silentNativeIngress": true
+              }
+            ],
+            "durableCaptureDelta": 0,
+            "durableInboxDelta": 2,
+            "resultFile": "Rollback-LegacyMixed-2457f74d013242818167b686283a0633.json"
+          },
+          {
+            "trial": "NativeMixed",
+            "hookPass": true,
+            "barrierStillHeld": true,
+            "hooks": [
+              {
+                "provider": "claude",
+                "channel": "Native",
+                "passed": true,
+                "timeout": false,
+                "elapsedMilliseconds": 112,
+                "exitCode": 0,
+                "neutralOutput": true,
+                "silentNativeIngress": true
+              },
+              {
+                "provider": "codex",
+                "channel": "Native",
+                "passed": true,
+                "timeout": false,
+                "elapsedMilliseconds": 106,
+                "exitCode": 0,
+                "neutralOutput": true,
+                "silentNativeIngress": true
+              }
+            ],
+            "durableCaptureDelta": 2,
+            "durableInboxDelta": 0,
+            "resultFile": "Rollback-NativeMixed-aeecaae5cfcb4912a62a0b4997204c43.json"
+          }
+        ],
+        "primaryError": null,
+        "complete": true
+      }
+    },
+    {
+      "phase": "Retire",
+      "payloadVersion": "0.1.9004",
+      "workerCompleted": true,
+      "payloadRemoved": true,
+      "matrix": {
+        "mode": "generated hooks and NativeAOT helper with synthetic provider homes/data",
+        "phase": "Retire",
+        "minimumBlockedMilliseconds": 3500,
+        "barrierElapsedMilliseconds": 3528,
+        "hookBudgetMilliseconds": 3000,
+        "trials": [
+          {
+            "trial": "LegacyClaude",
+            "hookPass": true,
+            "barrierStillHeld": true,
+            "hooks": [
+              {
+                "provider": "claude",
+                "channel": "Legacy",
+                "passed": true,
+                "timeout": false,
+                "elapsedMilliseconds": 999,
+                "exitCode": 0,
+                "neutralOutput": true,
+                "silentNativeIngress": true
+              }
+            ],
+            "durableCaptureDelta": 0,
+            "durableInboxDelta": 1,
+            "resultFile": "Retire-LegacyClaude-231a5972ba1243b593ccade55e06f6c8.json"
+          },
+          {
+            "trial": "LegacyCodex",
+            "hookPass": true,
+            "barrierStillHeld": true,
+            "hooks": [
+              {
+                "provider": "codex",
+                "channel": "Legacy",
+                "passed": true,
+                "timeout": false,
+                "elapsedMilliseconds": 952,
+                "exitCode": 0,
+                "neutralOutput": true,
+                "silentNativeIngress": true
+              }
+            ],
+            "durableCaptureDelta": 0,
+            "durableInboxDelta": 1,
+            "resultFile": "Retire-LegacyCodex-f428f4d6908340b888f0875bcc2d83db.json"
+          },
+          {
+            "trial": "LegacyMixed",
+            "hookPass": true,
+            "barrierStillHeld": true,
+            "hooks": [
+              {
+                "provider": "claude",
+                "channel": "Legacy",
+                "passed": true,
+                "timeout": false,
+                "elapsedMilliseconds": 1103,
+                "exitCode": 0,
+                "neutralOutput": true,
+                "silentNativeIngress": true
+              },
+              {
+                "provider": "codex",
+                "channel": "Legacy",
+                "passed": true,
+                "timeout": false,
+                "elapsedMilliseconds": 1098,
+                "exitCode": 0,
+                "neutralOutput": true,
+                "silentNativeIngress": true
+              }
+            ],
+            "durableCaptureDelta": 0,
+            "durableInboxDelta": 0,
+            "resultFile": "Retire-LegacyMixed-8a3f972dbcfa4b0d9ddce3703ee3e1a9.json"
+          },
+          {
+            "trial": "NativeMixed",
+            "hookPass": true,
+            "barrierStillHeld": true,
+            "hooks": [
+              {
+                "provider": "claude",
+                "channel": "Native",
+                "passed": true,
+                "timeout": false,
+                "elapsedMilliseconds": 111,
+                "exitCode": 0,
+                "neutralOutput": true,
+                "silentNativeIngress": true
+              },
+              {
+                "provider": "codex",
+                "channel": "Native",
+                "passed": true,
+                "timeout": false,
+                "elapsedMilliseconds": 107,
+                "exitCode": 0,
+                "neutralOutput": true,
+                "silentNativeIngress": true
+              }
+            ],
+            "durableCaptureDelta": 2,
+            "durableInboxDelta": 0,
+            "resultFile": "Retire-NativeMixed-65d02825fee54c6e9bfa8920c32e3477.json"
+          }
+        ],
+        "primaryError": null,
+        "complete": true
+      }
+    },
+    {
+      "phase": "Cleanup",
+      "payloadVersion": "0.1.9005",
+      "workerCompleted": true,
+      "payloadRemoved": true,
+      "matrix": {
+        "mode": "generated hooks and NativeAOT helper with synthetic provider homes/data",
+        "phase": "Cleanup",
+        "minimumBlockedMilliseconds": 3500,
+        "barrierElapsedMilliseconds": 3516,
+        "hookBudgetMilliseconds": 3000,
+        "trials": [
+          {
+            "trial": "LegacyClaude",
+            "hookPass": true,
+            "barrierStillHeld": true,
+            "hooks": [
+              {
+                "provider": "claude",
+                "channel": "Legacy",
+                "passed": true,
+                "timeout": false,
+                "elapsedMilliseconds": 1016,
+                "exitCode": 0,
+                "neutralOutput": true,
+                "silentNativeIngress": true
+              }
+            ],
+            "durableCaptureDelta": 0,
+            "durableInboxDelta": 1,
+            "resultFile": "Cleanup-LegacyClaude-adcb5a7b04a242498f045246f44b22d6.json"
+          },
+          {
+            "trial": "LegacyCodex",
+            "hookPass": true,
+            "barrierStillHeld": true,
+            "hooks": [
+              {
+                "provider": "codex",
+                "channel": "Legacy",
+                "passed": true,
+                "timeout": false,
+                "elapsedMilliseconds": 947,
+                "exitCode": 0,
+                "neutralOutput": true,
+                "silentNativeIngress": true
+              }
+            ],
+            "durableCaptureDelta": 0,
+            "durableInboxDelta": 0,
+            "resultFile": "Cleanup-LegacyCodex-07ab03d6308d4b27ae4d0379a20d6c19.json"
+          },
+          {
+            "trial": "LegacyMixed",
+            "hookPass": true,
+            "barrierStillHeld": true,
+            "hooks": [
+              {
+                "provider": "claude",
+                "channel": "Legacy",
+                "passed": true,
+                "timeout": false,
+                "elapsedMilliseconds": 1185,
+                "exitCode": 0,
+                "neutralOutput": true,
+                "silentNativeIngress": true
+              },
+              {
+                "provider": "codex",
+                "channel": "Legacy",
+                "passed": true,
+                "timeout": false,
+                "elapsedMilliseconds": 1180,
+                "exitCode": 0,
+                "neutralOutput": true,
+                "silentNativeIngress": true
+              }
+            ],
+            "durableCaptureDelta": 0,
+            "durableInboxDelta": -1,
+            "resultFile": "Cleanup-LegacyMixed-3afe9c96d8574417801cd4ce597c8b9d.json"
+          },
+          {
+            "trial": "NativeMixed",
+            "hookPass": true,
+            "barrierStillHeld": true,
+            "hooks": [
+              {
+                "provider": "claude",
+                "channel": "Native",
+                "passed": true,
+                "timeout": false,
+                "elapsedMilliseconds": 113,
+                "exitCode": 0,
+                "neutralOutput": true,
+                "silentNativeIngress": true
+              },
+              {
+                "provider": "codex",
+                "channel": "Native",
+                "passed": true,
+                "timeout": false,
+                "elapsedMilliseconds": 110,
+                "exitCode": 0,
+                "neutralOutput": true,
+                "silentNativeIngress": true
+              }
+            ],
+            "durableCaptureDelta": 2,
+            "durableInboxDelta": 0,
+            "resultFile": "Cleanup-NativeMixed-3523bb5dad6e41fb8e6eb63db42462c5.json"
+          }
+        ],
+        "primaryError": null,
+        "complete": true
+      }
+    }
+  ],
+  "leaseTarget": "0.1.9001",
+  "leasedPayloadRetained": true,
+  "previousVersionRetained": true,
+  "recoveryPayloadRetained": true,
+  "selectedOriginalRetained": true,
+  "retireTargetAbsent": true,
+  "cleanupTargetAbsent": true,
+  "fixtureRoot": "D:\\Code\\ZeusApps.BellTower\\artifacts\\qa-006\\four-phase-435c3c3f6b56443fad1d7c4efbb67ba1"
+}

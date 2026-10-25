@@ -1,0 +1,43 @@
+{
+  "Label": "Installed 0.1.10 configured commands; only final data argument replaced, helper path retained",
+  "Results": [
+    {
+      "Provider": "claude",
+      "Group": "claude",
+      "Milliseconds": 108,
+      "ExitCode": 0,
+      "Neutral": true,
+      "NoStderr": true,
+      "WithinThreeSeconds": true
+    },
+    {
+      "Provider": "codex",
+      "Group": "codex",
+      "Milliseconds": 74,
+      "ExitCode": 0,
+      "Neutral": true,
+      "NoStderr": true,
+      "WithinThreeSeconds": true
+    },
+    {
+      "Provider": "claude",
+      "Group": "mixed",
+      "Milliseconds": 109,
+      "ExitCode": 0,
+      "Neutral": true,
+      "NoStderr": true,
+      "WithinThreeSeconds": true
+    },
+    {
+      "Provider": "codex",
+      "Group": "mixed",
+      "Milliseconds": 104,
+      "ExitCode": 0,
+      "Neutral": true,
+      "NoStderr": true,
+      "WithinThreeSeconds": true
+    }
+  ],
+  "DurableCaptures": 4,
+  "CorrectsPriorHarness": "Initial harness replaced the data-root prefix inside the helper executable path too, producing file-not-found. No configured command was changed by either smoke."
+}

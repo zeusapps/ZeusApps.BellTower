@@ -1,0 +1,11 @@
+{
+  "status": "preflight-passed",
+  "selectedBefore": "0.1.10",
+  "selectedAfter": "0.1.10",
+  "selectionUnchanged": true,
+  "launcherUnchanged": true,
+  "payloadCountBefore": 24,
+  "payloadCountAfter": 24,
+  "payloadHashesUnchanged": true,
+  "trayIdentityUnchanged": true
+}

@@ -1,0 +1,8 @@
+{
+  "timeZone": "Central European Standard Time",
+  "installDuringDst": true,
+  "rawDmtfOffset": "+120",
+  "rawWallMinusTruthHours": 2.0,
+  "cimKind": "Local",
+  "cimToUtcMinusTruthSeconds": 0.0
+}

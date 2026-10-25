@@ -1,0 +1,226 @@
+{
+  "generatedUtc": "2026-10-25T10:12:38.2074045Z",
+  "evidenceType": "installed native, synthetic disposable installation and data",
+  "package": "D:\\Code\\ZeusApps.BellTower\\artifacts\\dev-builds\\bell-tower-0.1.9006-win-x64.zip",
+  "packageSha256": "5e5258894518e9856de4eef5534bebe8038d827767189e2baf316d6bbe8570d0",
+  "installer": "9ba060a56df708cb4db16d44ee070380a222e11a63a180e8c5cfaa54f0ce22a0",
+  "cases": [
+    {
+      "case": "marker-negatives",
+      "root": "D:\\Code\\ZeusApps.BellTower\\artifacts\\qa-007\\native-marker-negatives-c728873d43",
+      "passed": true,
+      "freeGBAtStart": 18.08,
+      "initialTray": {
+        "pid": 25800,
+        "version": "0.1.9003"
+      },
+      "preflightReadOnly": true,
+      "ownerFields": [
+        "Pid",
+        "StartedUtcTicks"
+      ],
+      "recordFields": {
+        "pending": [
+          "Id",
+          "Token",
+          "Root",
+          "DataDirectory",
+          "Original",
+          "Target",
+          "ContractHash",
+          "Created",
+          "Owner",
+          "HadTray"
+        ],
+        "restart": [
+          "Id",
+          "Token",
+          "Root",
+          "DataDirectory",
+          "Original",
+          "Target",
+          "ContractHash",
+          "Created",
+          "Owner",
+          "HadTray"
+        ]
+      },
+      "tampers": [
+        {
+          "tamper": "pending-token",
+          "refused": true,
+          "pendingUnchanged": true,
+          "restartUnchanged": true,
+          "selectionUnchanged": true,
+          "manifestUnchanged": true,
+          "noTrayStarted": true,
+          "message": "845 |  . ]::Ended) { throw ('The complete pending/restart recovery tuple or en . ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ The complete pending/restart recovery tuple or ended-owner proof differs (failed="
+        },
+        {
+          "tamper": "pending-id",
+          "refused": true,
+          "pendingUnchanged": true,
+          "restartUnchanged": true,
+          "selectionUnchanged": true,
+          "manifestUnchanged": true,
+          "noTrayStarted": true,
+          "message": "845 |  . ]::Ended) { throw ('The complete pending/restart recovery tuple or en . ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ The complete pending/restart recovery tuple or ended-owner proof differs (failed="
+        },
+        {
+          "tamper": "restart-token",
+          "refused": true,
+          "pendingUnchanged": true,
+          "restartUnchanged": true,
+          "selectionUnchanged": true,
+          "manifestUnchanged": true,
+          "noTrayStarted": true,
+          "message": "845 |  . ]::Ended) { throw ('The complete pending/restart recovery tuple or en . ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ The complete pending/restart recovery tuple or ended-owner proof differs (failed="
+        },
+        {
+          "tamper": "restart-id",
+          "refused": true,
+          "pendingUnchanged": true,
+          "restartUnchanged": true,
+          "selectionUnchanged": true,
+          "manifestUnchanged": true,
+          "noTrayStarted": true,
+          "message": "845 |  . ]::Ended) { throw ('The complete pending/restart recovery tuple or en . ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ The complete pending/restart recovery tuple or ended-owner proof differs (failed="
+        },
+        {
+          "tamper": "pending-unknown-field",
+          "refused": true,
+          "pendingUnchanged": true,
+          "restartUnchanged": true,
+          "selectionUnchanged": true,
+          "manifestUnchanged": true,
+          "noTrayStarted": true,
+          "message": "851 |  .             throw 'A recovery marker changed bytes or differs from th . ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ A recovery marker changed bytes or differs from the complete manifest tuple; pres"
+        },
+        {
+          "tamper": "restart-unknown-field",
+          "refused": true,
+          "pendingUnchanged": true,
+          "restartUnchanged": true,
+          "selectionUnchanged": true,
+          "manifestUnchanged": true,
+          "noTrayStarted": true,
+          "message": "851 |  .             throw 'A recovery marker changed bytes or differs from th . ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ A recovery marker changed bytes or differs from the complete manifest tuple; pres"
+        },
+        {
+          "tamper": "pending-trailing-byte",
+          "refused": true,
+          "pendingUnchanged": true,
+          "restartUnchanged": true,
+          "selectionUnchanged": true,
+          "manifestUnchanged": true,
+          "noTrayStarted": true,
+          "message": "851 |  .             throw 'A recovery marker changed bytes or differs from th . ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ A recovery marker changed bytes or differs from the complete manifest tuple; pres"
+        },
+        {
+          "tamper": "restart-trailing-byte",
+          "refused": true,
+          "pendingUnchanged": true,
+          "restartUnchanged": true,
+          "selectionUnchanged": true,
+          "manifestUnchanged": true,
+          "noTrayStarted": true,
+          "message": "851 |  .             throw 'A recovery marker changed bytes or differs from th . ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ A recovery marker changed bytes or differs from the complete manifest tuple; pres"
+        },
+        {
+          "tamper": "restart-missing",
+          "refused": true,
+          "pendingUnchanged": true,
+          "restartUnchanged": true,
+          "selectionUnchanged": true,
+          "manifestUnchanged": true,
+          "noTrayStarted": true,
+          "message": "813 |              [BellTower.Updates.UpdateTransaction]::EnsureNoCoordinato . ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Exception calling \"EnsureNoCoordinator\" with \"1\" argument(s): \"An interrupted updat"
+        },
+        {
+          "tamper": "pending-missing",
+          "refused": true,
+          "pendingUnchanged": true,
+          "restartUnchanged": true,
+          "selectionUnchanged": true,
+          "manifestUnchanged": true,
+          "noTrayStarted": true,
+          "message": "867 |  . tartPath) { throw 'A restart coordination record already exists; insp . ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ A restart coordination record already exists; inspect it before starting another "
+        },
+        {
+          "tamper": "pending-version",
+          "refused": true,
+          "pendingUnchanged": true,
+          "restartUnchanged": true,
+          "selectionUnchanged": true,
+          "manifestUnchanged": true,
+          "noTrayStarted": true,
+          "message": "845 |  . ]::Ended) { throw ('The complete pending/restart recovery tuple or en . ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ The complete pending/restart recovery tuple or ended-owner proof differs (failed="
+        },
+        {
+          "tamper": "restart-original",
+          "refused": true,
+          "pendingUnchanged": true,
+          "restartUnchanged": true,
+          "selectionUnchanged": true,
+          "manifestUnchanged": true,
+          "noTrayStarted": true,
+          "message": "845 |  . ]::Ended) { throw ('The complete pending/restart recovery tuple or en . ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ The complete pending/restart recovery tuple or ended-owner proof differs (failed="
+        },
+        {
+          "tamper": "pending-owner-live-foreign",
+          "refused": true,
+          "pendingUnchanged": true,
+          "restartUnchanged": true,
+          "selectionUnchanged": true,
+          "manifestUnchanged": true,
+          "noTrayStarted": true,
+          "message": "845 |  . ]::Ended) { throw ('The complete pending/restart recovery tuple or en . ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ The complete pending/restart recovery tuple or ended-owner proof differs (failed="
+        },
+        {
+          "tamper": "restart-owner-live-foreign",
+          "refused": true,
+          "pendingUnchanged": true,
+          "restartUnchanged": true,
+          "selectionUnchanged": true,
+          "manifestUnchanged": true,
+          "noTrayStarted": true,
+          "message": "845 |  . ]::Ended) { throw ('The complete pending/restart recovery tuple or en . ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ The complete pending/restart recovery tuple or ended-owner proof differs (failed="
+        },
+        {
+          "tamper": "pending-expired",
+          "refused": true,
+          "pendingUnchanged": true,
+          "restartUnchanged": true,
+          "selectionUnchanged": true,
+          "manifestUnchanged": true,
+          "noTrayStarted": true,
+          "message": "845 |  . ]::Ended) { throw ('The complete pending/restart recovery tuple or en . ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ The complete pending/restart recovery tuple or ended-owner proof differs (failed="
+        },
+        {
+          "tamper": "restart-expired",
+          "refused": true,
+          "pendingUnchanged": true,
+          "restartUnchanged": true,
+          "selectionUnchanged": true,
+          "manifestUnchanged": true,
+          "noTrayStarted": true,
+          "message": "845 |  . ]::Ended) { throw ('The complete pending/restart recovery tuple or en . ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ The complete pending/restart recovery tuple or ended-owner proof differs (failed="
+        }
+      ],
+      "control": {
+        "exitCode": 1,
+        "output": "Exception: D:\\Code\\ZeusApps.BellTower\\scripts\\install-dev.ps1:1062:59 Line | 1062 |  . pe Leaf)) { throw 'Operation coordination record disappeared; preserv . ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Operation coordination record disappeared; preserving recovery state.",
+        "originalTrayRunning": true
+      },
+      "seconds": 30.7,
+      "cleanup": {
+        "trayExitRequested": true,
+        "trayEnded": true,
+        "leftovers": [],
+        "remainingAfterCleanup": 0
+      }
+    }
+  ],
+  "allPassed": true,
+  "remainingProcesses": 0.0
+}

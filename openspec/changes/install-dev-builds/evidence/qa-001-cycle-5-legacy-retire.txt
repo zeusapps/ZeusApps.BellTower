@@ -1,0 +1,17 @@
+=== Retire legacy 0.1.10 without -Legacy
+Exception: D:\Code\ZeusApps.BellTower\scripts\install-dev.ps1:208
+Line |
+ 208 |  … !$Legacy) { throw "Refused: $Version is not a dev build (no dev marke …
+     |                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     | Refused: 0.1.10 is not a dev build (no dev marker, outside the reserved range). Name an earlier unmarked dev
+     | build explicitly with -Legacy.
+
+=== Retire legacy 0.1.10 with -Legacy
+{
+  "status": "retired",
+  "version": "0.1.10",
+  "selectedVersion": "0.1.8",
+  "record": "D:\\Code\\ZeusApps.BellTower\\artifacts\\qa-001-20261024T201914Z\\workspace\\retire-0.1.10-20261024T202152Z.json"
+}
+
+versions: 0.1.8

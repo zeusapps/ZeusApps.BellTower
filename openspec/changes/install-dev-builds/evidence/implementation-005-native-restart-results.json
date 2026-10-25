@@ -1,0 +1,66 @@
+{
+  "preflight": "passed",
+  "failedSwitchRecovery": {
+    "status": "running-original",
+    "operationManifest": "D:\\Code\\ZeusApps.BellTower\\artifacts\\implementation-005-native-restart-28e226200e8446ad82d82c0f776cefc3\\private\\bell-tower-dev-4b6f55d0717242268a9a5e831de4bc01\\operation.json",
+    "selectedVersion": "0.1.9003",
+    "trayPid": 24552,
+    "trayRestarted": true,
+    "originalBytesPreserved": true,
+    "restoredFiles": "state.json, state.json.bak, current.json only",
+    "configurationAndRuntimeFiles": "untouched"
+  },
+  "switch": {
+    "status": "running-candidate",
+    "operationManifest": "D:\\Code\\ZeusApps.BellTower\\artifacts\\implementation-005-native-restart-28e226200e8446ad82d82c0f776cefc3\\private\\bell-tower-dev-d2db52a22f58435cbb349ca7a6002d1d\\operation.json",
+    "selectedVersion": "0.1.9002",
+    "trayPid": 27052,
+    "trayRestarted": true,
+    "originalBytesPreserved": true,
+    "restoredFiles": "none",
+    "configurationAndRuntimeFiles": "untouched"
+  },
+  "failedRollbackRestartRecovered": {
+    "status": "running-original",
+    "operationManifest": "D:\\Code\\ZeusApps.BellTower\\artifacts\\implementation-005-native-restart-28e226200e8446ad82d82c0f776cefc3\\private\\bell-tower-dev-d2db52a22f58435cbb349ca7a6002d1d\\operation.json",
+    "selectedVersion": "0.1.9003",
+    "trayPid": 9256,
+    "trayRestarted": true,
+    "originalBytesPreserved": true,
+    "restoredFiles": "state.json, state.json.bak, current.json only",
+    "configurationAndRuntimeFiles": "untouched"
+  },
+  "switchedTray": {
+    "Process": {
+      "Pid": 27052,
+      "StartedUtcTicks": 639285112376093738
+    },
+    "Version": "0.1.9002",
+    "DataDirectory": "D:\\Code\\ZeusApps.BellTower\\artifacts\\implementation-005-native-restart-28e226200e8446ad82d82c0f776cefc3\\data",
+    "Activation": "6116313c82d3446dbcf717f590998987",
+    "Capture": 1
+  },
+  "restoredTray": {
+    "Process": {
+      "Pid": 9256,
+      "StartedUtcTicks": 639285112427460531
+    },
+    "Version": "0.1.9003",
+    "DataDirectory": "D:\\Code\\ZeusApps.BellTower\\artifacts\\implementation-005-native-restart-28e226200e8446ad82d82c0f776cefc3\\data",
+    "Activation": "93d42621b44c40b4bf18793ddc7a1b68",
+    "Capture": 1
+  },
+  "stalePresenceRemains": true,
+  "stoppedPreflight": {
+    "status": "preflight-passed",
+    "operationManifest": "D:\\Code\\ZeusApps.BellTower\\artifacts\\implementation-005-native-restart-28e226200e8446ad82d82c0f776cefc3\\private\\bell-tower-dev-450176015f234958848ce2678ca796d3\\operation.json",
+    "originalVersion": "0.1.9003",
+    "candidateVersion": "0.1.9001",
+    "display": "0.1.9001 dev b74a12b dirty (2026-10-24 20:07 UTC)",
+    "originalFiles": 27,
+    "trayRunning": false,
+    "mutation": "none; only the private operation workspace was written"
+  },
+  "retiredCandidate": "automatic cleanup removed 0.1.9001",
+  "disposableRoot": "D:\\Code\\ZeusApps.BellTower\\artifacts\\implementation-005-native-restart-28e226200e8446ad82d82c0f776cefc3"
+}

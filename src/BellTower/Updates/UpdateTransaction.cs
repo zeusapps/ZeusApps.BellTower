@@ -8,6 +8,7 @@ namespace BellTower.Updates;
 
 public static class UpdateTransaction
 {
+    internal static Action<string, string>? PayloadRemovalTestCheckpoint { get; set; }
     public static string Marker(DataPaths paths) => Path.Combine(paths.Root, "updates", "restart.json");
     public static string Presence(DataPaths paths) => Path.Combine(paths.Root, "updates", "tray.json");
     public static string PlanPath(Installation installation, string id) => Path.Combine(installation.Root, "updates", id, "plan.json");
@@ -32,6 +33,7 @@ public static class UpdateTransaction
     }
     public static UpdatePlan Stage(Installation installation, DataPaths paths, string archive, ReleaseOffer offer)
     {
+        offer.EnsureStable();
         Installation.EnsurePlainPath(paths.Root);
         if (Contains(installation.Root, paths.Root) || Contains(paths.Root, installation.Root))
         { throw new IOException("Keep installation and data directories separate."); }
@@ -40,7 +42,8 @@ public static class UpdateTransaction
         CaptureCompatibility.Ensure(paths.Root, offer.Contract.Capture, offer.Contract.AttachmentHealth);
         EnsureNoCoordinator(installation);
         var selected = installation.Selection();
-        if (ReleaseContract.Parse(offer.Version) <= ReleaseContract.Parse(selected.Version))
+        // A dev selection counts as its stable base version, so a stable release can replace it.
+        if (ReleaseContract.Parse(offer.Version) <= installation.Contract(selected.Version).EffectiveVersion)
         { throw new IOException("This version is already selected or superseded."); }
         var id = Guid.NewGuid().ToString("N");
         var staging = Path.Combine(installation.Root, "updates", id);
@@ -185,11 +188,24 @@ public static class UpdateTransaction
     public static void Cleanup(Installation installation)
     {
         using var mutation = new InstallationGate(installation.Root, "update");
-        using var launch = new InstallationGate(installation.Root);
+        var retained = RetainedVersions(installation);
+        foreach (var directory in Directory.EnumerateDirectories(Path.Combine(installation.Root, "versions")))
+        { _ = TryRemovePayload(installation, Path.GetFileName(directory), retained, false); }
+    }
+    /// <summary>Removes one dev-marked payload under the same retention rules as <see cref="Cleanup"/>. Returns null when removed, otherwise the reason it was kept.</summary>
+    public static string? Retire(Installation installation, string version)
+    {
+        _ = ReleaseContract.Parse(version);
+        using var mutation = new InstallationGate(installation.Root, "update");
+        return TryRemovePayload(installation, version, RetainedVersions(installation), true);
+    }
+    /// <summary>Versions that must stay, each with the reason: the selected version, its previous version, and versions an unfinished update may need to recover.</summary>
+    public static Dictionary<string, string> RetainedVersions(Installation installation)
+    {
         var selected = installation.Selection();
-        var retained = new HashSet<string>(StringComparer.Ordinal) { selected.Version };
+        var retained = new Dictionary<string, string>(StringComparer.Ordinal) { [selected.Version] = "the selected version" };
         if (selected.Previous is not null)
-        { retained.Add(selected.Previous); }
+        { retained.TryAdd(selected.Previous, "the recorded previous version (needed for rollback)"); }
         var updatesRoot = Path.Combine(installation.Root, "updates");
         if (Directory.Exists(updatesRoot))
         {
@@ -203,32 +219,54 @@ public static class UpdateTransaction
                 if (!File.Exists(outcomeFile) || DistributionJson.Read<UpdateOutcome>(outcomeFile).State is "failed" or "rolled-back" or "staged")
                 {
                     var recovery = DistributionJson.Read<UpdatePlan>(planFile);
-                    retained.Add(recovery.Original);
-                    retained.Add(recovery.Target);
+                    retained.TryAdd(recovery.Original, "retained by an unfinished update's recovery material");
+                    retained.TryAdd(recovery.Target, "retained by an unfinished update's recovery material");
                 }
             }
         }
-        foreach (var directory in Directory.EnumerateDirectories(Path.Combine(installation.Root, "versions")))
+        return retained;
+    }
+    /// <summary>The one removal rule: not retained, valid contract, no lease, only owned files with matching hashes. The caller holds the update gate; this method keeps the launch gate only while checking selection and acquiring an exclusive payload lease.</summary>
+    public static string? TryRemovePayload(Installation installation, string version, IReadOnlyDictionary<string, string> retained, bool requireDevMarker)
+    {
+        FileStream lease;
+        using (var launch = new InstallationGate(installation.Root))
         {
-            var version = Path.GetFileName(directory);
-            if (retained.Contains(version))
-            { continue; }
+            var selection = installation.Selection();
+            if (selection.Version == version)
+            { return $"{version} is the selected version."; }
+            if (selection.Previous == version)
+            { return $"{version} is the recorded previous version (needed for rollback)."; }
+            if (retained.TryGetValue(version, out var why))
+            { return $"{version} is {why}."; }
+            try
+            { lease = installation.Lease(version, true); }
+            catch (IOException)
+            { return $"{version} is leased by a running Bell Tower process."; }
+        }
+        var directory = Path.Combine(installation.Root, "versions", version);
+        using (lease)
+        {
             try
             {
                 var contract = DistributionJson.Read<ReleaseContract>(Path.Combine(directory, "release.json"));
                 contract.Validate();
-                using var lease = installation.Lease(version, true);
+                if (requireDevMarker && contract.Build is not { Channel: ReleaseBuild.DevChannel })
+                { return $"{version} has no dev marker, so it is not retired here; the tray's automatic cleanup reclaims unmarked payloads once they are neither selected nor retained."; }
                 Installation.EnsurePlainPath(directory);
                 var files = CollectOwnedFiles(directory).ToArray();
                 // Preserve unowned or modified files, including recovery material.
-                if (files.Any(file => Path.GetRelativePath(directory, file).Replace('\\', '/') is var name && name != "release.json" && contract.Files?.ContainsKey(name) != true))
-                { continue; }
+                if (files.FirstOrDefault(file => Path.GetRelativePath(directory, file).Replace('\\', '/') is var name && name != "release.json" && contract.Files?.ContainsKey(name) != true) is { } unowned)
+                { return $"{version} holds a file Bell Tower did not install ({Path.GetRelativePath(directory, unowned)}); inspect it privately."; }
+                PayloadRemovalTestCheckpoint?.Invoke(installation.Root, version);
                 Installation.VerifyFiles(directory, contract);
                 foreach (var file in files)
                 { Installation.EnsurePlainPath(file); }
                 Directory.Delete(directory, true);
+                return null;
             }
-            catch (Exception error) when (error is IOException or UnauthorizedAccessException or System.Text.Json.JsonException) { }
+            catch (Exception error) when (error is IOException or UnauthorizedAccessException or System.Text.Json.JsonException)
+            { return $"{version} could not be removed: {error.Message}"; }
         }
     }
     private static IEnumerable<string> CollectOwnedFiles(string directory)
@@ -284,12 +322,16 @@ public static class UpdateTransaction
         }
         throw new IOException(message);
     }
-    private static void EnsureNoCoordinator(Installation installation)
+    public static void EnsureNoCoordinator(Installation installation) => EnsureNoCoordinator(installation, null);
+    public static void EnsureNoCoordinator(Installation installation, UpdatePlan? expectedRecovery)
     {
         var pending = Path.Combine(installation.Root, "updates", "pending.json");
         if (!File.Exists(pending))
         { return; }
         var plan = DistributionJson.Read<UpdatePlan>(pending, 16384);
+        if (expectedRecovery is not null && plan == expectedRecovery && Path.GetFullPath(plan.Root).Equals(installation.Root, StringComparison.OrdinalIgnoreCase) &&
+            ProcessProbe.Inspect(plan.Owner) == ProcessLiveness.Ended)
+        { return; }
         if (ProcessProbe.IsAlive(plan.Owner) && DateTimeOffset.UtcNow - plan.Created < TimeSpan.FromMinutes(10))
         { throw new IOException("A staged update is active; wait and inspect update --status."); }
         throw new IOException("An interrupted update needs inspection. Retain its recovery directory; see update --status and releases documentation.");

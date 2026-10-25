@@ -1,0 +1,156 @@
+{
+  "generatedUtc": "2026-10-25T10:54:42.0058347Z",
+  "evidenceType": "installed native, synthetic disposable installation and data",
+  "package": "D:\\Code\\ZeusApps.BellTower\\artifacts\\dev-builds\\bell-tower-0.1.9006-win-x64.zip",
+  "packageSha256": "5e5258894518e9856de4eef5534bebe8038d827767189e2baf316d6bbe8570d0",
+  "installer": "ae5252a0ca5cbfc5987d85d1a50b04ff418292a0afb9ccbef893c84a0beac407",
+  "cases": [
+    {
+      "case": "rollback-never-selected",
+      "root": "D:\\Code\\ZeusApps.BellTower\\artifacts\\qa-009\\native-rollback-never-selected-431bdd1f94",
+      "passed": true,
+      "freeGBAtStart": 16.01,
+      "initialTray": {
+        "pid": 24016,
+        "version": "0.1.9003"
+      },
+      "preflightReadOnly": true,
+      "interrupted": {
+        "state": "original-stopped",
+        "selectionOriginal": true,
+        "trayStopped": true,
+        "recordsPresent": true
+      },
+      "fence": {
+        "samples": 116,
+        "samplesWithTrayOrPresence": 56,
+        "samplesWithTrayOrPresenceAndRecordsBothPresent": 53,
+        "samplesPresenceOriginalWithOpActivation": 17,
+        "ofWhichRecordsBothPresent": 14,
+        "firstTraySampleMs": 1612,
+        "lastSampleWithRecordsMs": 2503,
+        "lastPresenceOpSampleWithRecordsMs": 2503,
+        "monotonic": true,
+        "firstTraySampleRecords": {
+          "restart": true,
+          "pending": true
+        },
+        "firstRecordsAbsentMs": 2532,
+        "violations": [
+          {
+            "ms": 2532,
+            "trayProcess": true,
+            "presenceLive": true,
+            "presenceVersion": "0.1.9003",
+            "presenceActivationIsOp": true,
+            "restart": false,
+            "pending": false
+          },
+          {
+            "ms": 2565,
+            "trayProcess": true,
+            "presenceLive": true,
+            "presenceVersion": "0.1.9003",
+            "presenceActivationIsOp": true,
+            "restart": false,
+            "pending": false
+          },
+          {
+            "ms": 2597,
+            "trayProcess": true,
+            "presenceLive": true,
+            "presenceVersion": "0.1.9003",
+            "presenceActivationIsOp": true,
+            "restart": false,
+            "pending": false
+          }
+        ],
+        "allSamplesHead": [
+          {
+            "ms": 34,
+            "trayProcess": false,
+            "presenceLive": false,
+            "presenceVersion": null,
+            "presenceActivationIsOp": false,
+            "restart": true,
+            "pending": true
+          },
+          {
+            "ms": 65,
+            "trayProcess": false,
+            "presenceLive": false,
+            "presenceVersion": null,
+            "presenceActivationIsOp": false,
+            "restart": true,
+            "pending": true
+          },
+          {
+            "ms": 93,
+            "trayProcess": false,
+            "presenceLive": false,
+            "presenceVersion": null,
+            "presenceActivationIsOp": false,
+            "restart": true,
+            "pending": true
+          }
+        ],
+        "allSamplesTail": [
+          {
+            "ms": 2503,
+            "trayProcess": true,
+            "presenceLive": true,
+            "presenceVersion": "0.1.9003",
+            "presenceActivationIsOp": true,
+            "restart": true,
+            "pending": true
+          },
+          {
+            "ms": 2532,
+            "trayProcess": true,
+            "presenceLive": true,
+            "presenceVersion": "0.1.9003",
+            "presenceActivationIsOp": true,
+            "restart": false,
+            "pending": false
+          },
+          {
+            "ms": 2565,
+            "trayProcess": true,
+            "presenceLive": true,
+            "presenceVersion": "0.1.9003",
+            "presenceActivationIsOp": true,
+            "restart": false,
+            "pending": false
+          },
+          {
+            "ms": 2597,
+            "trayProcess": true,
+            "presenceLive": true,
+            "presenceVersion": "0.1.9003",
+            "presenceActivationIsOp": true,
+            "restart": false,
+            "pending": false
+          }
+        ]
+      },
+      "rollback": {
+        "exitCode": 0,
+        "output": "{ \"status\": \"running-original\", \"operationManifest\": \"D:\\\\Code\\\\ZeusApps.BellTower\\\\artifacts\\\\qa-009\\\\native-rollback-never-selected-431bdd1f94\\\\private\\\\bell-tower-dev-d31bc6150bc0463db2b4255c0a228d97\\\\operation.json\", \"selectedVersion\": \"0.1.9003\", \"trayPid\": 37240, \"trayRestarted\": true, \"originalBytesPreserved\": true, \"restoredFiles\": \"state.json, state.json.bak, current.json only\", \"configurationAndRuntimeFiles\": \"untouched\" }",
+        "manifestState": "running-original",
+        "originalTrayRunning": true,
+        "recordsRemoved": true,
+        "selectionOriginal": true
+      },
+      "fenceHolds": true,
+      "seconds": 9.5,
+      "cleanup": {
+        "trayExitRequested": true,
+        "trayEnded": true,
+        "leftovers": [],
+        "remainingAfterCleanup": 0
+      }
+    }
+  ],
+  "allPassed": true,
+  "remainingProcesses": 0.0
+}

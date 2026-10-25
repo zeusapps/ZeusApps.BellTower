@@ -37,6 +37,14 @@ public sealed class Installation
         { throw new InvalidDataException("Incomplete version payload."); }
         return path;
     }
+    public ReleaseContract Contract(string version) => DistributionJson.Read<ReleaseContract>(Path.Combine(Payload(version), "release.json"));
+    /// <summary>The stable version that update checks compare against: a dev selection counts as its base version.</summary>
+    public System.Version EffectiveVersion() => Contract(Selection().Version).EffectiveVersion;
+    public string DisplayVersion(string version)
+    {
+        var contract = Contract(version);
+        return VersionDisplay.Format(contract.Version, contract.Build);
+    }
     public FileStream Lease(string version, bool exclusive = false)
     {
         _ = ReleaseContract.Parse(version);

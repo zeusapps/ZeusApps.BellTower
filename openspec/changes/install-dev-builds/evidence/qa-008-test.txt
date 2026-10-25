@@ -1,0 +1,21 @@
+Test run for D:\Code\ZeusApps.BellTower\tests\BellTower.Tests\bin\Release\net10.0-windows\BellTower.Tests.dll (.NETCoreApp,Version=v10.0)
+VSTest version 18.0.2 (x64)
+
+Starting test execution, please wait...
+A total of 1 test files matched the specified pattern.
+[xUnit.net 00:01:00.64]     BellTower.Tests.Scripts.InstallDevScriptTests.RollbackRefusesAPointerIntentThatIsNotExactlyBound(drift: "operation", expected: "failed=operation") [FAIL]
+  Failed BellTower.Tests.Scripts.InstallDevScriptTests.RollbackRefusesAPointerIntentThatIsNotExactlyBound(drift: "operation", expected: "failed=operation") [3 s]
+  Error Message:
+   Installer did not reach barrier rollback-pointer-written: Exception: D:\Code\ZeusApps.BellTower\scripts\install-dev.ps1:415:19
+Line |
+ 415 |  .   } catch { throw ('A Bell Tower process could not be safely classifi .
+     |                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     | A Bell Tower process could not be safely classified (PID 37664); refusing before selection mutation.
+
+  Stack Trace:
+     at BellTower.Tests.Scripts.InstallDevScriptTests.WaitForBarrier(String barriers, String phase, RunningInstaller installer) in D:\Code\ZeusApps.BellTower\tests\BellTower.Tests\Scripts\InstallDevScriptTests.Recovery.cs:line 451
+   at BellTower.Tests.Scripts.InstallDevScriptTests.RollbackRefusesAPointerIntentThatIsNotExactlyBound(String drift, String expected) in D:\Code\ZeusApps.BellTower\tests\BellTower.Tests\Scripts\InstallDevScriptTests.Recovery.cs:line 306
+   at InvokeStub_InstallDevScriptTests.RollbackRefusesAPointerIntentThatIsNotExactlyBound(Object, Span`1)
+   at System.Reflection.MethodBaseInvoker.InvokeWithFewArgs(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)
+
+Failed!  - Failed:     1, Passed:   816, Skipped:     0, Total:   817, Duration: 2 m 41 s - BellTower.Tests.dll (net10.0)

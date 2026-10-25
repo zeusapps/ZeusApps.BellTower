@@ -1,0 +1,22 @@
+  Determining projects to restore...
+  Restored D:\Code\ZeusApps.BellTower\src\BellTower.Distribution\BellTower.Distribution.csproj (in 573 ms).
+  Restored D:\Code\ZeusApps.BellTower\src\BellTower.Protocol\BellTower.Protocol.csproj (in 592 ms).
+  Restored D:\Code\ZeusApps.BellTower\src\BellTower\BellTower.csproj (in 603 ms).
+  Determining projects to restore...
+  Restored D:\Code\ZeusApps.BellTower\src\BellTower.Launcher\BellTower.Launcher.csproj (in 307 ms).
+  1 of 2 projects are up-to-date for restore.
+  Determining projects to restore...
+  Restored D:\Code\ZeusApps.BellTower\src\BellTower.Ingress\BellTower.Ingress.csproj (in 259 ms).
+  1 of 2 projects are up-to-date for restore.
+  BellTower.Distribution -> D:\Code\ZeusApps.BellTower\src\BellTower.Distribution\bin\Release\net10.0-windows\win-x64\BellTower.Distribution.dll
+  BellTower.Protocol -> D:\Code\ZeusApps.BellTower\src\BellTower.Protocol\bin\Release\net10.0\win-x64\BellTower.Protocol.dll
+  BellTower -> D:\Code\ZeusApps.BellTower\src\BellTower\bin\Release\net10.0-windows\win-x64\bell-tower.dll
+  BellTower -> D:\Code\ZeusApps.BellTower\artifacts\dev-builds\bell-tower-0.1.9006-win-x64\versions\0.1.9006\
+  BellTower.Protocol -> D:\Code\ZeusApps.BellTower\src\BellTower.Protocol\bin\Release\net10.0\win-x64\BellTower.Protocol.dll
+  BellTower.Ingress -> D:\Code\ZeusApps.BellTower\src\BellTower.Ingress\bin\Release\net10.0-windows\win-x64\bell-tower-ingress.dll
+  Generating native code
+  BellTower.Ingress -> D:\Code\ZeusApps.BellTower\artifacts\dev-builds\bell-tower-0.1.9006-win-x64\ingress-publish\
+  BellTower.Distribution -> D:\Code\ZeusApps.BellTower\src\BellTower.Distribution\bin\Release\net10.0-windows\win-x64\BellTower.Distribution.dll
+  BellTower.Launcher -> D:\Code\ZeusApps.BellTower\src\BellTower.Launcher\bin\Release\net10.0-windows\win-x64\bell-tower.dll
+  BellTower.Launcher -> D:\Code\ZeusApps.BellTower\artifacts\dev-builds\bell-tower-0.1.9006-win-x64\
+Packaged D:\Code\ZeusApps.BellTower\artifacts\dev-builds\bell-tower-0.1.9006-win-x64.zip

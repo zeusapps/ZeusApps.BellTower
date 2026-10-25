@@ -1,0 +1,32 @@
+{
+  "target": "head=b74a12b baseline=b74a12b files=32 diff=fb2c83821602 untracked=14/62017675a458",
+  "package": {
+    "command": "./scripts/package.ps1 -Dev",
+    "plainShellWithoutVswhereOnPath": true,
+    "version": "0.1.9005",
+    "commit": "b74a12b",
+    "dirty": true,
+    "baseVersion": "0.1.8",
+    "capture": 1,
+    "archiveSha256": "651798C25A1777C6242B9D20E6AD7605ED054681CE8E755F4792D5EB9AD7CF5C"
+  },
+  "buildAfterPackage": {"command":"dotnet build -c Release --no-restore","result":"passed","warnings":0,"errors":0},
+  "fullReleaseTests": {
+    "command":"dotnet test -c Release --no-build --no-restore",
+    "passed":774,
+    "failed":1,
+    "total":775,
+    "failure":"BellTower.Tests.Tray.StripRenderingTests.IncreasingTheInheritedFontRefitsTheChipAndItsStrip; assertion expected true, actual false at StripRenderingTests.cs:101"
+  },
+  "scopedFormat": {"command":"dotnet format ZeusApps.BellTower.slnx --no-restore --verify-no-changes --include src/BellTower/IO/DataLock.cs src/BellTower/IO/TrayInvocationCommand.cs src/BellTower/IO/WindowsCommandLine.cs tests/BellTower.Tests/IO/DataLockTests.cs tests/BellTower.Tests/IO/TrayInvocationCommandTests.cs","result":"passed"},
+  "nodeTests":{"command":"node --test vscode/service.test.js vscode/focus.test.js","passed":8,"failed":0},
+  "maintainerPreflight":{"result":"passed","selectedVersion":"0.1.10","selectionHashUnchanged":true,"launcherHashUnchanged":true,"all47PayloadHashesUnchanged":true,"trayRecordAndLiveIdentityUnchanged":true},
+  "benchmark":{
+    "durableCaptures":242,"durableLegacyEvents":50,"sessionsAfterDrain":8,"crashReplay":"passed",
+    "claudeNative":{"samples":121,"medianMs":138.8242,"p95Ms":162.4477,"p99Ms":181.548,"maxMs":192.2377,"failed":0,"over3s":0},
+    "codexNative":{"samples":121,"medianMs":96.5127,"p95Ms":111.059,"p99Ms":120.0973,"maxMs":127.5758,"failed":0,"over3s":0},
+    "claudeLegacy":{"samples":25,"medianMs":1872.5704,"p95Ms":2017.2896,"p99Ms":2018.5539,"maxMs":2018.5539,"failed":0,"over3s":0},
+    "codexLegacy":{"samples":25,"medianMs":1823.7006,"p95Ms":1925.5639,"p99Ms":1935.1877,"maxMs":1935.1877,"failed":0,"over3s":0}
+  },
+  "stopRequest": {"userRequestedWrapUp":true,"isolatedTrayWorkerProcessCountAfterCleanup":0,"enteredQABarriersReleased":true,"isolatedFailureCharacterizationAndCleanFullRerun":"not run after stop request"}
+}

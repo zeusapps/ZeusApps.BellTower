@@ -1,0 +1,21 @@
+{
+  "kind": "installed native, synthetic disposable install/data",
+  "originalVersion": "0.1.10",
+  "candidateVersion": "0.1.9005",
+  "retiredVersion": "0.1.9004",
+  "initialTrayPublished": true,
+  "preflight": "preflight-passed",
+  "switchExit": 0,
+  "selectedAfterSwitch": "0.1.9005",
+  "switchTrayRestarted": true,
+  "rollbackExit": 0,
+  "selectedAfterRollback": "0.1.10",
+  "retireExit": 0,
+  "retiredPayloadAbsent": true,
+  "stableLauncherUnchanged": true,
+  "candidateRetained": false,
+  "originalRetained": true,
+  "pendingAbsent": true,
+  "restartAbsent": true,
+  "fixtureRoot": "D:\\Code\\ZeusApps.BellTower\\artifacts\\qa-006\\native-lifecycle-9fe22ed8b3374218a89de65e5fc45326"
+}

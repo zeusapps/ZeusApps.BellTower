@@ -1,0 +1,43 @@
+{
+  "generatedUtc": "2026-10-25T10:03:33.0766394Z",
+  "evidenceType": "installed native, synthetic disposable installation and data",
+  "package": "D:\\Code\\ZeusApps.BellTower\\artifacts\\dev-builds\\bell-tower-0.1.9006-win-x64.zip",
+  "packageSha256": "5e5258894518e9856de4eef5534bebe8038d827767189e2baf316d6bbe8570d0",
+  "installer": "9ba060a56df708cb4db16d44ee070380a222e11a63a180e8c5cfaa54f0ce22a0",
+  "cases": [
+    {
+      "case": "rollback-never-selected",
+      "root": "D:\\Code\\ZeusApps.BellTower\\artifacts\\qa-007\\native-rollback-never-selected-a230e8ebc8",
+      "passed": false,
+      "freeGBAtStart": 4.66,
+      "initialTray": {
+        "pid": 43196,
+        "version": "0.1.9003"
+      },
+      "preflightReadOnly": true,
+      "interrupted": {
+        "state": "original-stopped",
+        "selectionOriginal": true,
+        "trayStopped": true,
+        "recordsPresent": true
+      },
+      "rollback": {
+        "exitCode": 1,
+        "output": "Exception: D:\\Code\\ZeusApps.BellTower\\scripts\\install-dev.ps1:1062:59 Line | 1062 |  . pe Leaf)) { throw 'Operation coordination record disappeared; preserv . ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Operation coordination record disappeared; preserving recovery state.",
+        "manifestState": "running-original",
+        "originalTrayRunning": true,
+        "recordsRemoved": true,
+        "selectionOriginal": true
+      },
+      "seconds": 16.1,
+      "cleanup": {
+        "trayExitRequested": true,
+        "trayEnded": true,
+        "leftovers": [],
+        "remainingAfterCleanup": 0
+      }
+    }
+  ],
+  "allPassed": false,
+  "remainingProcesses": 0.0
+}

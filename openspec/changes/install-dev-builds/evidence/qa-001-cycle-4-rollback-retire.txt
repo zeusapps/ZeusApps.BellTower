@@ -1,0 +1,102 @@
+
+=== ROLLBACK
+exit=0
+{
+  "status": "running-original",
+  "operationManifest": "D:\\Code\\ZeusApps.BellTower\\artifacts\\qa-001-20261024T201914Z\\workspace\\bell-tower-dev-b8a870ad8b394841b36fcc0c6092aa24\\operation.json",
+  "selectedVersion": "0.1.8",
+  "trayPid": 40440,
+  "trayRestarted": true,
+  "originalBytesPreserved": true,
+  "restoredFiles": "state.json, state.json.bak, current.json only",
+  "configurationAndRuntimeFiles": "untouched"
+}
+current.json: {
+  "version": "0.1.8"
+}
+
+selection hash equals original snapshot: True
+--version: 0.1.8
+update --status:
+Running 0.1.8; selected 0.1.8.
+No update outcome recorded.
+doctor version: 
+versions: 0.1.8,0.1.9001
+proc 40704 D:\Code\ZeusApps.BellTower\artifacts\qa-001-20261024T201914Z\install\bell-tower.exe
+proc 40440 D:\Code\ZeusApps.BellTower\artifacts\qa-001-20261024T201914Z\install\versions\0.1.8\bell-tower.exe
+
+=== Retire refused: leased payload (lease held by another process)
+exit=1
+Exception: D:\Code\ZeusApps.BellTower\scripts\install-dev.ps1:225
+Line |
+ 225 |  … ) } catch { throw "Refused: $Version is leased by a running Bell Towe …
+     |                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     | Refused: 0.1.9001 is leased by a running Bell Tower process.
+versions: 0.1.8,0.1.9001
+
+=== Retire refused: stable payload without -Legacy (real fixture stable 0.1.9 payload copied in)
+exit=1
+Exception: D:\Code\ZeusApps.BellTower\scripts\install-dev.ps1:208
+Line |
+ 208 |  … !$Legacy) { throw "Refused: $Version is not a dev build (no dev marke …
+     |                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     | Refused: 0.1.9 is not a dev build (no dev marker, outside the reserved range). Name an earlier unmarked dev
+     | build explicitly with -Legacy.
+
+=== Retire stable 0.1.9 WITH -Legacy while selection is 0.1.8 (heuristic probe)
+exit=0
+{
+  "status": "retired",
+  "version": "0.1.9",
+  "selectedVersion": "0.1.8",
+  "record": "D:\\Code\\ZeusApps.BellTower\\artifacts\\qa-001-20261024T201914Z\\workspace\\retire-0.1.9-20261024T202123Z.json"
+}
+versions: 0.1.8,0.1.9001
+
+=== Retire legacy unmarked 0.1.10 (copy of dev payload with build removed): without -Legacy then with
+exit=1
+Exception: D:\Code\ZeusApps.BellTower\scripts\install-dev.ps1:208
+Line |
+ 208 |  … !$Legacy) { throw "Refused: $Version is not a dev build (no dev marke …
+     |                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     | Refused: 0.1.10 is not a dev build (no dev marker, outside the reserved range). Name an earlier unmarked dev
+     | build explicitly with -Legacy.
+exit=1
+ParentContainsErrorRecordException: D:\Code\ZeusApps.BellTower\scripts\install-dev.ps1:234
+Line |
+ 234 |  …             [BellTower.Distribution.Installation]::VerifyFiles($targe …
+     |                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     | Exception calling "VerifyFiles" with "2" argument(s): "Missing payload file inventory."
+
+=== -Legacy on a dev-range payload refused
+exit=1
+Exception: D:\Code\ZeusApps.BellTower\scripts\install-dev.ps1:209
+Line |
+ 209 |  … ersion))) { throw "-Legacy is only for unmarked payloads outside the  …
+     |                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     | -Legacy is only for unmarked payloads outside the reserved range; 0.1.9001 is a regular dev build.
+
+=== Retire dev payload 0.1.9001
+exit=0
+{
+  "status": "retired",
+  "version": "0.1.9001",
+  "selectedVersion": "0.1.8",
+  "record": "D:\\Code\\ZeusApps.BellTower\\artifacts\\qa-001-20261024T201914Z\\workspace\\retire-0.1.9001-20261024T202127Z.json"
+}
+versions: 0.1.10,0.1.8
+current.json: {
+  "version": "0.1.8"
+}
+
+
+=== Retire stable base payload 0.1.8 (selected)
+exit=1
+Exception: D:\Code\ZeusApps.BellTower\scripts\install-dev.ps1:204
+Line |
+ 204 |  …  -eq $Version) { throw "Refused: $Version is the selected version." }
+     |                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     | Refused: 0.1.8 is the selected version.
+
+=== install-dev.ps1 Retire dir listing: leftover 0.1.8 payload hashes unchanged
+running-original

@@ -1,0 +1,49 @@
+{
+  "utc": "2026-10-25T10:58:08.3678255Z",
+  "timeZone": "Central European Standard Time",
+  "nowIsDst": false,
+  "rows": [
+    {
+      "writeMonthUtc": "2026-10",
+      "writtenDuringDst": false,
+      "cimKind": "Local",
+      "diffTicks": 35999999991,
+      "diffHours": 1.0
+    },
+    {
+      "writeMonthUtc": "2026-10",
+      "writtenDuringDst": false,
+      "cimKind": "Local",
+      "diffTicks": 35999999997,
+      "diffHours": 1.0
+    },
+    {
+      "writeMonthUtc": "2026-10",
+      "writtenDuringDst": false,
+      "cimKind": "Local",
+      "diffTicks": 35999999996,
+      "diffHours": 1.0
+    },
+    {
+      "writeMonthUtc": "2026-08",
+      "writtenDuringDst": true,
+      "cimKind": "Local",
+      "diffTicks": 36000000000,
+      "diffHours": 1.0
+    },
+    {
+      "writeMonthUtc": "2026-10",
+      "writtenDuringDst": true,
+      "cimKind": "Local",
+      "diffTicks": 36000000000,
+      "diffHours": 1.0
+    },
+    {
+      "writeMonthUtc": "2026-10",
+      "writtenDuringDst": true,
+      "cimKind": "Local",
+      "diffTicks": 36000000000,
+      "diffHours": 1.0
+    }
+  ]
+}

@@ -1,0 +1,262 @@
+{
+  "generatedUtc": "2026-10-25T09:57:18.7150473Z",
+  "evidenceType": "installed native, synthetic disposable installation and data",
+  "package": "D:\\Code\\ZeusApps.BellTower\\artifacts\\dev-builds\\bell-tower-0.1.9006-win-x64.zip",
+  "packageSha256": "5e5258894518e9856de4eef5534bebe8038d827767189e2baf316d6bbe8570d0",
+  "installer": "9ba060a56df708cb4db16d44ee070380a222e11a63a180e8c5cfaa54f0ce22a0",
+  "cases": [
+    {
+      "case": "restored-monitoring-retry",
+      "root": "D:\\Code\\ZeusApps.BellTower\\artifacts\\qa-007\\native-restored-monitoring-retry-ef4f30eafd",
+      "passed": true,
+      "freeGBAtStart": 4.59,
+      "initialTray": {
+        "pid": 17284,
+        "version": "0.1.9003"
+      },
+      "preflightReadOnly": true,
+      "interrupted": {
+        "phase": "rollback-before-selection",
+        "state": "restored-monitoring-candidate-pointer",
+        "intent": false,
+        "pointer": "dev",
+        "candidateStopped": true
+      },
+      "retry": {
+        "exitZero": true,
+        "selectionOriginal": true,
+        "trayOriginal": true,
+        "trayActivationIsOperation": true,
+        "recordsRemoved": true,
+        "noIntent": true,
+        "state": true,
+        "devSnapshotNotSavedAgain": true
+      },
+      "expectedInterruptedState": [
+        "restored-monitoring-candidate-pointer",
+        false,
+        "dev"
+      ],
+      "seconds": 23.4,
+      "cleanup": {
+        "trayExitRequested": true,
+        "trayEnded": true,
+        "leftovers": [],
+        "remainingAfterCleanup": 0
+      }
+    },
+    {
+      "case": "pointer-intent-saved",
+      "root": "D:\\Code\\ZeusApps.BellTower\\artifacts\\qa-007\\native-pointer-intent-saved-ddb160eb5a",
+      "passed": true,
+      "freeGBAtStart": 4.59,
+      "initialTray": {
+        "pid": 40124,
+        "version": "0.1.9003"
+      },
+      "preflightReadOnly": true,
+      "interrupted": {
+        "phase": "rollback-pointer-intent-saved",
+        "state": "restored-monitoring-candidate-pointer",
+        "intent": true,
+        "pointer": "dev",
+        "candidateStopped": true
+      },
+      "retry": {
+        "exitZero": true,
+        "selectionOriginal": true,
+        "trayOriginal": true,
+        "trayActivationIsOperation": true,
+        "recordsRemoved": true,
+        "noIntent": true,
+        "state": true,
+        "devSnapshotNotSavedAgain": true
+      },
+      "expectedInterruptedState": [
+        "restored-monitoring-candidate-pointer",
+        true,
+        "dev"
+      ],
+      "seconds": 23.4,
+      "cleanup": {
+        "trayExitRequested": true,
+        "trayEnded": true,
+        "leftovers": [],
+        "remainingAfterCleanup": 0
+      }
+    },
+    {
+      "case": "pointer-written",
+      "root": "D:\\Code\\ZeusApps.BellTower\\artifacts\\qa-007\\native-pointer-written-b6ca981e67",
+      "passed": true,
+      "freeGBAtStart": 4.54,
+      "initialTray": {
+        "pid": 28400,
+        "version": "0.1.9003"
+      },
+      "preflightReadOnly": true,
+      "interrupted": {
+        "phase": "rollback-pointer-written",
+        "state": "restored-monitoring-candidate-pointer",
+        "intent": true,
+        "pointer": "original",
+        "candidateStopped": true
+      },
+      "retry": {
+        "exitZero": true,
+        "selectionOriginal": true,
+        "trayOriginal": true,
+        "trayActivationIsOperation": true,
+        "recordsRemoved": true,
+        "noIntent": true,
+        "state": true,
+        "devSnapshotNotSavedAgain": true
+      },
+      "expectedInterruptedState": [
+        "restored-monitoring-candidate-pointer",
+        true,
+        "original"
+      ],
+      "seconds": 23.9,
+      "cleanup": {
+        "trayExitRequested": true,
+        "trayEnded": true,
+        "leftovers": [],
+        "remainingAfterCleanup": 0
+      }
+    },
+    {
+      "case": "pointer-phase-saved",
+      "root": "D:\\Code\\ZeusApps.BellTower\\artifacts\\qa-007\\native-pointer-phase-saved-72ef2a902c",
+      "passed": true,
+      "freeGBAtStart": 4.5,
+      "initialTray": {
+        "pid": 28192,
+        "version": "0.1.9003"
+      },
+      "preflightReadOnly": true,
+      "interrupted": {
+        "phase": "rollback-pointer-phase-saved",
+        "state": "restored-monitoring-snapshot",
+        "intent": false,
+        "pointer": "original",
+        "candidateStopped": true
+      },
+      "retry": {
+        "exitZero": true,
+        "selectionOriginal": true,
+        "trayOriginal": true,
+        "trayActivationIsOperation": true,
+        "recordsRemoved": true,
+        "noIntent": true,
+        "state": true,
+        "devSnapshotNotSavedAgain": true
+      },
+      "expectedInterruptedState": [
+        "restored-monitoring-snapshot",
+        false,
+        "original"
+      ],
+      "seconds": 24.1,
+      "cleanup": {
+        "trayExitRequested": true,
+        "trayEnded": true,
+        "leftovers": [],
+        "remainingAfterCleanup": 0
+      }
+    },
+    {
+      "case": "live-activation-before-receipt",
+      "root": "D:\\Code\\ZeusApps.BellTower\\artifacts\\qa-007\\native-live-activation-before-receipt-fd5b69368a",
+      "passed": true,
+      "freeGBAtStart": 4.38,
+      "initialTray": {
+        "pid": 8172,
+        "version": "0.1.9003"
+      },
+      "preflightReadOnly": true,
+      "interrupted": {
+        "candidateTrayReceiptAbsent": true,
+        "receiptActivationMatchesLive": true,
+        "candidatePid": 37248
+      },
+      "negatives": {
+        "liveActivation": {
+          "refused": true,
+          "message": true,
+          "unchanged": true,
+          "trayAlive": true,
+          "output": "Exception: D:\\Code\\ZeusApps.BellTower\\scripts\\install-dev.ps1:488:62 Line | 488 |  . tivation) { throw ('The live candidate tray activation differs from t . ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ The live candidate tray activation differs from this operation (expected a18d7b487a4f447e9c8246adb45bcd71, live c86ba4939a2f475a8c7ade06744ae32e); refusing before any signal."
+        },
+        "receiptActivation": {
+          "refused": true,
+          "message": true,
+          "unchanged": true,
+          "trayAlive": true,
+          "output": "Exception: D:\\Code\\ZeusApps.BellTower\\scripts\\install-dev.ps1:496:178 Line | 496 |  . tivation) { throw 'Candidate launcher receipt is bound to a different . ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Candidate launcher receipt is bound to a different version or activation."
+        },
+        "receiptPid": {
+          "refused": true,
+          "message": true,
+          "unchanged": true,
+          "trayAlive": true,
+          "output": "Exception: D:\\Code\\ZeusApps.BellTower\\scripts\\install-dev.ps1:499:68 Line | 499 |  . dLauncher) { throw 'Candidate launcher exited or changed identity.' } ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Candidate launcher exited or changed identity."
+        }
+      },
+      "retry": {
+        "exitZero": true,
+        "selectionOriginal": true,
+        "trayOriginal": true,
+        "trayActivationIsOperation": true,
+        "recordsRemoved": true,
+        "noIntent": true,
+        "state": true
+      },
+      "seconds": 26.5,
+      "cleanup": {
+        "trayExitRequested": true,
+        "trayEnded": true,
+        "leftovers": [],
+        "remainingAfterCleanup": 0
+      }
+    },
+    {
+      "case": "activation-before-stop",
+      "root": "D:\\Code\\ZeusApps.BellTower\\artifacts\\qa-007\\native-activation-before-stop-30ff614bfc",
+      "passed": true,
+      "freeGBAtStart": 4.36,
+      "initialTray": {
+        "pid": 43096,
+        "version": "0.1.9003"
+      },
+      "preflightReadOnly": true,
+      "refusal": {
+        "refused": true,
+        "message": true,
+        "noExitRequest": true,
+        "trayAlive": true,
+        "selectionUnchanged": true,
+        "state": "running-candidate",
+        "output": "Exception: D:\\Code\\ZeusApps.BellTower\\scripts\\install-dev.ps1:488:62 Line | 488 |  . tivation) { throw ('The live candidate tray activation differs from t . ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ The live candidate tray activation differs from this operation (expected 28a7101a61e74e9f91eba345405e613b, live 8fa0d240d89449bbb5419f2ed5623a49); refusing before any signal."
+      },
+      "retry": {
+        "exitZero": true,
+        "selectionOriginal": true,
+        "trayOriginal": true,
+        "trayActivationIsOperation": true,
+        "recordsRemoved": true,
+        "noIntent": true,
+        "state": true
+      },
+      "seconds": 23.5,
+      "cleanup": {
+        "trayExitRequested": true,
+        "trayEnded": true,
+        "leftovers": [],
+        "remainingAfterCleanup": 0
+      }
+    }
+  ],
+  "allPassed": true,
+  "remainingProcesses": 0.0
+}

@@ -1,0 +1,57 @@
+
+=== update --check with dev selected (network read-only to GitHub)
+Running 0.1.9001 dev b74a12b dirty (2026-10-24 20:07 UTC); selected 0.1.9001 dev b74a12b dirty (2026-10-24 20:07 UTC). No newer compatible stable release available. Stable releases are compared with its base version 0.1.8.
+
+=== Effective-version staging: copy of dev-selected installation, stage stable 0.1.9 fixture
+copy selection: {
+  "version": "0.1.9001",
+  "previous": "0.1.8",
+  "activation": "60bc8851a0ad434d9b711dee3d8137db"
+}
+EffectiveVersion of dev selection: 0.1.8
+Display: 0.1.9001 dev b74a12b dirty (2026-10-24 20:07 UTC)
+STAGED stable 0.1.9: {"Id":"10af28617370439faeef01b079286adb","Token":"60CB56E8ECF84E2C29BEE50ADBB32EFEDFFA0086EC87968C4F60F6FF9C727FB4","Root":"D:\\Code\\ZeusApps.BellTower\\artifacts\\qa-001-20261024T201914Z\\stagecopy\\install","DataDirectory":"D:\\Code\\ZeusApps.BellTower\\artifacts\\qa-001-20261024T201914Z\\stagecopy\\data","Original":"0.1.9001","Target":"0.1.9","ContractHash":"86cfcfa949313ab4d73c972a19c888089127f17386ece045b1af72cf8c87d55c","Created":"2026-10-24T20:20:34.1094276+00:00","Owner":{"Pid":228,"StartedUtcTicks":639284700310068114},"HadTray":false}
+versions in copy: 0.1.8,0.1.9,0.1.9001
+control stable 0.1.8 vs dev(base 0.1.8): Exception calling "Stage" with "4" argument(s): "A staged update is active; wait and inspect update --status."
+EnsureStable dev offer: Exception calling "EnsureStable" with "0" argument(s): "Development builds are not offered as releases."
+Stage dev offer: Exception calling "Stage" with "4" argument(s): "Development builds are not offered as releases."
+
+=== Retire refusals while 0.1.9001 selected, 0.1.8 previous
+exit=1
+Exception: D:\Code\ZeusApps.BellTower\scripts\install-dev.ps1:204
+Line |
+ 204 |  …  -eq $Version) { throw "Refused: $Version is the selected version." }
+     |                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     | Refused: 0.1.9001 is the selected version.
+exit=1
+Exception: D:\Code\ZeusApps.BellTower\scripts\install-dev.ps1:205
+Line |
+ 205 |  … $Version) { throw "Refused: $Version is the recorded previous version …
+     |                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     | Refused: 0.1.8 is the recorded previous version (needed for rollback).
+exit=1
+Exception: D:\Code\ZeusApps.BellTower\scripts\install-dev.ps1:205
+Line |
+ 205 |  … $Version) { throw "Refused: $Version is the recorded previous version …
+     |                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     | Refused: 0.1.8 is the recorded previous version (needed for rollback).
+exit=1
+Exception: D:\Code\ZeusApps.BellTower\scripts\install-dev.ps1:198
+Line |
+ 198 |  … et -PathType Container)) { throw "Payload $Version does not exist." }
+     |                               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     | Payload 0.1.7 does not exist.
+
+=== Rollback refused: dev selection drift
+exit=1
+Exception: D:\Code\ZeusApps.BellTower\scripts\install-dev.ps1:357
+Line |
+ 357 |  … didate')) { throw 'The dev selection or operation state changed; roll …
+     |                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     | The dev selection or operation state changed; rollback refused.
+selection after restore: {
+  "version": "0.1.9001",
+  "previous": "0.1.8",
+  "activation": "60bc8851a0ad434d9b711dee3d8137db"
+}
+--version: 0.1.9001 dev b74a12b dirty (2026-10-24 20:07 UTC)

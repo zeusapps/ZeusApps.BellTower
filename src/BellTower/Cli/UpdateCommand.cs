@@ -21,7 +21,7 @@ internal sealed class UpdateCommand : Command
             {
                 var path = installation is null ? null : UpdateTransaction.OutcomePath(installation);
                 var outcome = path is not null && File.Exists(path) ? DistributionJson.Read<UpdateOutcome>(path, 16384) : null;
-                output.WriteLine($"Running {ApplicationInfo.Version}; selected {installation?.Selection().Version ?? "unpackaged"}.");
+                output.WriteLine($"Running {ApplicationInfo.Display}; selected {(installation is null ? "unpackaged" : installation.DisplayVersion(installation.Selection().Version))}.");
                 output.WriteLine(outcome is null ? "No update outcome recorded." : $"{outcome.State}: {outcome.Version}. {outcome.Message}");
                 return outcome?.State == "failed" ? 1 : 0;
             }
@@ -36,10 +36,12 @@ internal sealed class UpdateCommand : Command
             var release = await discovery.CheckAsync(true, token);
             if (release?.Error is { } error)
             { throw new IOException(error); }
-            var selected = installation?.Selection().Version ?? ApplicationInfo.Version;
-            if (release?.Offer is not { } offer || ReleaseContract.Parse(offer.Version) <= ReleaseContract.Parse(selected))
-            { output.WriteLine($"Running {ApplicationInfo.Version}; selected {selected}. No newer compatible stable release available."); return 0; }
-            output.WriteLine($"Running {ApplicationInfo.Version}; selected {selected}; available {offer.Version}. {offer.Page}");
+            var selected = installation is null ? ApplicationInfo.Display : installation.DisplayVersion(installation.Selection().Version);
+            var effective = installation?.EffectiveVersion() ?? ReleaseContract.Effective(ApplicationInfo.Version, null);
+            var basis = VersionDisplay.IsDev(selected) ? $" Stable releases are compared with its base version {effective}." : "";
+            if (release?.Offer is not { } offer || ReleaseContract.Parse(offer.Version) <= effective)
+            { output.WriteLine($"Running {ApplicationInfo.Display}; selected {selected}. No newer compatible stable release available.{basis}"); return 0; }
+            output.WriteLine($"Running {ApplicationInfo.Display}; selected {selected}; available {offer.Version}. {offer.Page}");
             if (result.GetValue(check))
             { return 0; }
             var download = Path.Combine(paths.Root, "updates", "downloads", Guid.NewGuid().ToString("N"));

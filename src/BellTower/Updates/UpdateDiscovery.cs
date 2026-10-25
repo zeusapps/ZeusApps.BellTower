@@ -20,10 +20,10 @@ public sealed class UpdateDiscovery(DataPaths paths, ReleaseClient client, TimeP
         var cache = Read();
         try
         {
-            cache.Offer?.Validate();
-            var selected = Installation.ForPayload(Environment.ProcessPath!)?.Selection().Version ?? Cli.ApplicationInfo.Version;
+            cache.Offer?.EnsureStable();
+            var effective = Installation.ForPayload(Environment.ProcessPath!)?.EffectiveVersion() ?? ReleaseContract.Effective(Cli.ApplicationInfo.Version, null);
             return cache.Validated is { } validated && validated <= clock.GetUtcNow() && clock.GetUtcNow() - validated < TimeSpan.FromDays(7)
-                && cache.Offer is { } offer && ReleaseContract.Parse(offer.Version) > ReleaseContract.Parse(selected) ? offer : null;
+                && cache.Offer is { } offer && ReleaseContract.Parse(offer.Version) > effective ? offer : null;
         }
         catch (Exception error) when (error is IOException or System.Text.Json.JsonException) { return null; }
     }

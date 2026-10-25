@@ -1,0 +1,15 @@
+{
+  "scenario": "candidate restart failure -> recovery original restart failure -> same-manifest retry",
+  "recoveryExit": 1,
+  "phaseAfterRecovery": "Rollback",
+  "phaseTargetAfterRecovery": "0.1.9003",
+  "stateAfterRecovery": "restored-monitoring-snapshot",
+  "selectedBeforeRetry": "0.1.9003",
+  "retryExit": 0,
+  "retryOutput": "{\r\n  \"status\": \"running-original\",\r\n  \"operationManifest\": \"D:\\\\Code\\\\ZeusApps.BellTower\\\\artifacts\\\\implementation-006-nested-e4cb2f3c8b43497dbd65b43a96aebb58\\\\private\\\\bell-tower-dev-3abbba187c8641428fae6b2258cbaabf\\\\operation.json\",\r\n  \"selectedVersion\": \"0.1.9003\",\r\n  \"trayPid\": 33848,\r\n  \"trayRestarted\": true,\r\n  \"originalBytesPreserved\": true,\r\n  \"restoredFiles\": \"state.json, state.json.bak, current.json only\",\r\n  \"configurationAndRuntimeFiles\": \"untouched\"\r\n}\r\n ",
+  "selectedAfterRetry": "0.1.9003",
+  "phaseAfterRetry": "Rollback",
+  "pendingRemains": false,
+  "restartRemains": false,
+  "disposableRoot": "D:\\Code\\ZeusApps.BellTower\\artifacts\\implementation-006-nested-e4cb2f3c8b43497dbd65b43a96aebb58"
+}

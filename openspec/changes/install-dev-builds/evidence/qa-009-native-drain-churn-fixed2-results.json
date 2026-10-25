@@ -1,0 +1,45 @@
+{
+  "generatedUtc": "2026-10-25T10:56:24.7972493Z",
+  "evidenceType": "installed native, synthetic disposable installation and data",
+  "package": "D:\\Code\\ZeusApps.BellTower\\artifacts\\dev-builds\\bell-tower-0.1.9006-win-x64.zip",
+  "packageSha256": "5e5258894518e9856de4eef5534bebe8038d827767189e2baf316d6bbe8570d0",
+  "installer": "ae5252a0ca5cbfc5987d85d1a50b04ff418292a0afb9ccbef893c84a0beac407",
+  "cases": [
+    {
+      "case": "drain-churn",
+      "root": "D:\\Code\\ZeusApps.BellTower\\artifacts\\qa-009\\native-drain-churn-91f0f1ddb0",
+      "passed": true,
+      "freeGBAtStart": 15.94,
+      "initialTray": {
+        "pid": 37184,
+        "version": "0.1.9003"
+      },
+      "preflightReadOnly": true,
+      "churnImage": "D:\\Code\\ZeusApps.BellTower\\artifacts\\qa-009\\native-drain-churn-91f0f1ddb0\\install\\versions\\0.1.9003\\bell-tower.exe",
+      "churn": {
+        "spawned": 588,
+        "switchExit": 0,
+        "switchOutput": "{ \"status\": \"running-candidate\", \"operationManifest\": \"D:\\\\Code\\\\ZeusApps.BellTower\\\\artifacts\\\\qa-009\\\\native-drain-churn-91f0f1ddb0\\\\private\\\\bell-tower-dev-2f75d9aeb6a64f729898bba98b71d37d\\\\operation.json\", \"selectedVersion\": \"0.1.9006\", \"trayPid\": 21784, \"trayRestarted\": true, \"originalBytesPreserved\": true, \"restoredFiles\": \"none\", \"configurationAndRuntimeFiles\": \"untouched\" }",
+        "classificationRefusal": false
+      },
+      "rollback": {
+        "exitZero": true,
+        "selectionOriginal": true,
+        "trayOriginal": true,
+        "trayActivationIsOperation": true,
+        "recordsRemoved": true,
+        "noIntent": true,
+        "state": true
+      },
+      "seconds": 16.9,
+      "cleanup": {
+        "trayExitRequested": true,
+        "trayEnded": true,
+        "leftovers": [],
+        "remainingAfterCleanup": 0
+      }
+    }
+  ],
+  "allPassed": true,
+  "remainingProcesses": 0.0
+}

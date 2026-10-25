@@ -1,0 +1,68 @@
+{
+  "mode": "generated shell commands during explicit launch-gate hold or idle fixture",
+  "providers": [
+    "Claude Code (Git Bash)",
+    "Codex (cmd.exe)"
+  ],
+  "scenario": "gate-hold",
+  "hookBudgetMilliseconds": 3000,
+  "barrierStillActiveAfterHooks": false,
+  "launchGateHeldForBaselineControl": true,
+  "channel": "Legacy",
+  "before": {
+    "captures": 23,
+    "inbox": 0
+  },
+  "after": {
+    "captures": 23,
+    "inbox": 0
+  },
+  "completed": 0,
+  "failed": 4,
+  "hooks": [
+    {
+      "provider": "claude",
+      "channel": "Legacy",
+      "index": 1,
+      "passed": false,
+      "elapsedMilliseconds": 3164,
+      "exitCode": null,
+      "timeout": true,
+      "stdout": "",
+      "stderr": "exceeded the generated hook budget"
+    },
+    {
+      "provider": "codex",
+      "channel": "Legacy",
+      "index": 1,
+      "passed": false,
+      "elapsedMilliseconds": 3201,
+      "exitCode": null,
+      "timeout": true,
+      "stdout": "",
+      "stderr": "exceeded the generated hook budget"
+    },
+    {
+      "provider": "claude",
+      "channel": "Legacy",
+      "index": 2,
+      "passed": false,
+      "elapsedMilliseconds": 3279,
+      "exitCode": null,
+      "timeout": true,
+      "stdout": "",
+      "stderr": "exceeded the generated hook budget"
+    },
+    {
+      "provider": "codex",
+      "channel": "Legacy",
+      "index": 2,
+      "passed": false,
+      "elapsedMilliseconds": 3406,
+      "exitCode": null,
+      "timeout": true,
+      "stdout": "",
+      "stderr": "exceeded the generated hook budget"
+    }
+  ]
+}

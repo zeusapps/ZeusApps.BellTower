@@ -1,0 +1,44 @@
+HEAD: b74a12ba20eb9d3595204b41295b9dab73b7895d
+Baseline: b74a12ba20eb9d3595204b41295b9dab73b7895d
+Paths: .agents/skills/install-dev-build .claude/skills/install-dev-build docs/development.md docs/installation.md docs/releases.md scripts src tests
+Manifest (A added, M modified, D deleted, ? untracked):
+  ? .agents/skills/install-dev-build/SKILL.md
+  ? .claude/skills/install-dev-build/SKILL.md
+  ? scripts/install-dev.ps1
+  ? src/BellTower.Distribution/VersionDisplay.cs
+  ? tests/BellTower.Tests/Scripts/InstallDevBuildSkillTests.cs
+  ? tests/BellTower.Tests/Scripts/InstallDevScriptTests.cs
+  ? tests/BellTower.Tests/Scripts/PackageScriptTests.cs
+  ? tests/BellTower.Tests/Updates/DevBuildTests.cs
+  ? tests/BellTower.Tests/Updates/HookMaintenanceTests.cs
+  ? tests/BellTower.Tests/Updates/PayloadRetentionTests.cs
+  M docs/development.md
+  M docs/installation.md
+  M docs/releases.md
+  M scripts/package.ps1
+  M src/BellTower.Distribution/Installation.cs
+  M src/BellTower.Distribution/ReleaseContract.cs
+  M src/BellTower/BellTower.csproj
+  M src/BellTower/Cli/ApplicationInfo.cs
+  M src/BellTower/Cli/ApplicationVersionAction.cs
+  M src/BellTower/Cli/UpdateCommand.cs
+  M src/BellTower/Diagnostics/DiagnosticsReporter.cs
+  M src/BellTower/Tray/OverviewForm.cs
+  M src/BellTower/Tray/TrayApplication.cs
+  M src/BellTower/Updates/ReleaseClient.cs
+  M src/BellTower/Updates/ReleaseOffer.cs
+  M src/BellTower/Updates/UpdateDiscovery.cs
+  M src/BellTower/Updates/UpdateTransaction.cs
+Tracked diff SHA-256: 41ba2dbe9660f50e17bdab217f947a38b493f605ef433ded47ea6e7910efecfc
+Untracked file SHA-256:
+  c9ada458ca27b48897054ed517f9e9a756429b080c5cb9835a691e4583474190  .agents/skills/install-dev-build/SKILL.md
+  c9ada458ca27b48897054ed517f9e9a756429b080c5cb9835a691e4583474190  .claude/skills/install-dev-build/SKILL.md
+  7566cfd7ad5ccfc2f2af64e12b3ff0eca1c717534b77fc14509a2e08bab89812  scripts/install-dev.ps1
+  8af4bfa3e658c0d02525114bd22b61df6dd12354fa68fcef5f80feaabb7ad08d  src/BellTower.Distribution/VersionDisplay.cs
+  c595ab72948026a73278b38f24dde31f6e126d137d05b2066db79c0c6cbee59f  tests/BellTower.Tests/Scripts/InstallDevBuildSkillTests.cs
+  864b5d01f4058242ebbb80a2a24cfbaac9d91cf5f780dfb3a17be1287caaf3b4  tests/BellTower.Tests/Scripts/InstallDevScriptTests.cs
+  ed01bcfe88ece6834c7c594756e403ffd75af76aa80c5c71f4c6adea487e63bf  tests/BellTower.Tests/Scripts/PackageScriptTests.cs
+  33b231f9d1e4435bf6aa538fd34bc1a07a7735e5d181eef252617b8ed392d44f  tests/BellTower.Tests/Updates/DevBuildTests.cs
+  dba3da9e25f3dbe3e7a821515c0d9383dea3ebc971b6ad9a5423120503e51d0b  tests/BellTower.Tests/Updates/HookMaintenanceTests.cs
+  a95fb83f0aece253efe02597aa8528976f08c8430a31bea28487efc7abcc71c0  tests/BellTower.Tests/Updates/PayloadRetentionTests.cs
+Summary: head=b74a12b baseline=b74a12b files=27 diff=41ba2dbe9660 untracked=10/88d345b46144

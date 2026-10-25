@@ -1,0 +1,14 @@
+{
+  "kind": "installed-native disposable probe",
+  "scenario": "normal Rollback with restart-marker byte drift during setup data-lock wait",
+  "result": "failed as acceptance",
+  "rollbackExitCode": 1,
+  "refusedChangedBytes": true,
+  "selectionChanged": false,
+  "selectionAfter": "0.1.9004",
+  "monitoringSnapshotRestoredBeforeRefusal": true,
+  "manifestPhaseAtRefusal": "running-candidate",
+  "driftedRestartMarkerPreserved": true,
+  "pendingMarkerPreserved": true,
+  "disposableFixture": "artifacts/qa-005/rollback-drift-46d6256a90fd43a081c7d0c1e22b7923"
+}

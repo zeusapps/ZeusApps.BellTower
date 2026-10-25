@@ -1,0 +1,27 @@
+{
+  "child": {
+    "pid": 32628,
+    "startTicks": 639285242701804176,
+    "image": "D:\\Code\\ZeusApps.BellTower\\artifacts\\qa-010-delayed\\install\\versions\\0.1.8\\bell-tower.exe"
+  },
+  "phase1_beforeRelease": {
+    "switchExitedWhileChildPaused": false,
+    "childAliveAtThatPoint": true,
+    "selectedWhilePaused": "0.1.8"
+  },
+  "phase2_afterRelease": {
+    "mutexResult": {
+      "pid": 32628,
+      "image": "D:\\Code\\ZeusApps.BellTower\\artifacts\\qa-010-delayed\\install\\versions\\0.1.8\\bell-tower.exe",
+      "dataRoot": "D:\\Code\\ZeusApps.BellTower\\artifacts\\qa-010-delayed\\data",
+      "createdNew": false,
+      "utc": "2026-10-25T12:24:50.4099006+01:00"
+    },
+    "exitCode": 0,
+    "stdout": "{\r\n  \"status\": \"running-candidate\",\r\n  \"operationManifest\": \"D:\\\\Code\\\\ZeusApps.BellTower\\\\artifacts\\\\qa-010-delayed\\\\workspace\\\\bell-tower-dev-8a023b932408468f8e24233c90d56e8b\\\\operation.json\",\r\n  \"selectedVersion\": \"0.1.9002\",\r\n  \"trayPid\": null,\r\n  \"trayRestarted\": false,\r\n  \"originalBytesPreserved\": true,\r\n  \"restoredFiles\": \"none\",\r\n  \"configurationAndRuntimeFiles\": \"untouched\"\r\n}\r\n",
+    "stderr": "",
+    "selectedAfter": "0.1.9002",
+    "foreignOwnerPresence": false,
+    "childStillRunning": false
+  }
+}

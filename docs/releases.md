@@ -42,6 +42,14 @@ Each activation records its ID and staged/activated/monitoring-restored/failed/r
 
 Cleanup retains current/previous payloads, active launch/runtime leases, and pending/failed recovery references. It preserves unowned/modified files and retries busy versions later. There is no need to stop a session merely to reclaim disk space.
 
+## Development builds and stable updates
+
+Local development builds use the reserved version range PATCH >= 9000 (for base 0.1.8: 0.1.9001 and up) so they never collide with stable release folders or block a stable update. Stable packaging refuses the range, and a published release in the range is never offered. While a dev build is selected, update checks, tray discovery and staging compare stable offers with the dev build's base version recorded in its `release.json` build metadata (an unmarked dev-range payload counts as MAJOR.MINOR.0). A stable release newer than that base is offered and installs normally; the dev build becomes `previous` and is cleaned up later like any retained version.
+
+The dev channel, packaging, the install/rollback/retire procedure and the cleanup of the legacy unmarked trial payloads 0.1.9 and 0.1.10 are described in [Development builds](development.md#development-builds). Dev packages never go into releases: they stay under artifacts/dev-builds/ and are installed only by scripts/install-dev.ps1 with the maintainer's authorization.
+
+If a switch is interrupted, treat it like an interrupted update: keep the operation record (artifacts/dev-builds/operations/bell-tower-dev-*/operation.json), run `install-dev.ps1 -Action Rollback -OperationManifest <path>` when its state shows the dev build was selected, and otherwise restore the known-good `current.json` as described under rollback above. Never edit state snapshots by hand.
+
 ## One-time migration from the legacy executable
 
 A legacy installation has a full application at its registered bell-tower.exe path. That file can be held open by the tray, a runtime manager, or launch command. Establishing a launcher at the identical path may need one planned window after sessions finish naturally. Bootstrap replacement in a future release can likewise need maintenance; routine compatible payload updates do not.

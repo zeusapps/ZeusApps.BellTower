@@ -1,0 +1,89 @@
+# Analysis report: install-dev-builds / 006
+
+## Review target
+
+- Reviewer / role: `analyze_dev_builds_005` / code-analyzer, round 006 assignment.
+- Client / version / mode / model: Codex CLI 0.164.0 (`codex --version`), delegated subagent, `gpt-6.1-sol`, high reasoning; native role default, no override.
+- Date: 2026-10-25 UTC.
+- Change root: `D:/Code/ZeusApps.BellTower/openspec/changes/install-dev-builds`.
+- Requirements: [tasks](../tasks.md) 4.1/4.3 and acceptance 6.1/6.3; [development-builds spec](../specs/development-builds/spec.md); [design](../design.md) decision 7; [bounded corrective plan](../evidence/analysis-005-fix-plan.md).
+- Scope: `src`, `tests`, `scripts`, `docs/development.md`, `docs/releases.md`, `docs/installation.md`, `.claude/skills/install-dev-build`, `.agents/skills/install-dev-build`; relevant process, CLI, state-lock and updater neighbors. Focused changes are the installer, `DataLock.TryAcquire`, unresolved-root classification and their tests.
+- Baseline / HEAD: `b74a12ba20eb9d3595204b41295b9dab73b7895d`.
+- Matching before/after identity: `head=b74a12b baseline=b74a12b files=32 diff=fb2c83821602 untracked=14/62017675a458`; full tracked SHA-256 `fb2c83821602833cddddf968dabeca328e8bc2317fb4a0b0bf73d0c75b4303bf`. Full [before](../evidence/analysis-006-identity-before.txt) and [after](../evidence/analysis-006-identity-after.txt) manifests match; `Compare-Object` returned no differences.
+- Prior evidence: [Analysis 005](analysis-005.md), [QA 005](qa-005.md), [Implementation 006](../evidence/implementation-006.md), its four native result files, and the focused plan. Recheck limited to canonical ANALYSIS-200/201 and affected QA-250/251, ANALYSIS-202, QA-200 and specified earlier regressions. Existing canonical IDs remain appropriate for these incomplete corrections; new ANALYSIS-300–349 allocation was not consumed. No optional suggestions were reopened.
+
+## Analysis performed
+
+| Area | Method / evidence | Outcome / limitation |
+| --- | --- | --- |
+| Nonblocking lock acquisition | Inspect `DataLock.cs :8–60`, default callers, new test and installer `Enter-MonitoringCommit :283–322` | `TryAcquire` correctly uses `WaitOne(0)`, returns null with unowned handle disposed, preserves abandoned acquisition, and disposes the handle on unexpected wait failure. Default constructor remains five seconds. Normal Rollback retries without deliberately blocking on a partial bundle. Caller exception cleanup remains incomplete as ANALYSIS-200 below |
+| Pre-state record validation | Trace normal Rollback `:783–805` and commit entry `:287–310` | Corrected: renewal/drain/retry delay outside data locks; both read guards deny write/delete sharing; sizes capped at 16 KiB; hashes/full tuples and freshness checked after successful bundle acquisition. Guards remain through snapshot restore and phase persistence. Source mechanism addresses the QA-250 setup-lock-wait reproduction; analyzer did not execute it |
+| Phase truth and retries | Trace `restoring-monitoring-snapshot`, `restored-monitoring-candidate-pointer`, original-pointer states and dispatch | Truthful started/completed phases and mutation-aware cleanup are added, and a saved dev snapshot is reused. The completed-monitoring retry branch does not execute the required pointer restore; original-pointer-before-phase-save also has no accepted retry state. ANALYSIS-201 remains |
+| Pointer wait boundaries | Compare Switch `:749–756` with Rollback `:808–823` | Rollback revalidates exact records under read guards after launch-gate acquisition. Switch still validates before a potentially blocking gate and writes without the corresponding post-acquisition check; ANALYSIS-200 remains |
+| Relative-root classification | Inspect `TrayInvocationCommand :77–81` and added relative-path tests | Corrected: non-fully-qualified explicit data roots throw instead of resolving against installer cwd. Native Unicode parsing and rooted quoted/recursive/equals/other-root/helper behavior remain. Primary path semantics were verified in the prior plan; runtime process fixture belongs to QA |
+| Phase/pair transition publication | Trace `Replace-OwnedRecordPair :166–198`, `Resolve-InterruptedRecordTransition :199–254`, recovery dispatch `:605–652`, takeover `:676–688` | Corrected source mechanism: old/new phase and target persisted in existing intent; exact ordered old/old, new-pending/old-restart, new/new states; complete plan/hash checks and ended owners; new phase committed with expectations. Nested failed-Switch recovery now explicitly transitions to Rollback. No arbitrary target/foreign byte acceptance added in ordinary generated transitions |
+| Interrupted candidate ownership | Trace actual `restartLauncher` receipt and `Assert-OwnedCandidate :414–431` | Persisted field, exact launcher PID/start/image, candidate process identity and ancestry checks corrected. Live candidate activation is not compared with expected receipt/operation activation; ANALYSIS-201 remains |
+| Stale presence | Reinspect `Read-Owner :89–115` and shared tri-state `ProcessProbe` | ANALYSIS-202 source correction retained: ended/no object is stopped; unknown/inaccessible or unreserved object without proven owner refuses; live image/root/identity verified. Native negative matrix belongs to QA |
+| Maintenance teardown | Compare `HookMaintenanceTests` with reviewed 005 hash | Unchanged since 005: original skipped-join path stays corrected in source; timer still begins after launch/input, so independent whole-command timing and injected descendant teardown proof remain QA acceptance, not analyzer passes |
+| Short locks, retention and provider parity | Reinspect unchanged shared cleanup/removal policy, launcher, detailed drift errors and skill hashes | Prior ANALYSIS-001/006, QA-001/005 corrections retained. Slow payload/process work remains outside launch; shared retirement rule unchanged; no provider policy split, launcher edit or deadline increase. Both skill SHA-256 values equal `c9ada458ca27b48897054ed517f9e9a756429b080c5cb9835a691e4583474190` |
+| Developer runtime evidence | Read [lock-wait drift](../evidence/implementation-006-lockwait-drift-results.json), [nested recovery](../evidence/implementation-006-nested-recovery-results.json), [candidate receipt](../evidence/implementation-006-candidate-receipt-results.json), [transition matrix](../evidence/implementation-006-transition-results.json) | These record useful successful positive/drift cases. They do not exercise the remaining branch/error cases below and are developer evidence, not analyzer-executed or independent runtime acceptance |
+| Read-only checks | `git diff --check -- src tests scripts docs/development.md docs/releases.md docs/installation.md`; identity comparison; skill hashes; `codex --version` | Passed; whitespace emitted only Git line-ending notices. No source mutation |
+| Build/tests/format/native trials/benchmark | Not performed by analyzer | QA006 exclusively owns shared outputs. No performance measurements or authenticated field causation claimed |
+
+## Findings
+
+### ANALYSIS-200 (recheck): Switch does not revalidate after waiting for the launch gate, and partial lock acquisition has an uncovered exception path
+
+- Severity: warning; blocking agreed safe mutation/ownership behavior in 4.1/4.3.
+- Locations at reviewed identity: `scripts/install-dev.ps1:749–756`, compared with `:810–823`; `:288–310`.
+- Observation, pointer boundary: Switch calls `Assert-OperationBoundary` at `:749`, then constructs the launch gate at `:750`. That constructor can wait up to ten seconds. Inside the gate it checks only selection hash before writing `current.json`; it does not acquire the marker read guards or recheck the exact pair. Marker drift during the gate wait is discovered at the later reservation-release boundary after selection changed. Rollback's corresponding path has the new guards/check at `:815–817`; the same requirement was not applied to Switch. This is the same wait/check gap the corrective plan explicitly sought to prevent at pointer acquisition.
+- Observation, partial bundle: the three `DataLock.TryAcquire` calls at `:291–295` are outside the `try/catch` beginning at `:297`. If acquiring a later lock throws (for example a named mutex cannot be opened), previously acquired locks are not disposed by this function. The caller's `$commit` assignment has not returned and its `try/finally` at `:784` has not begun, so it also cannot release them. This can retain a data mutex when the script is invoked in a still-running PowerShell host. Correct busy/null paths do release, but an exceptional acquisition does not. The plan specifically required failure cleanup for every partial bundle; the current unit test only covers ordinary busy/release behavior.
+- Proposed correction and benefit: give Switch the same bounded exact-record guards/revalidation after successful launch-gate acquisition and retain them through pointer replacement. Enclose all bundle acquisition and guard acquisition in one exception-safe ownership scope; release every successfully acquired handle in reverse order on any failure before returning a commit. Keep scans, record renewal and retry delays outside held data/launch locks.
+- Behavior-preservation risks: preserve default `DataLock` timing/abandonment/thread affinity, short launch sections and normal hook delivery. Do not hide an acquisition error as successful ownership or stop an unknown process.
+- Evidence type: deterministic source/control-flow gaps; no analyzer-executed native reproduction claimed.
+- Verification: hold the disposable launch gate, let Switch finish its outside boundary and wait, modify either marker, release the gate, and assert the original pointer remains byte-identical and drifted records remain. For bundle cleanup, force a later `TryAcquire` to throw after setup/state acquisition while keeping the invoking host alive; a separate test owner must immediately acquire every earlier lock. Retain the busy/null and abandoned mutex controls and QA-250 normal-Rollback drift case.
+- Relationship: incomplete canonical ANALYSIS-200 correction and affected safety regression in its new acquisition helper. The original normal-Rollback state-wait check and unresolved relative-root issues are corrected portions of the finding.
+
+### ANALYSIS-201 (recheck): The new restored-monitoring retry skips pointer restoration, and fallback ownership omits live activation
+
+- Severity: warning; blocking supported same-manifest recovery in 4.1 and design decision 7.
+- Locations at reviewed identity: `scripts/install-dev.ps1:760–826`, especially `:772–776`, `:810–825`; `:414–431`.
+- Observation, retry before pointer restoration: on state `restored-monitoring-candidate-pointer`, the branch at `:772–776` sets the monitoring-mutation flag, runs the boundary and assigns `$before`. The original-pointer restoration at `:810–825` is inside the following `else` branch, so it is skipped on this retry. Execution proceeds to reservation release and `Start-SelectedTray original`, but the stable launcher still selects the candidate. With a tray expected this times out waiting for the original receipt; with no tray expected it can report `running-original` while the candidate pointer remains selected. A completed monitoring phase must skip repeating monitoring restoration, not skip the outstanding pointer step.
+- Observation, crash after pointer replacement: if the process ends after `:820` restores the original pointer but before `:824–825` persists the original-pointer phase, the durable combination is original pointer plus `restored-monitoring-candidate-pointer`. Dispatch accepts that phase only with candidate hash at `:772`; the original-pointer branches allow other states, and the fallback rejects this one at `:778`. Thus this exact original-pointer completion window cannot resume either. The phase must be reconciled with the exact recorded pointer bytes without repeating a completed monitoring restore or admitting unrelated pointer drift.
+- Observation, activation: `Assert-OwnedCandidate :420` compares the saved launcher receipt's activation to `manifest.coordinationId`. It never compares the **live tray presence** `$Owner.activation` with that expected activation. `Read-Owner` checks data root, PID/start and image, but does not impose an expected activation. A live candidate with matching process/launcher lineage but changed/mismatched presence activation therefore passes this fallback and can be signalled by `Stop-VerifiedTray`. The agreed negative receipt matrix requires this mismatch to refuse; normal `Assert-OwnedRestart` already checks live activation, but the interrupted-candidate fallback does not.
+- Proposed correction and benefit: converge both freshly restored and already-restored monitoring paths on one guarded original-pointer step; recognize the exact original-pointer-before-phase-save completion state and finish idempotently. Keep all current pointer hashes/phase bindings and owned records. Add the live candidate activation comparison to the persisted-receipt fallback before any stop/adoption, retaining current exact PID/start/root/image/live-launcher ancestry rechecks.
+- Behavior-preservation risks: do not restore monitoring or overwrite saved dev snapshots twice, accept arbitrary pointer/target combinations, or weaken receipt validation to get a restart through. Foreign or unverified processes must remain untouched.
+- Evidence type: deterministic branch/field mismatches in source, not measured native outcomes.
+- Verification: end only a disposable normal-Rollback coordinator at `rollback-before-selection` after completed monitoring restoration, preserve its exact records, and retry the same manifest; original pointer/tray must be restored without another monitoring restore. Inject termination immediately after pointer replacement but before phase persistence and repeat. At the candidate-presence-before-receipt interval, change only live presence activation while leaving saved receipt/PID/start/lineage intact; recovery must refuse before signalling the tray and preserve selection/records. Keep the valid persisted-receipt and nested-failure cases already recorded by the developer.
+- Relationship: incomplete canonical ANALYSIS-201 correction, including the agreed phase-idempotency and strict fallback-activation requirements. The stale Switch-to-Rollback phase and unwritten `candidateLauncher` field from round 005 are corrected portions of the original finding.
+
+## Re-verification
+
+| Finding ID | Current target | Independent source conclusion | Outcome |
+| --- | --- | --- | --- |
+| ANALYSIS-200 / QA-250 | `fb2c83821602` / `14/62017675a458` | Normal Rollback post-acquisition pair/guard check and unknown relative-root refusal corrected; Switch gate-wait validation and exceptional partial-bundle cleanup incomplete | Still failing overall |
+| ANALYSIS-201 / QA-251 | Same | Coherent old/new phase transition and actual persisted launcher are implemented; restored-monitoring retry/pointer completion and live activation gaps remain | Still failing overall |
+| ANALYSIS-202 | Same | Tri-state presence/object/image correlation retained | Source correction retained; native matrix belongs to QA |
+| QA-200 | Same | Cleanup failure-finally join unchanged from corrected 005 | Source correction retained; injected-failure and timing acceptance belongs to QA |
+| ANALYSIS-001 / QA-001 | Same | Shared dev-marker/retention/lease/owned-file policy unchanged | Source correction retained |
+| ANALYSIS-006 / QA-150 | Same | Short launcher critical sections/reservation retained; complete safe boundaries still blocked above | Partial |
+| QA-005 | Same | Detailed expected/actual selection, original-byte and owner diagnostics retained | Source correction retained |
+
+## Assessment and limitations
+
+The frozen target is not ready for completion. The prior decisive positive cases are corrected and the source includes stronger locking, phase publication and ownership checks, but the two canonical findings still have concrete required error/retry paths unresolved. A clean suite or successful positive smoke cannot prove those different paths.
+
+No implementation, immutable prior report, ledger or planning file was changed. Before/after identities match exactly. Both providers and mixed sessions use the same affected code; no provider-specific restriction or policy exception is claimed. Build, native lifecycle, all-phase hooks, negative process/receipt probes and timing/durability measurements remain QA006's responsibility. This reviewer did not alter live settings, stop user processes or replay any live event. The parent's earlier user-authorized native-hook migration is separate from this source review and does not prove the work-machine timeout's sole cause.
+
+The orchestrator owns finding triage, independent QA reconciliation and the next workflow/user decision. No analyzer fixes were made.
+
+```text
+status: done
+role / client / model: code-analyzer / Codex CLI 0.164.0 delegated subagent / gpt-6.1-sol
+task / finding IDs: ANALYSIS-200/201/202; QA-250/251/200; specified earlier regressions
+changed or report paths: reports/analysis-006.md; evidence/analysis-006-identity-before.txt; evidence/analysis-006-identity-after.txt
+checks: source recheck -> failed two canonical safety/recovery findings; whitespace -> passed; skill hashes -> identical; source before/after -> matched; build/tests/format/native/benchmark -> not performed (QA owns outputs)
+target identity: before/after head=b74a12b baseline=b74a12b files=32 diff=fb2c83821602 untracked=14/62017675a458
+limitations / decisions needed: pointer-wait/partial-lock failure and phase/activation paths remain; runtime acceptance belongs to QA
+next: orchestrator triages immutable report with QA006 evidence; no further implementation without its assignment
+```

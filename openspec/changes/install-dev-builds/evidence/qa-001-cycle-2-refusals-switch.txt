@@ -1,0 +1,65 @@
+
+=== Preflight refuses stable (non-dev) candidate: fixture 0.1.9
+exit=1
+Exception: D:\Code\ZeusApps.BellTower\scripts\install-dev.ps1:258
+Line |
+ 258 |  … ne 'dev') { throw "Refused: $($candidate.Version) is not a marked dev …
+     |                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     | Refused: 0.1.9 is not a marked dev build (reserved range PATCH >= 9000 plus build metadata). Build it with
+     | scripts/package.ps1 -Dev.
+
+=== Switch refused: selection drift
+exit=1
+Exception: D:\Code\ZeusApps.BellTower\scripts\install-dev.ps1:316
+Line |
+ 316 |  … onSha256) { throw 'The original selection changed or the operation wa …
+     |                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     | The original selection changed or the operation was already applied.
+selection restored: A53E6FB9A8DC1AE58BC21B17378AA93DD52CABA621563FBFABDFB3CCD986FD07
+versions: 0.1.8
+
+=== Switch refused: original payload byte drift
+exit=1
+Exception: D:\Code\ZeusApps.BellTower\scripts\install-dev.ps1:160
+Line |
+ 160 |  … e.sha256) { throw 'An original payload file changed; inspect privatel …
+     |                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     | An original payload file changed; inspect privately.
+versions: 0.1.8
+
+=== owner still the 0.1.8 tray?
+Running 0.1.8; selected 0.1.8.
+No update outcome recorded.
+
+=== SWITCH
+exit=0
+{
+  "status": "running-candidate",
+  "operationManifest": "D:\\Code\\ZeusApps.BellTower\\artifacts\\qa-001-20261024T201914Z\\workspace\\bell-tower-dev-b8a870ad8b394841b36fcc0c6092aa24\\operation.json",
+  "selectedVersion": "0.1.9001",
+  "trayPid": 32024,
+  "trayRestarted": true,
+  "originalBytesPreserved": true,
+  "restoredFiles": "none",
+  "configurationAndRuntimeFiles": "untouched"
+}
+
+=== verify surfaces after switch
+current.json: {
+  "version": "0.1.9001",
+  "previous": "0.1.8",
+  "activation": "60bc8851a0ad434d9b711dee3d8137db"
+}
+--version: 0.1.9001 dev b74a12b dirty (2026-10-24 20:07 UTC)
+update --status:
+Running 0.1.9001 dev b74a12b dirty (2026-10-24 20:07 UTC); selected 0.1.9001 dev b74a12b dirty (2026-10-24 20:07 UTC).
+No update outcome recorded.
+doctor version: 0.1.9001 dev b74a12b dirty (2026-10-24 20:07 UTC)
+doctor trayRunning: True
+proc 28284 D:\Code\ZeusApps.BellTower\artifacts\qa-001-20261024T201914Z\install\bell-tower.exe
+proc 32024 D:\Code\ZeusApps.BellTower\artifacts\qa-001-20261024T201914Z\install\versions\0.1.9001\bell-tower.exe
+
+=== payload release.json build
+{"channel":"dev","commit":"b74a12b","dirty":true,"builtAt":"2026-10-24T20:07:11Z","baseVersion":"0.1.8"}
+
+=== update --check offline sanity (no network call expected to matter) skipped

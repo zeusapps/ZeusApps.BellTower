@@ -1,0 +1,88 @@
+{
+  "kind": "installed native, actual published 0.1.8 runtime, capture 0 / legacy-only; synthetic disposable data",
+  "steps": {
+    "tray": {
+      "version": "0.1.8",
+      "capture": 0,
+      "pid": 12508
+    },
+    "idleHooks": [
+      {
+        "trial": "LegacyClaude",
+        "err": null,
+        "hookPass": true,
+        "maxMs": 1222.0,
+        "captureDelta": 0,
+        "inboxDelta": 1,
+        "barrierHeld": false,
+        "neutral": true
+      },
+      {
+        "trial": "LegacyCodex",
+        "err": null,
+        "hookPass": true,
+        "maxMs": 1104.0,
+        "captureDelta": 0,
+        "inboxDelta": -1,
+        "barrierHeld": false,
+        "neutral": true
+      },
+      {
+        "trial": "LegacyMixed",
+        "err": null,
+        "hookPass": true,
+        "maxMs": 1212.0,
+        "captureDelta": 0,
+        "inboxDelta": 1,
+        "barrierHeld": false,
+        "neutral": true
+      }
+    ],
+    "preflight": {
+      "exitCode": 0,
+      "text": "{ \"status\": \"preflight-passed\", \"operationManifest\": \"D:\\\\Code\\\\ZeusApps.BellTower\\\\artifacts\\\\qa-007\\\\published-018-fixture\\\\private\\\\bell-tower-dev-fa30721903854b2ea4dc261c25c4bcca\\\\operation.json\", \"originalVersion\": \"0.1.8\", \"candidateVersion\": \"0.1.9006\", \"display\": \"0.1.9006 dev b74a12b dirty (2026-10-25 09:48 UTC)\", \"originalFiles\": 17, \"trayRunning\": true, \"mutation\": \"none; only the private operation workspace was written\" }",
+      "selectionUnchanged": true
+    },
+    "heldSwitchHooks": [
+      {
+        "trial": "LegacyClaude",
+        "err": null,
+        "hookPass": true,
+        "maxMs": 1132.0,
+        "captureDelta": 0,
+        "inboxDelta": 1,
+        "barrierHeld": true,
+        "neutral": true
+      },
+      {
+        "trial": "LegacyCodex",
+        "err": null,
+        "hookPass": true,
+        "maxMs": 1048.0,
+        "captureDelta": 0,
+        "inboxDelta": 1,
+        "barrierHeld": true,
+        "neutral": true
+      },
+      {
+        "trial": "LegacyMixed",
+        "err": null,
+        "hookPass": true,
+        "maxMs": 1127.0,
+        "captureDelta": 0,
+        "inboxDelta": 2,
+        "barrierHeld": true,
+        "neutral": true
+      }
+    ],
+    "heldSwitchMs": 3403,
+    "switch": {
+      "exitCode": 0,
+      "text": "{ \"status\": \"running-candidate\", \"operationManifest\": \"D:\\\\Code\\\\ZeusApps.BellTower\\\\artifacts\\\\qa-007\\\\published-018-fixture\\\\private\\\\bell-tower-dev-fa30721903854b2ea4dc261c25c4bcca\\\\operation.json\", \"selectedVersion\": \"0.1.9006\", \"trayPid\": 33396, \"trayRestarted\": true, \"originalBytesPreserved\": true, \"restoredFiles\": \"none\", \"configurationAndRuntimeFiles\": \"untouched\" }"
+    },
+    "selectionAfterSwitch": "0.1.9006"
+  },
+  "cleanup": {
+    "leftoversStopped": []
+  }
+}

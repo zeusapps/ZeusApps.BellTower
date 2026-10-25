@@ -7,7 +7,7 @@ internal sealed class ApplicationVersionAction : SynchronousCommandLineAction
 {
     public override int Invoke(ParseResult parseResult)
     {
-        parseResult.InvocationConfiguration.Output.WriteLine(ApplicationInfo.Version);
+        parseResult.InvocationConfiguration.Output.WriteLine(ApplicationInfo.Display);
         return 0;
     }
 }

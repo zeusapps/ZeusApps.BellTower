@@ -1,0 +1,49 @@
+=== stop only my disposable tray
+False
+=== Preflight (no tray)
+exit=0
+{
+  "status": "preflight-passed",
+  "operationManifest": "D:\\Code\\ZeusApps.BellTower\\artifacts\\qa-001-20261024T201914Z\\workspace\\bell-tower-dev-d080b5e42ac1447788760bb56728400a\\operation.json",
+  "originalVersion": "0.1.8",
+  "candidateVersion": "0.1.9001",
+  "display": "0.1.9001 dev b74a12b dirty (2026-10-24 20:07 UTC)",
+  "originalFiles": 16,
+  "trayRunning": false,
+  "mutation": "none; only the private operation workspace was written"
+}
+=== Switch (no tray)
+exit=0
+{
+  "status": "running-candidate",
+  "operationManifest": "D:\\Code\\ZeusApps.BellTower\\artifacts\\qa-001-20261024T201914Z\\workspace\\bell-tower-dev-d080b5e42ac1447788760bb56728400a\\operation.json",
+  "selectedVersion": "0.1.9001",
+  "trayPid": null,
+  "trayRestarted": false,
+  "originalBytesPreserved": true,
+  "restoredFiles": "none",
+  "configurationAndRuntimeFiles": "untouched"
+}
+--version: 0.1.9001 dev b74a12b dirty (2026-10-24 20:07 UTC)
+=== Rollback (no tray)
+exit=0
+{
+  "status": "running-original",
+  "operationManifest": "D:\\Code\\ZeusApps.BellTower\\artifacts\\qa-001-20261024T201914Z\\workspace\\bell-tower-dev-d080b5e42ac1447788760bb56728400a\\operation.json",
+  "selectedVersion": "0.1.8",
+  "trayPid": null,
+  "trayRestarted": false,
+  "originalBytesPreserved": true,
+  "restoredFiles": "state.json, state.json.bak, current.json only",
+  "configurationAndRuntimeFiles": "untouched"
+}
+--version: 0.1.8
+=== Retire 0.1.9001
+exit=0
+{
+  "status": "retired",
+  "version": "0.1.9001",
+  "selectedVersion": "0.1.8",
+  "record": "D:\\Code\\ZeusApps.BellTower\\artifacts\\qa-001-20261024T201914Z\\workspace\\retire-0.1.9001-20261024T202221Z.json"
+}
+procs left:

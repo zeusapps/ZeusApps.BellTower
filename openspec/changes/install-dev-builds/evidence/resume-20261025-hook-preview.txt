@@ -1,0 +1,7 @@
+{
+  "ConfigureFiles": 3,
+  "ReplacedOwnedHooks": 22,
+  "InstalledHookEntries": 22,
+  "ImmutableIngressPlanned": true,
+  "DryRun": true
+}

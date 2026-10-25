@@ -1,0 +1,13 @@
+{
+  "generatedUtc": "2026-10-25T11:30:00Z",
+  "disposableProcessesRemaining": 0,
+  "sweep": "CIM scan for ExecutablePath under artifacts/qa-010* or command lines naming artifacts/qa-010 (excluding QA shell commands) returned none",
+  "ownedProcesses": [
+    "owner-race: foreign 0.1.8 tray exited by itself (exit code 0) before Switch was released; harness finally-block found nothing to stop",
+    "delayed-child: simulator pid 32628 exited after losing the tray-instance mutex (createdNew=false); harness kill path not needed; Switch installers exited 0"
+  ],
+  "userBellTowerProcessesObservedAfter": [2908, 16508, 18412],
+  "userProcessesTouched": false,
+  "fixturesDeleted": ["artifacts/qa-010-owner-race", "artifacts/qa-010-delayed", "artifacts/qa-010-helper-src", "artifacts/qa-010-helper-publish"],
+  "maintainerInstallationLiveTraySettingsTouched": false
+}
