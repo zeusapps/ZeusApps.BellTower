@@ -8,7 +8,7 @@ Orchestrator-owned ledger. Reviewers write their assigned reports; developers wr
 - Session identity: claude-install-dev-builds-resume-20261025
 - Since (UTC): 2026-10-25
 - Previous owner: Codex CLI 0.164.0 / codex-install-dev-builds-handoff-20261024 (inactive on user wrap-up); user handed back: "Now it's turn of codex do be exhausted, so you need to pick it up and make it done."
-- State: active; implementation complete. Resumed on frozen target `head=b74a12b baseline=b74a12b files=32 diff=fb2c83821602 untracked=14/62017675a458` (re-verified identical). Resuming user-approved round 007 per [wrap-up checkpoint](../evidence/wrapup-checkpoint-20261025T085617Z.md).
+- State: complete; archived on user request. Resumed on frozen target `head=b74a12b baseline=b74a12b files=32 diff=fb2c83821602 untracked=14/62017675a458` (re-verified identical). Resuming user-approved round 007 per [wrap-up checkpoint](../evidence/wrapup-checkpoint-20261025T085617Z.md).
 
 Baseline commit: `b74a12b` (branch `add-claude-repository-subagents`). User authorized apply on 2026-10-24 ("go ahead and apply"). User previously authorized tray restarts for dev installs; a live Switch on the maintainer installation remains a separate step after review (task 6.1).
 
@@ -123,14 +123,15 @@ QA 001 and Analysis 001 completed on `diff=d7215fdec6d9 untracked=8/78c150b1a77e
 | 2026-10-25 | committed 84dac98 | live install failed | orchestrator | User-authorized live Switch of 0.1.9007: refused (LIVE-001) after stopping the tray (LIVE-002); recovered by Rollback to 0.1.10; maintainer back on original state. Task 4.1 reopened; archive withheld; escalated to user. |
 | 2026-10-25 | live install failed | assigned | user | Chose "Fix round, then install (Recommended)": Implementation 011 for LIVE-001/002/003, then reviews, commit, install, archive. |
 | 2026-10-25 | review 013 | complete | orchestrator | QA 013 / Analysis 013 clean on `head=84dac98 baseline=84dac98 files=6 diff=19aea83cdd82 untracked=0/e3b0c44298fc`. LIVE-001/002/003, ANALYSIS-550–553 and ANALYSIS-600 verified; ANALYSIS-554/555/650 deferred. Task 4.1 re-checked; committing, then the authorized live install retry. |
+| 2026-10-25 | committed ae0198b | installed | orchestrator | User-authorized live install: package 0.1.9010 (`ae0198b`), read-only Preflight passed, Switch → `running-candidate`, tray PID 35092 on 0.1.9010; `--version`, `update --status`, `doctor` show the dev label; `update --check` compares against base 0.1.8; no coordination records left. Operation record `artifacts/dev-builds/operations/bell-tower-dev-be5759e7f7604d4fb234a0ab400e0250/operation.json` (Rollback returns to 0.1.10). |
 ## Completion assessment
 
 - Latest current reviews: [QA 010](qa-010.md) and [Analysis 010](analysis-010.md) on final target `head=b74a12b baseline=b74a12b files=34 diff=1eaa17c65cb6 untracked=16/0c724f50f6d8`; functional and native acceptance for the unchanged logic in [QA 007](qa-007.md), [QA 008](qa-008.md), [QA 009](qa-009.md) and [Analysis 007](analysis-007.md)–[009](analysis-009.md) (rounds 008–010 touched only the QA-350/400 paths, each rechecked, and line endings).
 - Required acceptance: 13/13 tasks (4.1 re-verified after the live-defect rounds 011–013). Release build, 820/820 full suite, format verify, node 8/8 ([QA 010](qa-010.md)); dev package 0.1.9006, NativeAOT benchmark (242 captures, Claude median 180 ms, Codex 135 ms, all < 3 s) and read-only maintainer Preflight ([QA 007](qa-007.md)); disposable Preflight → Switch → Rollback → Retire, crash/recovery matrix, marker negatives, hooks < 3 s for Claude, Codex and mixed pairs at six barriers, published 0.1.8 trial ([QA 007](qa-007.md), [QA 009](qa-009.md)); QA-150 owner race and delayed child ([QA 010](qa-010.md)).
 - Findings: no blocking finding open; LIVE-001/002/003 verified (QA 011–013, Analysis 011–013). Suggestions (incl. ANALYSIS-450, QA-451) and QA-204 deferred in the register.
 - Evidence gaps: no authenticated provider sessions; hook and benchmark evidence is generated-shell; legacy per-event durability not claimed; work-machine timeout cause unverified (not a provider restriction).
-- Commit: `84dac98` (implementation plus change artifacts before the live attempt).
-- Live maintainer Switch: first attempt 2026-10-25 with 0.1.9007 (`84dac98`) failed safely (LIVE-001/002) and was recovered by Rollback; retry follows the fix commit.
+- Commits: `84dac98` (implementation), `ae0198b` (live-defect fixes).
+- Live maintainer Switch: first attempt with 0.1.9007 (`84dac98`) failed safely (LIVE-001/002) and was recovered; retry with 0.1.9010 (`ae0198b`) succeeded 2026-10-25 (see history).
 
 ## Handoff reconciliation (2026-10-24)
 
