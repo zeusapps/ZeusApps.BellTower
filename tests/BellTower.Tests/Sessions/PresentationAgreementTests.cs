@@ -25,7 +25,7 @@ public sealed class PresentationAgreementTests
         var plan = new[] { ("claude", "dep-7070-fix", "DEP-7070", "DEP-7070-login"), ("codex", "dep-8080-docs", "DEP-8080", "DEP-8080-docs") };
         foreach (var (provider, _, _, _) in plan)
         {
-            new EventStore(workspace.Paths).Publish(TestWorkspace.Event(EventKind.Permission, now.AddSeconds(-60)) with
+            new EventStore(workspace.Paths).Publish(TestWorkspace.ConfirmedPermission(now.AddSeconds(-60)) with
             { Provider = provider, SessionId = "one", AttachmentId = "attachment-" + provider, Directory = family.Main });
         }
         var state = new StateStore(workspace.Paths).Drain();

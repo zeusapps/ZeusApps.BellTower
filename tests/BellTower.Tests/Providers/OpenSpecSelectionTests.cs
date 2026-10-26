@@ -212,7 +212,7 @@ public sealed class OpenSpecSelectionTests
     {
         using var workspace = new TestWorkspace();
         var events = new EventStore(workspace.Paths);
-        events.Publish(TestWorkspace.Event(EventKind.Permission) with { Directory = workspace.Root });
+        events.Publish(TestWorkspace.ConfirmedPermission() with { Directory = workspace.Root });
         var store = new StateStore(workspace.Paths);
         var session = store.Drain().Sessions["claude:session-1"];
         store.MarkViewed(session.Key, session.Episode!);

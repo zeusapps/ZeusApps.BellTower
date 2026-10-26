@@ -1,0 +1,70 @@
+using System.Text.Json;
+using BellTower.Core;
+using BellTower.Providers;
+var t0 = new DateTimeOffset(2026,10,26,12,0,0,TimeSpan.Zero);
+Observation H(string prov, string json, double s, string sid="s1"){ using var d=JsonDocument.Parse(json); var a=new Attachment("att-"+prov,prov,null,new(),"D:/x",t0); return HookAdapter.Parse(prov,d.RootElement,a,t0.AddSeconds(s))! with {SessionId=sid}; }
+string Tool(string hook,string tool,string? id,string cmd="x")=>"{\"session_id\":\"s1\",\"hook_event_name\":\""+hook+"\",\"tool_name\":\""+tool+"\","+(id==null?"":"\"tool_use_id\":\""+id+"\",")+"\"tool_input\":{\"command\":\""+cmd+"\"}}";
+string Prompt="{\"session_id\":\"s1\",\"hook_event_name\":\"Notification\",\"notification_type\":\"permission_prompt\"}";
+string Plain(string hook)=>"{\"session_id\":\"s1\",\"hook_event_name\":\""+hook+"\"}";
+string Q(string hook,string? id)=>Tool(hook,"AskUserQuestion",id,"q");
+SessionState S(AppState st,string key)=>st.Sessions.Values.First(x=>x.Key==key);
+void Dump(string name,AppState st,string prov,double now,AlertPolicy? p=null){ var s=st.Sessions.Values.First(); var n=t0.AddSeconds(now);
+  Console.WriteLine($"{name} @+{now}s: reason={s.Reason?.ToString()??"-"} waits=[{string.Join(",",s.Waits.Select(w=>w.Reason+"/"+w.Confirmation+(w.Ambiguous?"/amb":"")))}] attn={s.RequiresAttention(n)} due={(s.Due is {} d?(d-t0).TotalSeconds.ToString("0.0"):"-")} ndue={(s.NotificationDue is {} nd?(nd-t0).TotalSeconds.ToString("0.0"):"-")} collect={(p==null?"n/a":p.Collect([s],n,false).Count.ToString())}"); }
+void Run(string name,string prov,params (double,string)[] ev){ var st=new AppState(); var p=new AlertPolicy(t0.AddSeconds(-1)); Console.WriteLine("== "+name);
+  foreach(var (s,j) in ev){ SessionReducer.Apply(st,H(prov,j,s)); Dump(JsonDocument.Parse(j).RootElement.GetProperty("hook_event_name").GetString()!,st,prov,s,p);} 
+  foreach(var n in new[]{ev[^1].Item1+1,ev[^1].Item1+20,ev[^1].Item1+120}) Dump("later",st,prov,n,p); }
+Run("A auto approve 30s claude","claude",(0,Plain("UserPromptSubmit")),(1,Tool("PermissionRequest","Bash","x1")),(20,Tool("PermissionRequest","Bash",null)),(31,Tool("PostToolUse","Bash","x1")));
+Run("A2 auto approve >15s codex","codex",(0,Plain("UserPromptSubmit")),(1,Tool("PermissionRequest","Bash",null)));
+Run("B claude human","claude",(0,Plain("UserPromptSubmit")),(1,Tool("PermissionRequest","Bash",null)),(7.3,Prompt));
+Run("B2 prompt only no precursor","claude",(0,Plain("UserPromptSubmit")),(7,Prompt));
+Run("C late prompt after resolve","claude",(0,Plain("UserPromptSubmit")),(1,Tool("PermissionRequest","Bash","a")),(3,Tool("PostToolUse","Bash","a")),(7,Prompt),(7,Prompt));
+Run("C2 late prompt after Stop","claude",(0,Plain("UserPromptSubmit")),(1,Tool("PermissionRequest","Bash","a")),(3,Plain("Stop")),(7,Prompt));
+Run("D same-fp no PreToolUse, no ids, one result","claude",(0,Plain("UserPromptSubmit")),(1,Tool("PermissionRequest","Bash",null)),(1.1,Tool("PermissionRequest","Bash",null)),(2,Tool("PostToolUse","Bash",null)),(8,Prompt));
+Run("E question+permission+prompt","claude",(0,Plain("UserPromptSubmit")),(1,Q("PreToolUse","q1")),(2,Tool("PermissionRequest","Bash",null)),(8,Prompt));
+Run("F codex question default rejected","codex",(0,Plain("UserPromptSubmit")),(1,"{\"session_id\":\"s1\",\"hook_event_name\":\"PreToolUse\",\"tool_name\":\"request_user_input\",\"tool_use_id\":\"c1\",\"tool_input\":{\"q\":1}}"),(3,Plain("Stop")));
+Run("G question dialog claude","claude",(0,Plain("UserPromptSubmit")),(1,Q("PreToolUse","q1")),(1.1,Q("PermissionRequest",null)),(7.3,Prompt),(60,Q("PostToolUse","q1")));
+Run("D2 two parallel Bash same cmd, PreToolUse ids, one result","claude",(0,Plain("UserPromptSubmit")),(1,Tool("PreToolUse","Bash","a")),(1,Tool("PreToolUse","Bash","b")),(1.1,Tool("PermissionRequest","Bash",null)),(1.2,Tool("PermissionRequest","Bash",null)),(2,Tool("PostToolUse","Bash","a")),(8,Prompt));
+Run("D3 same, prompt before result","claude",(0,Plain("UserPromptSubmit")),(1,Tool("PreToolUse","Bash","a")),(1,Tool("PreToolUse","Bash","b")),(1.1,Tool("PermissionRequest","Bash",null)),(7.5,Prompt),(9,Tool("PostToolUse","Bash","a")),(15,Prompt));
+Run("D4 Pre a, Req a(auto), Post a at 2, Pre b, Req b at 3, prompt at 9","claude",(0,Plain("UserPromptSubmit")),(1,Tool("PreToolUse","Bash","a")),(1.1,Tool("PermissionRequest","Bash",null)),(2,Tool("PostToolUse","Bash","a")),(2.5,Tool("PreToolUse","Bash","b")),(3,Tool("PermissionRequest","Bash",null)),(9,Prompt));
+{
+ Console.WriteLine("== H codex native");
+ var st=new AppState(); SessionReducer.Apply(st,H("codex",Plain("UserPromptSubmit"),0)); SessionReducer.Apply(st,H("codex",Tool("PermissionRequest","Bash",null),1));
+ var s=st.Sessions.Values.First(); var p=new AlertPolicy(t0.AddSeconds(-1));
+ Dump("provisional",st,"codex",30,p);
+ s.NativePermissionPending=true; s.NativePermissionSince=t0.AddSeconds(10);
+ Dump("native true since10 @12",st,"codex",12,p); Dump("native true @16",st,"codex",16,p);
+ s.NativePermissionPending=false; Dump("native false @40",st,"codex",40,p);
+ s.NativePermissionPending=null; Dump("native expired @50",st,"codex",50,p);
+ // restart silent: new policy started after due
+ s.NativePermissionPending=true; s.NativePermissionSince=t0.AddSeconds(10);
+ var p2=new AlertPolicy(t0.AddSeconds(100)); Dump("restart policy",st,"codex",120,p2);
+ // serialize and reload restoring
+ var bk=JsonSerializer.Deserialize<AppState>(JsonSerializer.Serialize(st,BellTower.IO.Json.Options),BellTower.IO.Json.Options)!;
+ Console.WriteLine("reloaded reason="+bk.Sessions.Values.First().Reason+" waits="+bk.Sessions.Values.First().Waits[0].Confirmation);
+}
+{
+ Console.WriteLine("== I claude confirmed restart");
+ var st=new AppState(); SessionReducer.Apply(st,H("claude",Plain("UserPromptSubmit"),0)); SessionReducer.Apply(st,H("claude",Tool("PermissionRequest","Bash",null),1)); SessionReducer.Apply(st,H("claude",Prompt,7.3));
+ var bk=JsonSerializer.Deserialize<AppState>(JsonSerializer.Serialize(st,BellTower.IO.Json.Options),BellTower.IO.Json.Options)!;
+ var p2=new AlertPolicy(t0.AddSeconds(100)); Dump("restored",bk,"claude",120,p2);
+ Console.WriteLine("attn after restore: "+bk.Sessions.Values.First().RequiresAttention(t0.AddSeconds(120)));
+}
+{
+ Console.WriteLine("== J mixed: claude question + codex permission");
+ var st=new AppState();
+ SessionReducer.Apply(st,H("claude",Plain("UserPromptSubmit"),0,"c1")); SessionReducer.Apply(st,H("claude",Q("PreToolUse","q1"),1,"c1")); SessionReducer.Apply(st,H("claude",Q("PermissionRequest",null),1.1,"c1")); SessionReducer.Apply(st,H("claude",Prompt,7.3,"c1"));
+ SessionReducer.Apply(st,H("codex",Plain("UserPromptSubmit"),0,"x1")); SessionReducer.Apply(st,H("codex",Tool("PermissionRequest","Bash",null),2,"x1"));
+ foreach(var s in st.Sessions.Values) Console.WriteLine(s.Key+" reason="+s.Reason+" waits="+string.Join(",",s.Waits.Select(w=>w.Reason+"/"+w.Confirmation))+" ep="+s.Episode);
+}
+{
+ Console.WriteLine("== K stale prompt vs genuine confirmation-only soon after unrelated resolved wait");
+ var st=new AppState(); SessionReducer.Apply(st,H("claude",Plain("UserPromptSubmit"),0)); SessionReducer.Apply(st,H("claude",Tool("PreToolUse","Bash","a"),1)); SessionReducer.Apply(st,H("claude",Tool("PermissionRequest","Bash",null),1.1)); SessionReducer.Apply(st,H("claude",Tool("PostToolUse","Bash","a"),3));
+ // second tool's PermissionRequest hook lost/delayed; human prompt arrives 10s later
+ SessionReducer.Apply(st,H("claude",Prompt,13)); Dump("prompt w/o precursor 10s after resolve",st,"claude",14);
+}
+// legacy snapshot + unknown fields
+var json="{\"schemaVersion\":1,\"futureTop\":7,\"sessions\":{\"claude:s1\":{\"key\":\"claude:s1\",\"attachmentId\":\"a\",\"provider\":\"claude\",\"sessionId\":\"s1\",\"waits\":[{\"reason\":\"permission\",\"since\":\"2026-10-26T12:00:00+00:00\",\"operationId\":null,\"fingerprint\":\"fp\",\"newFutureField\":{\"a\":1}}],\"episode\":\"e1\",\"episodeStarted\":\"2026-10-26T12:00:00+00:00\"}}}";
+var legacy=JsonSerializer.Deserialize<AppState>(json,BellTower.IO.Json.Options)!; var ls=legacy.Sessions.Values.First();
+Console.WriteLine("LEGACY reason="+(ls.Reason?.ToString()??"-")+" conf="+ls.Waits[0].Confirmation+" attn="+ls.RequiresAttention(t0.AddMinutes(5)));
+var back=JsonSerializer.Serialize(legacy,BellTower.IO.Json.Options); Console.WriteLine("roundtrip keeps: "+back.Contains("newFutureField")+" "+back.Contains("futureTop"));
+Console.WriteLine(Enum.GetValues<AttentionReason>().Select(x=>x+"="+(int)x).Aggregate((a,b)=>a+" "+b));

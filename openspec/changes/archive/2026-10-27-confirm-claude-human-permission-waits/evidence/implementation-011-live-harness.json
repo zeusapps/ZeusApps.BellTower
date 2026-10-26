@@ -1,0 +1,42 @@
+{
+  "purpose": "Harness smoke observations (fake loopback model, hidden consoles, no approval answered). Not live-trial evidence.",
+  "date": "2026-10-26",
+  "versions": { "bellTower": "0.1.9012", "claude": "2.1.310 (pinned copy of the on-disk release)", "claudeDefaultAtPreparation": "2.1.311", "codex": "0.164.0" },
+  "offsetsFromFirstPermissionRequestSeconds": {
+    "scenario1": { "permissionRequest": 0.1, "notificationPermissionPrompt": 6.0, "state": "Provisional then Confirmed at 6", "announceEligible": true, "chip": "needs permission" },
+    "scenario2": { "classifierRequestsHeldSeconds": 20, "permissionRequestHook": false, "notificationHook": false, "waits": 0, "chip": null, "doneChipAfterStopSeconds": 20 },
+    "scenario2b_hookDelayMechanism": { "permissionRequest": 0.1, "notificationPermissionPrompt": 6.0, "state": "Confirmed", "announceEligible": true, "clearedAtSeconds": 22 },
+    "scenario3": { "confirmedWithinSeconds": 1, "announceEligibleAfterSeconds": 5, "chip": "needs permission" },
+    "scenario4": { "reviewerHeldSeconds": 20, "provisionalSeconds": 25, "chip": null, "announceEligible": false, "unverifiedChip": false },
+    "scenario4b_noDaemon": { "unverifiedChipAtSeconds": 15, "clearedAtSeconds": 21, "announceEligible": false },
+    "scenario5": { "unverifiedChipAtSeconds": 15, "announceEligible": false },
+    "scenario6": { "claudeConfirmedAtSeconds": 6, "codexConfirmedAfterStatusSeconds": 5, "independentChips": 2 }
+  },
+  "findings": [
+    {
+      "id": "H-1",
+      "summary": "Codex 0.164.0 runs hook commands through PowerShell 7 on this machine; the generated cmd-style hook string is a PowerShell parse error and delivered no capture; the PowerShell call form delivered the events.",
+      "probe": "echo %COMSPEC% $PSHOME written by a hook printed the literal %COMSPEC% and the expanded PSHOME; ingress with the quoted-path-first string wrote 0 captures in two TUI runs (sync and async) while the PowerShell call form wrote 4.",
+      "status": "unverified for the user's real Codex configuration"
+    },
+    {
+      "id": "H-2",
+      "summary": "Async Codex hook registration let PermissionRequest reach the ingress before PreToolUse (ingress-only ordering, about 20 ms apart); the request was treated as resolved and no wait was shown.",
+      "status": "observed once in the managed-runtime harness run; needs confirmation"
+    },
+    {
+      "id": "H-3",
+      "summary": "Claude 2.1.310 in auto mode emitted no PermissionRequest and no Notification while the classifier call was pending, so a slow automatic approval cannot reach Bell Tower's provisional path through the real mechanism.",
+      "status": "observed in the TUI with the fake classifier endpoint"
+    },
+    {
+      "id": "H-4",
+      "summary": "A PermissionRequest hook that holds longer than about 6 s still produced Notification permission_prompt, so Bell Tower confirmed and announced although no person was asked.",
+      "status": "observed for the hook-delay mechanism only; not Claude's automatic reviewer"
+    }
+  ],
+  "limitations": [
+    "Bell Tower 0.1.9012 writes no announcement log; announcement eligibility is derived from persisted state using the product's AlertPolicy rule, chips are read through UI Automation.",
+    "The visible-window launch path and a real-display screenshot of the second tray were not exercised."
+  ]
+}

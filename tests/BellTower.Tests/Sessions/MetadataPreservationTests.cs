@@ -20,7 +20,7 @@ public sealed class MetadataPreservationTests
 
     private static string Wait(TestWorkspace workspace, string provider, string id, string directory, DateTimeOffset at)
     {
-        new EventStore(workspace.Paths).Publish(TestWorkspace.Event(EventKind.Permission, at) with
+        new EventStore(workspace.Paths).Publish(TestWorkspace.ConfirmedPermission(at) with
         { Provider = provider, SessionId = id, AttachmentId = "attachment-" + provider + id, Directory = directory });
         var state = new StateStore(workspace.Paths).Drain();
         return state.Sessions[provider + ":" + id].Episode!;

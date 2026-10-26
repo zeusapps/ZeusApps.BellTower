@@ -10,7 +10,7 @@ public sealed class PolicyTests
     private static SessionState Waiting(DateTimeOffset since)
     {
         var state = new AppState();
-        SessionReducer.Apply(state, TestWorkspace.Event(EventKind.Permission, since));
+        SessionReducer.Apply(state, TestWorkspace.ConfirmedPermission(since));
         return state.Sessions.Values.Single();
     }
 
@@ -30,8 +30,8 @@ public sealed class PolicyTests
         var now = DateTimeOffset.UtcNow;
         var policy = new AlertPolicy(now);
         var s = Waiting(now.AddSeconds(1));
-        Assert.Empty(policy.Collect([s], now.AddSeconds(15), false));
-        Assert.Single(policy.Collect([s], now.AddSeconds(16), false));
+        Assert.Empty(policy.Collect([s], now, false));
+        Assert.Single(policy.Collect([s], now.AddSeconds(1), false));
         Assert.Empty(policy.Collect([s], now.AddSeconds(17), false));
     }
 

@@ -33,7 +33,7 @@ Code organization and formatting follow the [development conventions](docs/devel
 
 ## Attention behavior
 
-- Completion waits 20 seconds. Managed Codex permissions use verified human-approval status with a 5-second grace; other permission paths use a 15-second debounce. Questions and terminal failures remain immediate.
+- Completion waits 20 seconds. Permission requests are provisional until a supported signal confirms that a person is needed (Claude's permission prompt notification, or the verified Codex owning-runtime approval status) and then use a 5-second grace that counts the provider's own delay; automatically approved requests never alert. A session with no supported signal (Codex without a verified owning runtime, or Claude with no permission prompt notification observed) shows a silent \"possibly waiting for approval\" chip after 15 seconds, with no sound, reminder or escalation and never labelled confirmed. Question dialogs stay questions. Questions and terminal failures remain immediate.
 - Background subagent/workflow/monitor activity suppresses completion, while foreground questions remain visible.
 - Left-click requests focus; successful chip navigation hides only its timer for the current wait. Right-click dismisses the chip.
 - The tray Sessions overview includes working sessions and allows manual name and change association editing.

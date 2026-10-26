@@ -1,0 +1,232 @@
+using BellTower.Core;
+using BellTower.IO;
+using BellTower.Providers;
+using BellTower.Sessions;
+
+void Check(bool passed, string label) { if (!passed) throw new Exception(label); Console.WriteLine("PASS " + label); }
+foreach (var causal in new[] { false, true })
+{
+    {
+        using var fixture = new Fixture(causal);
+        fixture.Publish(EventKind.Permission, "old");
+        var first = fixture.Drain();
+        var delayed = new Status();
+        fixture.Clients.Enqueue(delayed);
+        var refresh = fixture.Pump.RefreshAsync([first]);
+        await delayed.Started.Task.WaitAsync(TimeSpan.FromSeconds(2));
+        fixture.Publish(EventKind.ToolEnd, "old");
+        fixture.Publish(EventKind.Permission, "new-auto-review");
+        var middle = fixture.Drain();
+        fixture.Pump.Apply([middle], DateTimeOffset.UtcNow);
+        Check(middle.NativePermissionPending is null, $"original-race/{causal} in-flight cache rejected");
+        delayed.Result.SetResult(true);
+        await refresh;
+        var after = fixture.Drain();
+        fixture.Pump.Apply([after], DateTimeOffset.UtcNow);
+        Check(after.Waits.Single().OperationId == "new-auto-review" && after.Waits.Single().Confirmation == HumanConfirmation.Provisional && after.NativePermissionPending is null && !after.RequiresAttention(DateTimeOffset.UtcNow.AddMinutes(1)), $"original-race/{causal} old response never confirms newer request");
+        Check(new AlertPolicy(DateTimeOffset.UtcNow.AddMinutes(-2)).Collect([after], DateTimeOffset.UtcNow.AddMinutes(1), false).Count == 0, $"original-race/{causal} no wrong announcement");
+    }
+    {
+        using var fixture = new Fixture(causal);
+        fixture.Publish(EventKind.Permission, "A");
+        var first = fixture.Drain();
+        var revision = first.ApprovalRevision;
+        var delayed = new Status();
+        fixture.Clients.Enqueue(delayed);
+        var refresh = fixture.Pump.RefreshAsync([first]);
+        await delayed.Started.Task.WaitAsync(TimeSpan.FromSeconds(2));
+        fixture.Publish(EventKind.Permission, "B");
+        var both = fixture.Drain();
+        delayed.Result.SetResult(true);
+        await refresh;
+        var oldEnvelope = Directory.GetFiles(fixture.Paths.Inbox).Single();
+        var oldJson = File.ReadAllText(oldEnvelope);
+        var oldObservation = BellTower.IO.Json.Decode<Observation>(oldJson)!;
+        Check(oldObservation.RuntimeApprovalRevision == revision && oldObservation.RuntimeApprovalScope!.SequenceEqual(first.Waits.Select(w => w.ConfirmationScopeId)), $"ABA/{causal} query captures original set and generation");
+        var rejected = fixture.Drain();
+        fixture.Pump.Apply([rejected], DateTimeOffset.UtcNow);
+        Check(rejected.Waits.All(w => w.Confirmation == HumanConfirmation.Provisional) && rejected.NativePermissionPending is null, $"ABA/{causal} consumed result rejected against A+B");
+        fixture.Publish(EventKind.ToolEnd, "B");
+        var onlyA = fixture.Drain();
+        fixture.Pump.Apply([onlyA], DateTimeOffset.UtcNow);
+        Check(onlyA.Waits.Count == 1 && onlyA.ApprovalRevision > revision && onlyA.NativePermissionPending is null && !onlyA.RequiresAttention(DateTimeOffset.UtcNow.AddMinutes(1)), $"ABA/{causal} old cached result stays stale after B resolves");
+        // Restart persistence reads must not return the generation to its original A value.
+        Check(new StateStore(fixture.Paths).Read().Sessions["codex:probe"].ApprovalRevision == onlyA.ApprovalRevision, $"ABA/{causal} generation persists");
+        var ready = new Status(); ready.Result.SetResult(true); fixture.Clients.Enqueue(ready);
+        await fixture.Pump.RefreshAsync([onlyA]);
+        var freshEnvelope = BellTower.IO.Json.Decode<Observation>(File.ReadAllText(Directory.GetFiles(fixture.Paths.Inbox).Single()))!;
+        Check(freshEnvelope.Id != oldObservation.Id && freshEnvelope.RuntimeApprovalRevision == onlyA.ApprovalRevision, $"ABA/{causal} fresh query has independent dedupe ID");
+        var confirmed = fixture.Drain();
+        Check(confirmed.Waits.Single().Confirmation == HumanConfirmation.Confirmed, $"ABA/{causal} stale consumption does not poison fresh confirmation");
+        var episode = confirmed.Episode;
+        new EventStore(fixture.Paths).Publish(freshEnvelope);
+        Check(fixture.Drain().Episode == episode, $"ABA/{causal} replay of same observation remains idempotent");
+    }
+    {
+        // Callers can mutate an unordered session object in place. The query's captured array/scope must not follow mutation.
+        using var fixture = new Fixture(causal);
+        fixture.Publish(EventKind.Permission, "old");
+        var original = fixture.Drain();
+        var local = new AppState(); local.Sessions[original.Key] = original;
+        var delayed = new Status(); fixture.Clients.Enqueue(delayed);
+        var refresh = fixture.Pump.RefreshAsync([original]);
+        await delayed.Started.Task.WaitAsync(TimeSpan.FromSeconds(2));
+        SessionReducer.Apply(local, fixture.Event(EventKind.ToolEnd, "old"));
+        SessionReducer.Apply(local, fixture.Event(EventKind.Permission, "new"));
+        delayed.Result.SetResult(true); await refresh;
+        fixture.Pump.Apply([local.Sessions[original.Key]], DateTimeOffset.UtcNow);
+        var result = BellTower.IO.Json.Decode<Observation>(File.ReadAllText(Directory.GetFiles(fixture.Paths.Inbox).Single()))!;
+        Check(!result.RuntimeApprovalScope!.SequenceEqual(local.Sessions[original.Key].Waits.Select(w => w.ConfirmationScopeId)) && local.Sessions[original.Key].NativePermissionPending is null, $"mutable/{causal} captured evidence does not follow changed caller state");
+    }
+    {
+        using var fixture = new Fixture(causal);
+        fixture.Publish(EventKind.Permission, "A");
+        var first = fixture.Drain(); var revision = first.ApprovalRevision;
+        var delayed = new Status(); fixture.Clients.Enqueue(delayed);
+        var refresh = fixture.Pump.RefreshAsync([first]);
+        await delayed.Started.Task.WaitAsync(TimeSpan.FromSeconds(2));
+        fixture.Publish(EventKind.ToolStart, "unrelated");
+        var unchanged = fixture.Drain();
+        Check(unchanged.ApprovalRevision == revision, $"unchanged/{causal} unrelated activity does not stale valid query");
+        delayed.Result.SetResult(true); await refresh;
+        var confirmed = fixture.Drain();
+        Check(confirmed.Waits.Single().Confirmation == HumanConfirmation.Confirmed, $"unchanged/{causal} unchanged set confirms normally");
+    }
+    {
+        using var fixture = new Fixture(causal);
+        var events = new EventStore(fixture.Paths);
+        events.Publish(fixture.Event(EventKind.ToolStart, "A") with { OperationFingerprint = "same" });
+        events.Publish(fixture.Event(EventKind.ToolStart, "B") with { OperationFingerprint = "same" });
+        events.Publish(fixture.Event(EventKind.Permission, "unused") with { OperationId = null, OperationFingerprint = "same" });
+        var first = fixture.Drain(); var revision = first.ApprovalRevision;
+        Check(first.Waits.Single().Candidates is { Length: 2 }, $"candidate-set/{causal} starts as ambiguous A+B");
+        var delayed = new Status(); fixture.Clients.Enqueue(delayed);
+        var refresh = fixture.Pump.RefreshAsync([first]);
+        await delayed.Started.Task.WaitAsync(TimeSpan.FromSeconds(2));
+        events.Publish(fixture.Event(EventKind.ToolStart, "A") with { OperationFingerprint = "same" });
+        var remaining = fixture.Drain();
+        Check(remaining.Waits.Single().Candidates!.SequenceEqual(new[] { "B" }) && remaining.ApprovalRevision > revision, $"candidate-set/{causal} narrowing changes scope generation");
+        fixture.Pump.Apply([remaining], DateTimeOffset.UtcNow);
+        Check(remaining.NativePermissionPending is null, $"candidate-set/{causal} old in-flight marker rejected after narrowing");
+        delayed.Result.SetResult(true); await refresh;
+        fixture.Pump.Apply([remaining], DateTimeOffset.UtcNow);
+        Check(remaining.NativePermissionPending is null, $"candidate-set/{causal} old transient result rejected after narrowing");
+        var after = fixture.Drain();
+        Check(after.Waits.Single().Confirmation == HumanConfirmation.Provisional && !after.RequiresAttention(DateTimeOffset.UtcNow.AddMinutes(1)), $"candidate-set/{causal} old stored response rejected after narrowing");
+        var ready = new Status(); ready.Result.SetResult(true); fixture.Clients.Enqueue(ready);
+        await fixture.Pump.RefreshAsync([after]);
+        var confirmed = fixture.Drain();
+        Check(confirmed.Waits.Single().Confirmation == HumanConfirmation.Confirmed, $"candidate-set/{causal} fresh narrowed-set query confirms");
+    }
+}
+{
+    var at = DateTimeOffset.Parse("2026-10-01T00:00:00Z");
+    var wait = new WaitState(AttentionReason.Permission, at, null, "privateprint", ["raw-alpha", "raw-beta"], "opaque-episode");
+    Check(wait.ConfirmationScopeId == (wait with { Candidates = ["raw-beta", "raw-alpha"] }).ConfirmationScopeId, "candidate-identity order canonical");
+    Check(wait.ConfirmationScopeId != (wait with { Candidates = ["raw-beta"] }).ConfirmationScopeId, "candidate-identity membership distinct");
+    Check(!wait.ConfirmationScopeId.Contains("raw-alpha") && !wait.ConfirmationScopeId.Contains("raw-beta") && !wait.ConfirmationScopeId.Contains("privateprint"), "candidate-identity no raw metadata");
+    var legacy = wait with { Episode = null };
+    Check(legacy.ConfirmationScopeId == (legacy with { Candidates = ["raw-beta", "raw-alpha"] }).ConfirmationScopeId && !legacy.ConfirmationScopeId.Contains("raw-alpha"), "legacy candidate-identity canonical opaque fallback");
+}
+{
+    var start = DateTimeOffset.Parse("2026-10-01T00:00:00Z");
+    int id = 0;
+    Observation E(string provider, EventKind kind, double seconds, bool causal, string? operation = null) => new()
+    {
+        Id = (++id).ToString("x32"), Provider = provider, SessionId = "core-probe", AttachmentId = "attachment",
+        Kind = kind, At = start.AddSeconds(seconds), IngressAt = causal ? start.AddSeconds(seconds) : null,
+        OperationId = operation, OperationFingerprint = operation, AdapterRevision = Observation.HumanWaitRevision
+    };
+    Observation R(AppState state, double seconds, bool causal) => E("codex", EventKind.Permission, seconds, causal) with
+    {
+        HumanPrompt = true, RuntimeApproval = true,
+        RuntimeApprovalScope = state.Sessions["codex:core-probe"].Waits.Where(w => w.Reason == AttentionReason.Permission).Select(w => w.ConfirmationScopeId).Order(StringComparer.Ordinal).ToArray(),
+        RuntimeApprovalRevision = state.Sessions["codex:core-probe"].ApprovalRevision
+    };
+    foreach (var causal in new[] { false, true })
+    {
+        {
+            var state = new AppState();
+            SessionReducer.Apply(state, E("codex", EventKind.Permission, 0, causal, "A"));
+            SessionReducer.Apply(state, E("codex", EventKind.Permission, 1, causal) with { HumanPrompt = true, RuntimeApproval = true });
+            Check(state.Sessions["codex:core-probe"].Waits.Single().Confirmation == HumanConfirmation.Provisional, $"legacy-runtime/{causal} missing scope rejected");
+            SessionReducer.Apply(state, R(state, 2, causal));
+            Check(state.Sessions["codex:core-probe"].Waits.Single().Confirmation == HumanConfirmation.Confirmed, $"legacy-runtime/{causal} fresh scoped query recovers");
+        }
+        foreach (var boundary in new[] { EventKind.Stop, EventKind.End, EventKind.Prompt, EventKind.Register })
+        {
+            var state = new AppState();
+            SessionReducer.Apply(state, E("codex", EventKind.Permission, 0, causal, "A"));
+            var captured = R(state, 4, causal);
+            var change = E("codex", boundary, 1, causal);
+            if (boundary == EventKind.Register) change = change with { AttachmentId = "replacement" };
+            SessionReducer.Apply(state, change);
+            if (boundary is EventKind.Prompt or EventKind.Register)
+            {
+                var nextRequest = E("codex", EventKind.Permission, 2, causal, "B");
+                if (boundary == EventKind.Register) nextRequest = nextRequest with { AttachmentId = "replacement" };
+                SessionReducer.Apply(state, nextRequest);
+            }
+            SessionReducer.Apply(state, captured);
+            Check(!state.Sessions["codex:core-probe"].Waits.Any(w => w.Reason == AttentionReason.Permission && w.Confirmation == HumanConfirmation.Confirmed), $"boundary/{causal}/{boundary} old result cannot confirm");
+        }
+        {
+            var state = new AppState();
+            SessionReducer.Apply(state, E("codex", EventKind.Permission, -120, causal, "first"));
+            SessionReducer.Apply(state, E("codex", EventKind.Permission, -110, causal, "second"));
+            for (int index = 0; index < CausalSessionReducer.Window + 40; index++) SessionReducer.Apply(state, E("codex", EventKind.ToolStart, -60 + index * .01, causal, "unrelated" + index));
+            var before = state.Sessions["codex:core-probe"].ApprovalRevision;
+            var reloaded = System.Text.Json.JsonSerializer.Deserialize<AppState>(System.Text.Json.JsonSerializer.Serialize(state))!;
+            Check(reloaded.Sessions["codex:core-probe"].ApprovalRevision == before, $"restore/{causal} checkpoint revision persists");
+            SessionReducer.Apply(reloaded, R(reloaded, 0, causal) with { RestoredSince = start.AddSeconds(-1) });
+            var session = reloaded.Sessions["codex:core-probe"];
+            Check(session.Waits.All(w => w.Confirmation == HumanConfirmation.Confirmed && w.ConfirmedAt == w.Since.AddMilliseconds(1)) && session.RequiresAttention(start.AddSeconds(10)), $"restore/{causal} long-journal request set confirms");
+            Check(new AlertPolicy(start).Collect([session], start.AddSeconds(10), false).Count == 0, $"restore/{causal} long-journal confirmation silent");
+        }
+        {
+            var state = new AppState();
+            SessionReducer.Apply(state, E("claude", EventKind.Question, 0, causal, "question"));
+            SessionReducer.Apply(state, E("codex", EventKind.Permission, 0, causal, "permission"));
+            var questionEpisode = state.Sessions["claude:core-probe"].Episode;
+            SessionReducer.Apply(state, R(state, 1, causal));
+            Check(state.Sessions["claude:core-probe"].Episode == questionEpisode && state.Sessions["claude:core-probe"].Reason == AttentionReason.Question && state.Sessions["codex:core-probe"].Reason == AttentionReason.Permission, $"mixed/{causal} question and permission stay independent");
+        }
+    }
+}
+Console.WriteLine("All independent Analysis 006 pump scope/revision probes passed.");
+
+sealed class Status : ICodexAttentionClient
+{
+    public TaskCompletionSource Started { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+    public TaskCompletionSource<bool?> Result { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+    public Task ConnectAsync(string endpoint, string token, CancellationToken cancellation) => Task.CompletedTask;
+    public Task<bool?> ReadPermissionPendingAsync(string thread, CancellationToken cancellation) { Started.TrySetResult(); return Result.Task; }
+    public void Dispose() { }
+}
+sealed class Fixture : IDisposable
+{
+    public DataPaths Paths { get; }
+    public CodexPermissionPump Pump { get; }
+    public Queue<ICodexAttentionClient> Clients { get; } = new();
+    private readonly bool causal;
+    public Fixture(bool causal)
+    {
+        this.causal = causal;
+        Paths = new DataPaths(Path.GetFullPath(Path.Combine("artifacts", "analysis-005-pump-probe", "data-" + Guid.NewGuid().ToString("N")))); Paths.Ensure();
+        var process = ProcessProbe.Identify(Environment.ProcessId)!;
+        var runtime = new CodexRuntime("runtime-probe", "fixture-endpoint", process, process);
+        var runtimes = new CodexRuntimeStore(Paths);
+        AtomicFile.Write(runtimes.RecordPath(runtime.Attachment), BellTower.IO.Json.Encode(runtime));
+        File.WriteAllText(runtimes.TokenPath(runtime.Attachment), "fixture-token");
+        new AttachmentStore(Paths).Save(new(runtime.Attachment, "codex", process, new("unknown", process), Paths.Root, DateTimeOffset.UtcNow));
+        Pump = new CodexPermissionPump(Paths, () => Clients.Dequeue());
+    }
+    public Observation Event(EventKind kind, string operation)
+    {
+        var at = DateTimeOffset.UtcNow;
+        return new() { Provider="codex", SessionId="probe", AttachmentId="runtime-probe", Directory=Paths.Root, At=at, IngressAt=causal ? at : null, Kind=kind, OperationId=operation, OperationFingerprint=operation, AdapterRevision=Observation.HumanWaitRevision };
+    }
+    public void Publish(EventKind kind, string operation) => new EventStore(Paths).Publish(Event(kind, operation));
+    public SessionState Drain() => new StateStore(Paths).Drain().Sessions["codex:probe"];
+    public void Dispose() => Pump.Dispose();
+}

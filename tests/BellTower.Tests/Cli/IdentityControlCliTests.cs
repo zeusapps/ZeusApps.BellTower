@@ -1,6 +1,5 @@
 using System.Diagnostics;
 using System.Text.Json;
-using BellTower.Core;
 using BellTower.IO;
 using BellTower.Tests.Testing;
 using Xunit;
@@ -41,7 +40,7 @@ public sealed class IdentityControlCliTests
         .Single(property => string.Equals(property.Name, name, StringComparison.OrdinalIgnoreCase)).Value.GetString();
 
     private static void Register(TestWorkspace workspace, string provider, string directory) =>
-        new EventStore(workspace.Paths).Publish(TestWorkspace.Event(EventKind.Permission) with
+        new EventStore(workspace.Paths).Publish(TestWorkspace.ConfirmedPermission() with
         { Provider = provider, SessionId = "one", AttachmentId = "attachment-" + provider, Directory = directory });
 
     [Fact]

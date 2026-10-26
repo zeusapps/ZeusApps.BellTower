@@ -27,7 +27,7 @@ public sealed class CheckoutResolutionTests
         var ticket = family.Add("DEP-7070", "login", "dep-7070-fix");
         family.Add("DEP-8080", "docs", "dep-8080-docs");
         var session = IdentityFixtures.Session(provider, "one", family.Main);
-        new EventStore(workspace.Paths).Publish(TestWorkspace.Event(EventKind.Permission) with
+        new EventStore(workspace.Paths).Publish(TestWorkspace.ConfirmedPermission() with
         { Provider = provider, SessionId = "one", AttachmentId = session.AttachmentId, Directory = family.Main });
         var state = new StateStore(workspace.Paths);
         var before = state.Drain().Sessions[session.Key];
@@ -99,7 +99,7 @@ public sealed class CheckoutResolutionTests
         var sessions = new[] { "claude", "codex" }.Select(provider => IdentityFixtures.Session(provider, "one", family.Main)).ToArray();
         foreach (var session in sessions)
         {
-            new EventStore(workspace.Paths).Publish(TestWorkspace.Event(EventKind.Permission) with
+            new EventStore(workspace.Paths).Publish(TestWorkspace.ConfirmedPermission() with
             { Provider = session.Provider, SessionId = "one", AttachmentId = session.AttachmentId, Directory = family.Main });
         }
         new StateStore(workspace.Paths).Drain();
@@ -299,7 +299,7 @@ public sealed class CheckoutResolutionTests
         Assert.Equal(store, identity.SelectionRoot);
 
         // An explicit attach cannot target a non-Git directory either.
-        new EventStore(workspace.Paths).Publish(TestWorkspace.Event(EventKind.Permission) with
+        new EventStore(workspace.Paths).Publish(TestWorkspace.ConfirmedPermission() with
         { Provider = provider, SessionId = "one", AttachmentId = session.AttachmentId, Directory = family.Main });
         new StateStore(workspace.Paths).Drain();
         var catalog = new SessionCatalog(workspace.Paths);
@@ -317,7 +317,7 @@ public sealed class CheckoutResolutionTests
         Directory.CreateDirectory(Path.Combine(seven, "src"));
         foreach (var provider in new[] { "claude", "codex" })
         {
-            new EventStore(workspace.Paths).Publish(TestWorkspace.Event(EventKind.Permission) with
+            new EventStore(workspace.Paths).Publish(TestWorkspace.ConfirmedPermission() with
             { Provider = provider, SessionId = "one", AttachmentId = "attachment-" + provider, Directory = family.Main });
         }
         new StateStore(workspace.Paths).Drain();

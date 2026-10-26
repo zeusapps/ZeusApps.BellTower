@@ -30,12 +30,17 @@ public sealed class ReducerTests
     }
 
     [Fact]
-    public void PermissionHasFifteenSecondGraceWithoutChangingItsWaitStart()
+    public void ProvisionalPermissionIsNeverAttentionAndConfirmedPermissionIsEligibleOnArrival()
     {
         Apply(TestWorkspace.Event(EventKind.Permission, start));
-        Assert.False(Session.RequiresAttention(start.AddMilliseconds(14999)));
-        Assert.True(Session.RequiresAttention(start.AddSeconds(15)));
+        Assert.Null(Session.Reason);
+        Assert.False(Session.RequiresAttention(start.AddMinutes(10)));
+        Assert.Equal(HumanConfirmation.Provisional, Assert.Single(Session.Waits).Confirmation);
+        Apply(TestWorkspace.ConfirmedPermission(start.AddSeconds(6)));
+        Assert.Equal(AttentionReason.Permission, Session.Reason);
         Assert.Equal(start, Session.Since);
+        Assert.True(Session.RequiresAttention(start.AddSeconds(6)));
+        Assert.Single(Session.Waits);
     }
 
     [Fact]
@@ -105,7 +110,7 @@ public sealed class ReducerTests
     [Fact]
     public void UnrelatedToolDoesNotResolvePermission()
     {
-        Apply(TestWorkspace.Event(EventKind.Permission, start, "blocked"));
+        Apply(TestWorkspace.ConfirmedPermission(start, "blocked"));
         Apply(TestWorkspace.Event(EventKind.ToolEnd, start.AddSeconds(1), "other"));
         Assert.Equal(AttentionReason.Permission, Session.Reason);
         Apply(TestWorkspace.Event(EventKind.ToolEnd, start.AddSeconds(2), "blocked"));
@@ -117,7 +122,7 @@ public sealed class ReducerTests
     [InlineData(true)]
     public void MatchingOperationResumptionClearsPermissionWithoutResolvingOtherWaits(bool fingerprintOnly)
     {
-        var blocked = TestWorkspace.Event(EventKind.Permission, start, fingerprintOnly ? null : "blocked") with
+        var blocked = TestWorkspace.ConfirmedPermission(start, fingerprintOnly ? null : "blocked") with
         {
             OperationFingerprint = "arguments"
         };
@@ -135,7 +140,7 @@ public sealed class ReducerTests
     [Fact]
     public void UnrelatedResumptionWithIdenticalArgumentsCannotClearAnIdentifiedWait()
     {
-        Apply(TestWorkspace.Event(EventKind.Permission, start, "blocked") with { OperationFingerprint = "same" });
+        Apply(TestWorkspace.ConfirmedPermission(start, "blocked") with { OperationFingerprint = "same" });
         Apply(TestWorkspace.Event(EventKind.ToolStart, start.AddSeconds(1), "other") with { OperationFingerprint = "same" });
         Assert.Equal(AttentionReason.Permission, Session.Reason);
         Apply(TestWorkspace.Event(EventKind.ToolStart, start.AddSeconds(2), "blocked"));
@@ -148,7 +153,7 @@ public sealed class ReducerTests
     {
         Apply(TestWorkspace.Event(EventKind.ToolStart, start, "one") with { OperationFingerprint = "same" });
         Apply(TestWorkspace.Event(EventKind.ToolStart, start.AddSeconds(1), "two") with { OperationFingerprint = "same" });
-        Apply(TestWorkspace.Event(EventKind.Permission, start.AddSeconds(2)) with { OperationFingerprint = "same" });
+        Apply(TestWorkspace.ConfirmedPermission(start.AddSeconds(2)) with { OperationFingerprint = "same" });
         Apply(TestWorkspace.Event(EventKind.ToolStart, start.AddSeconds(3), "one") with { OperationFingerprint = "same" });
         Assert.Equal(AttentionReason.Permission, Session.Reason);
         Apply(TestWorkspace.Event(EventKind.ToolEnd, start.AddSeconds(4), "two") with { OperationFingerprint = "same" });
@@ -182,7 +187,7 @@ public sealed class ReducerTests
     [Fact]
     public void FingerprintCorrelatesPermissionWithoutToolId()
     {
-        Apply(TestWorkspace.Event(EventKind.Permission, start) with
+        Apply(TestWorkspace.ConfirmedPermission(start) with
         {
             OperationFingerprint = "fingerprint"
         });
@@ -197,7 +202,7 @@ public sealed class ReducerTests
     public void LatePermissionCannotResurrectCompletedOperation()
     {
         Apply(TestWorkspace.Event(EventKind.ToolEnd, start, "tool"));
-        Apply(TestWorkspace.Event(EventKind.Permission, start.AddSeconds(1), "tool"));
+        Apply(TestWorkspace.ConfirmedPermission(start.AddSeconds(1), "tool"));
         Assert.Null(Session.Reason);
     }
 
@@ -222,7 +227,7 @@ public sealed class ReducerTests
     [Fact]
     public void AcknowledgmentSurvivesDuplicateWait()
     {
-        var e = TestWorkspace.Event(EventKind.Permission, start, "tool");
+        var e = TestWorkspace.ConfirmedPermission(start, "tool");
         Apply(e);
         Session.AcknowledgedEpisode = Session.Episode;
         Apply(e with
@@ -237,11 +242,11 @@ public sealed class ReducerTests
     [Fact]
     public void ResolvedThenNewWaitGetsANewEpisode()
     {
-        Apply(TestWorkspace.Event(EventKind.Permission, start, "one"));
+        Apply(TestWorkspace.ConfirmedPermission(start, "one"));
         var old = Session.Episode;
         Session.AcknowledgedEpisode = old;
         Apply(TestWorkspace.Event(EventKind.ToolEnd, start.AddSeconds(1), "one"));
-        Apply(TestWorkspace.Event(EventKind.Permission, start.AddSeconds(2), "two"));
+        Apply(TestWorkspace.ConfirmedPermission(start.AddSeconds(2), "two"));
         Assert.NotEqual(old, Session.Episode);
         Assert.True(Session.RequiresAttention(start.AddSeconds(17)));
     }
@@ -249,7 +254,7 @@ public sealed class ReducerTests
     [Fact]
     public void ProviderAndSessionNamesDoNotMergeIdentity()
     {
-        Apply(TestWorkspace.Event(EventKind.Permission, start));
+        Apply(TestWorkspace.ConfirmedPermission(start));
         Apply(TestWorkspace.Event(EventKind.Stop, start) with
         {
             Provider = "codex"
@@ -265,7 +270,7 @@ public sealed class ReducerTests
         {
             AttachmentId = "new"
         });
-        Apply(TestWorkspace.Event(EventKind.Permission, start.AddSeconds(2)));
+        Apply(TestWorkspace.ConfirmedPermission(start.AddSeconds(2)));
         Assert.Null(Session.Reason);
         Assert.Equal("new", Session.AttachmentId);
     }
@@ -273,7 +278,7 @@ public sealed class ReducerTests
     [Fact]
     public void RepeatedEventIsIdempotent()
     {
-        var e = TestWorkspace.Event(EventKind.Permission, start, "tool");
+        var e = TestWorkspace.ConfirmedPermission(start, "tool");
         Apply(e);
         Apply(e);
         Assert.Single(Session.Waits);
@@ -283,7 +288,7 @@ public sealed class ReducerTests
     [Fact]
     public void EndAndInterruptClearAttention()
     {
-        Apply(TestWorkspace.Event(EventKind.Permission, start));
+        Apply(TestWorkspace.ConfirmedPermission(start));
         Apply(TestWorkspace.Event(EventKind.Interrupt, start.AddSeconds(1)));
         Assert.Null(Session.Reason);
         Apply(TestWorkspace.Event(EventKind.End, start.AddSeconds(2)));
@@ -302,7 +307,7 @@ public sealed class ReducerTests
         {
             OperationFingerprint = "same"
         });
-        Apply(TestWorkspace.Event(EventKind.Permission, start.AddSeconds(3), turn: null) with
+        Apply(TestWorkspace.ConfirmedPermission(start.AddSeconds(3), turn: null) with
         {
             OperationFingerprint = "same"
         });
@@ -329,7 +334,7 @@ public sealed class ReducerTests
         {
             OperationFingerprint = "same"
         });
-        Apply(TestWorkspace.Event(EventKind.Permission, start.AddSeconds(2)) with
+        Apply(TestWorkspace.ConfirmedPermission(start.AddSeconds(2)) with
         {
             OperationFingerprint = "same"
         });
@@ -348,7 +353,7 @@ public sealed class ReducerTests
     [Fact]
     public void DenialThenTurnStopStartsANewCompletionEpisode()
     {
-        Apply(TestWorkspace.Event(EventKind.Permission, start, "blocked"));
+        Apply(TestWorkspace.ConfirmedPermission(start, "blocked"));
         var old = Session.Episode;
         Session.AcknowledgedEpisode = old;
         Apply(TestWorkspace.Event(EventKind.Stop, start.AddSeconds(1)));

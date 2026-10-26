@@ -1,0 +1,68 @@
+using BellTower.Core;
+using BellTower.Providers;
+
+var start = DateTimeOffset.Parse("2026-10-01T00:00:00Z");
+int next = 0;
+Observation E(string provider, EventKind kind, double seconds, bool causal, string? operation = null, bool runtime = false, DateTimeOffset? restore = null) => new()
+{
+    Id = (++next).ToString("x32"), Provider = provider, SessionId = "probe", AttachmentId = "attachment", Kind = kind,
+    At = start.AddSeconds(seconds), IngressAt = causal ? start.AddSeconds(seconds) : null, OperationId = operation,
+    OperationFingerprint = operation, HumanPrompt = runtime, RuntimeApproval = runtime, RestoredSince = restore,
+    AdapterRevision = Observation.HumanWaitRevision
+};
+Observation H(string provider, double seconds, bool causal) => E(provider, EventKind.Permission, seconds, causal) with { HumanPrompt = true, ProviderDelay = TimeSpan.FromSeconds(5) };
+SessionState S(AppState state, string provider) => state.Sessions[provider + ":probe"];
+void Check(bool success, string text) { if (!success) throw new Exception(text); Console.WriteLine("PASS " + text); }
+
+foreach (var causal in new[] { false, true })
+{
+    foreach (var provider in new[] { "claude", "codex" })
+    {
+        var state = new AppState();
+        SessionReducer.Apply(state, E(provider, EventKind.Permission, 0, causal, "request"));
+        var session = S(state, provider);
+        if (provider == "claude") ClaudeConfirmationSignal.Apply([session]); else session.ConfirmationSignalUnavailable = true;
+        Check(!session.PossiblyWaiting(start.AddSeconds(14.9)) && session.PossiblyWaiting(start.AddSeconds(15)), $"{provider}/{causal} silent-chip boundary");
+        var policy = new AlertPolicy(start.AddSeconds(-1));
+        Check(!session.RequiresAttention(start.AddSeconds(20)) && policy.Collect([session], start.AddSeconds(20), false).Count == 0, $"{provider}/{causal} no unverified sound");
+        var old = session.Episode;
+        session.AcknowledgedEpisode = old;
+        SessionReducer.Apply(state, provider == "claude" ? H(provider, 30, causal) : E(provider, EventKind.Permission, 30, causal, runtime: true));
+        session = S(state, provider);
+        Check(session.Episode != old && session.AcknowledgedEpisode != session.Episode && session.RequiresAttention(start.AddSeconds(40)) && policy.Collect([session], start.AddSeconds(40), false).Count == 1, $"{provider}/{causal} QA-100 fresh confirmation episode");
+        Check(policy.Collect([session], start.AddSeconds(50), false).Count == 0, $"{provider}/{causal} no duplicate announcement");
+    }
+    {
+        var state = new AppState();
+        SessionReducer.Apply(state, E("codex", EventKind.Permission, 0, causal, "older"));
+        SessionReducer.Apply(state, E("codex", EventKind.Permission, 5, causal, runtime: true));
+        S(state, "codex").AcknowledgedEpisode = S(state, "codex").Episode;
+        var episode = S(state, "codex").Episode;
+        SessionReducer.Apply(state, E("codex", EventKind.Permission, 10, causal, "newer"));
+        SessionReducer.Apply(state, E("codex", EventKind.Permission, 30, causal, runtime: true));
+        var session = S(state, "codex");
+        Check(session.Episode == episode && session.Waits.Single(w => w.OperationId == "newer").Confirmation == HumanConfirmation.Provisional && !session.RequiresAttention(start.AddSeconds(40)), $"codex/{causal} ANALYSIS-002 continuing status not credited to new request");
+    }
+    {
+        var state = new AppState();
+        SessionReducer.Apply(state, E("claude", EventKind.Permission, 0, causal, "permission"));
+        SessionReducer.Apply(state, E("claude", EventKind.Question, 1, causal, "question"));
+        SessionReducer.Apply(state, H("claude", 7, causal));
+        SessionReducer.Apply(state, E("claude", EventKind.ToolEnd, 20, causal, "question"));
+        var session = S(state, "claude");
+        Check(session.Waits.Count == 1 && session.Waits[0].Confirmation != HumanConfirmation.Confirmed && !session.RequiresAttention(start.AddSeconds(30)), $"claude/{causal} ANALYSIS-100 no elimination");
+        SessionReducer.Apply(state, H("claude", 30, causal));
+        Check(S(state, "claude").RequiresAttention(start.AddSeconds(30)), $"claude/{causal} permission's own later prompt confirms");
+    }
+    {
+        var state = new AppState();
+        SessionReducer.Apply(state, E("codex", EventKind.Permission, -120, causal, "first"));
+        SessionReducer.Apply(state, E("codex", EventKind.Permission, -110, causal, "second"));
+        for (int index = 0; index < CausalSessionReducer.Window + 40; index++) SessionReducer.Apply(state, E("codex", EventKind.ToolStart, -60 + index * .01, causal, "other" + index));
+        SessionReducer.Apply(state, E("codex", EventKind.Permission, 0, causal, runtime: true, restore: start.AddSeconds(-1)));
+        var session = S(state, "codex");
+        Check(session.Waits.Count == 2 && session.Waits.All(w => w.Confirmation == HumanConfirmation.Confirmed && w.ConfirmedAt == w.Since.AddMilliseconds(1)), $"codex/{causal} ANALYSIS-101 restores all after journal window");
+        Check(session.RequiresAttention(start.AddSeconds(10)) && new AlertPolicy(start).Collect([session], start.AddSeconds(10), false).Count == 0, $"codex/{causal} restored confirmation silent");
+    }
+}
+Console.WriteLine("All independent reducer probes passed.");

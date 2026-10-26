@@ -28,6 +28,9 @@ public sealed class AlertPolicy(DateTimeOffset startedAt)
         return result;
     }
 
+    // The unverified chip text: no supported signal confirms a person is needed. Never shown with sound or as a confirmed wait.
+    public const string UnverifiedText = "possibly waiting for approval";
+
     public static string ReasonText(AttentionReason? reason) => reason switch
     {
         AttentionReason.Permission => "needs permission",

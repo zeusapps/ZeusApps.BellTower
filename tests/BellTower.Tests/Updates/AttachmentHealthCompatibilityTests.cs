@@ -13,7 +13,7 @@ public sealed class AttachmentHealthCompatibilityTests
     public void FailedCommitDoesNotDeclareHealthAndMalformedOrFutureRequirementsFailClosed()
     {
         using var workspace = new TestWorkspace();
-        new EventStore(workspace.Paths).Publish(TestWorkspace.Event(EventKind.Permission));
+        new EventStore(workspace.Paths).Publish(TestWorkspace.ConfirmedPermission());
         Directory.CreateDirectory(workspace.Paths.State);
         var failure = Record.Exception(() => new StateStore(workspace.Paths).Drain());
         Assert.True(failure is IOException or UnauthorizedAccessException);
@@ -34,7 +34,7 @@ public sealed class AttachmentHealthCompatibilityTests
     {
         using var workspace = new TestWorkspace();
         var installation = DistributionTests.CreateInstallation(Path.Combine(workspace.Root, "installed"), "0.1.7");
-        new EventStore(workspace.Paths).Publish(TestWorkspace.Event(EventKind.Permission));
+        new EventStore(workspace.Paths).Publish(TestWorkspace.ConfirmedPermission());
         new StateStore(workspace.Paths).Drain();
         var beforeState = File.ReadAllBytes(workspace.Paths.State);
         var beforeSelection = File.ReadAllBytes(installation.SelectionPath);
@@ -55,7 +55,7 @@ public sealed class AttachmentHealthCompatibilityTests
         using var workspace = new TestWorkspace();
         var at = DateTimeOffset.UtcNow.AddHours(-1);
         new AttachmentStore(workspace.Paths).Save(new("attachment-1", "claude", null, new("future-host"), workspace.Root, at));
-        new EventStore(workspace.Paths).Publish(TestWorkspace.Event(EventKind.Permission, at));
+        new EventStore(workspace.Paths).Publish(TestWorkspace.ConfirmedPermission(at));
         var state = new StateStore(workspace.Paths).Drain();
         var root = System.Text.Json.Nodes.JsonNode.Parse(Json.Encode(state))!;
         root["futureRoot"] = 123;

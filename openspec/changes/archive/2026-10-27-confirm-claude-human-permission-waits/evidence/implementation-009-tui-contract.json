@@ -1,0 +1,90 @@
+{
+  "provider": "codex",
+  "version": "0.164.0",
+  "captured": "2026-10-26",
+  "surface": "interactive TUI, standalone --no-daemon, tool-owned PTY",
+  "collaborationMode": "plan",
+  "permissionMode": "default",
+  "model": "fixture-model",
+  "transport": "loopback fake Responses endpoint with synthetic key; no real model or external API call",
+  "events": {
+    "blockingQuestionPositiveControl": {
+      "offeredTools": ["exec_command", "write_stdin", "list_mcp_resources", "list_mcp_resource_templates", "read_mcp_resource", "request_user_input", "view_image", "multi_agent_v1", "mcp__codex_worktrees", "get_goal", "create_goal", "update_goal", "web_search"],
+      "asyncToolOffered": false,
+      "requestUserInputSchema": {
+        "type": "function",
+        "name": "request_user_input",
+        "required": ["questions"],
+        "questionRequired": ["id", "header", "question", "options"],
+        "optionRequired": ["label", "description"]
+      },
+      "tui": "Plan mode entered; native blocking question UI appeared and remained unanswered",
+      "hooks": [
+        {
+          "offsetFromUserPromptSubmitMs": 306,
+          "hook_event_name": "PreToolUse",
+          "tool_name": "request_user_input",
+          "has_tool_use_id": true,
+          "keys": ["cwd", "hook_event_name", "model", "permission_mode", "session_id", "tool_input", "tool_name", "tool_use_id", "transcript_path", "turn_id"]
+        }
+      ],
+      "postToolUse": "not observed; question was left unanswered"
+    },
+    "asyncAvailability": {
+      "offeredTools": ["exec_command", "write_stdin", "list_mcp_resources", "list_mcp_resource_templates", "read_mcp_resource", "request_user_input", "view_image", "multi_agent_v1", "mcp__codex_worktrees", "get_goal", "create_goal", "update_goal", "web_search"],
+      "request_user_input_async_offered": false,
+      "hookSequence": ["UserPromptSubmit", "Stop"],
+      "userPromptSubmitToStopMs": 316,
+      "result": "fixture completion; async tool was not invoked",
+      "scope": "this installed 0.164.0 TUI Plan run with fixture-model"
+    },
+    "permissionRequest": {
+      "setup": {
+        "approval_policy": "on-request",
+        "sandbox_mode": "read-only"
+      },
+      "attempt": "fixture exec_command requested one Set-Content marker in its private disposable project",
+      "nativeApprovalUI": "shown",
+      "writeOccurred": false,
+      "hooks": [
+        {
+          "offsetFromUserPromptSubmitMs": 366,
+          "hook_event_name": "PreToolUse",
+          "tool_name": "Bash",
+          "has_tool_use_id": true,
+          "keys": ["cwd", "hook_event_name", "model", "permission_mode", "session_id", "tool_input", "tool_name", "tool_use_id", "transcript_path", "turn_id"]
+        },
+        {
+          "offsetFromUserPromptSubmitMs": 703,
+          "hook_event_name": "PermissionRequest",
+          "tool_name": "Bash",
+          "has_tool_use_id": false,
+          "keys": ["cwd", "hook_event_name", "model", "permission_mode", "session_id", "tool_input", "tool_name", "transcript_path", "turn_id"]
+        }
+      ],
+      "permissionRequestAfterPreToolUseMs": 337,
+      "NotificationHook": "none observed while request remained pending",
+      "requestUnansweredUntilMs": 26702,
+      "resolution": "operator interrupted only the owned PTY; this is not approval or automatic-review evidence"
+    }
+  },
+  "installedCliHelp": {
+    "version": "0.164.0",
+    "command": "node <installed Codex CLI entry> --help",
+    "isolatedCodexHome": true,
+    "noDaemonText": "Run without the shared background server, even if it is already running",
+    "distinction": "This documents absence of the shared background server for this invocation; it does not assert that all hook or future runtime signals are impossible."
+  },
+  "auxiliaryModelSlugAttempt": {
+    "model": "gpt-6.1-sol",
+    "fakeProviderToolsOffered": [],
+    "use": "excluded from positive-control and async conclusions because even request_user_input was absent"
+  },
+  "cleanup": {
+    "ownedTuiSessions": "all exited with status 0",
+    "fixtureServers": "closed on child exit",
+    "console": "inherited tool PTY; no visible window or cmd start",
+    "privateCodexHomes": true,
+    "realCredentialsOrInference": false
+  }
+}

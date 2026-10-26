@@ -13,7 +13,7 @@ public sealed class NavigationOutcomeTests
     {
         var workspace = new TestWorkspace();
         var store = new StateStore(workspace.Paths);
-        var wait = TestWorkspace.Event(EventKind.Permission, DateTimeOffset.UtcNow.AddMinutes(-1), "blocked");
+        var wait = TestWorkspace.ConfirmedPermission(DateTimeOffset.UtcNow.AddMinutes(-1), "blocked");
         new EventStore(workspace.Paths).Publish(wait);
         store.Drain();
         return (store, workspace, wait);
@@ -62,7 +62,7 @@ public sealed class NavigationOutcomeTests
         using (workspace)
         {
             new EventStore(workspace.Paths).Publish(TestWorkspace.Event(EventKind.Prompt, wait.At.AddSeconds(1)));
-            var newer = TestWorkspace.Event(EventKind.Permission, wait.At.AddSeconds(2), "newer");
+            var newer = TestWorkspace.ConfirmedPermission(wait.At.AddSeconds(2), "newer");
             new EventStore(workspace.Paths).Publish(newer);
             store.Drain();
 

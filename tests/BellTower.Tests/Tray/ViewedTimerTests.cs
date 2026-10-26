@@ -17,7 +17,7 @@ public sealed class ViewedTimerTests
         using var workspace = new TestWorkspace();
         var events = new EventStore(workspace.Paths);
         var store = new StateStore(workspace.Paths);
-        var first = TestWorkspace.Event(EventKind.Permission, DateTimeOffset.UtcNow.AddMinutes(-1), "first");
+        var first = TestWorkspace.ConfirmedPermission(DateTimeOffset.UtcNow.AddMinutes(-1), "first");
         events.Publish(first);
         store.Drain();
         store.MarkViewed(first.Key, first.Id);
@@ -25,7 +25,7 @@ public sealed class ViewedTimerTests
         {
             store.Acknowledge(first.Key);
         }
-        var second = TestWorkspace.Event(EventKind.Permission, first.At.AddSeconds(1), "second");
+        var second = TestWorkspace.ConfirmedPermission(first.At.AddSeconds(1), "second");
         events.Publish(second);
         store.Drain();
         store.MarkViewed(second.Key, second.Id);
@@ -53,7 +53,7 @@ public sealed class ViewedTimerTests
         using var workspace = new TestWorkspace();
         var events = new EventStore(workspace.Paths);
         var store = new StateStore(workspace.Paths);
-        var wait = TestWorkspace.Event(EventKind.Permission, DateTimeOffset.UtcNow.AddMinutes(-1), "blocked");
+        var wait = TestWorkspace.ConfirmedPermission(DateTimeOffset.UtcNow.AddMinutes(-1), "blocked");
         events.Publish(wait);
         events.Publish(wait with { Id = Guid.NewGuid().ToString("N"), Provider = "codex" });
         store.Drain();
@@ -78,12 +78,12 @@ public sealed class ViewedTimerTests
         var events = new EventStore(workspace.Paths);
         var store = new StateStore(workspace.Paths);
         var started = DateTimeOffset.UtcNow.AddMinutes(-1);
-        var first = TestWorkspace.Event(EventKind.Permission, started, "first");
+        var first = TestWorkspace.ConfirmedPermission(started, "first");
         events.Publish(first);
         store.Drain();
         store.MarkViewed(first.Key, first.Id);
         events.Publish(TestWorkspace.Event(EventKind.Prompt, started.AddSeconds(1)));
-        var second = TestWorkspace.Event(EventKind.Permission, started.AddSeconds(2), "second");
+        var second = TestWorkspace.ConfirmedPermission(started.AddSeconds(2), "second");
         events.Publish(second);
         store.Drain();
 

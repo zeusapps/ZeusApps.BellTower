@@ -6,6 +6,10 @@ namespace BellTower.Providers;
 
 public static class HookAdapter
 {
+    // Claude documents that its permission notification fires after about 6 s without typing, and 2.1.310 was observed at 6.1 to
+    // 6.3 s. This 5 s floor, below both, is credited against the shared human-wait grace so the signal is eligible on arrival.
+    public static readonly TimeSpan ClaudePermissionPromptDelay = TimeSpan.FromSeconds(5);
+
     public static Observation? Parse(string provider, JsonElement input, Attachment attachment, DateTimeOffset? at = null)
     {
         if (provider is not ("claude" or "codex"))
@@ -24,6 +28,7 @@ public static class HookAdapter
             "UserPromptSubmit" => EventKind.Prompt,
             "PreToolUse" => question ? EventKind.Question : EventKind.ToolStart,
             "PostToolUse" or "PostToolUseFailure" or "PermissionDenied" => EventKind.ToolEnd,
+            // Approval-flow start: provisional until a supported signal confirms a human wait.
             "PermissionRequest" => EventKind.Permission,
             "Stop" => EventKind.Stop,
             "StopFailure" => EventKind.Failure,
@@ -33,6 +38,7 @@ public static class HookAdapter
             "SessionEnd" => EventKind.End,
             "Notification" => notification switch
             {
+                // Claude's human-prompt notification: the confirming signal for the pending approval or question, not a new wait.
                 "permission_prompt" => EventKind.Permission,
                 "elicitation_dialog" => EventKind.Question,
                 "idle_prompt" => EventKind.Stop,
@@ -79,7 +85,12 @@ public static class HookAdapter
             BackgroundId = agent,
             BackgroundType = kind == EventKind.BackgroundStart ? "subagent" : null,
             BackgroundSnapshot = background,
-            IsMainThread = agent is null || hook is "SubagentStart" or "SubagentStop"
+            IsMainThread = agent is null || hook is "SubagentStart" or "SubagentStop",
+            HumanPrompt = hook == "Notification" && notification == "permission_prompt",
+            QuestionTool = question,
+            AdapterRevision = Observation.HumanWaitRevision,
+            PermissionMode = HookInput.Text(input, "permission_mode") is { Length: <= 64 } mode ? mode : null,
+            ProviderDelay = provider == "claude" && hook == "Notification" && notification == "permission_prompt" ? ClaudePermissionPromptDelay : null
         };
     }
 

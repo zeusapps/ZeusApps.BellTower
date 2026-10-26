@@ -1,0 +1,123 @@
+{
+  "provider": "claude",
+  "version": "2.1.310",
+  "mode": "interactive TUI, --permission-mode default, isolated config, loopback fixture model returning one AskUserQuestion tool_use",
+  "captured": "2026-10-26",
+  "task": "2A.5",
+  "note": "Field names and relative timing are actual (offset 0 = PreToolUse). Session IDs, paths, prompts and tool payloads are omitted; tool_use_id is the fixture model's synthetic value. The probe did not answer the dialog; its window was visible on the interactive desktop and PostToolUse arrived about 16.5 s after the start, so the source of that response (a person at the desktop) cannot be excluded and is not attributed.",
+  "sequence": [
+    {
+      "offsetMs": -208,
+      "hook_event_name": "UserPromptSubmit",
+      "permission_mode": "default",
+      "keys": [
+        "cwd",
+        "hook_event_name",
+        "permission_mode",
+        "prompt",
+        "prompt_id",
+        "session_id",
+        "transcript_path"
+      ]
+    },
+    {
+      "offsetMs": 0,
+      "hook_event_name": "PreToolUse",
+      "tool_name": "AskUserQuestion",
+      "permission_mode": "default",
+      "tool_use_id": "toolu_fixture_ask_1",
+      "keys": [
+        "cwd",
+        "effort",
+        "hook_event_name",
+        "permission_mode",
+        "prompt_id",
+        "session_id",
+        "tool_input",
+        "tool_name",
+        "tool_use_id",
+        "transcript_path"
+      ]
+    },
+    {
+      "offsetMs": 125,
+      "hook_event_name": "PermissionRequest",
+      "tool_name": "AskUserQuestion",
+      "permission_mode": "default",
+      "keys": [
+        "cwd",
+        "effort",
+        "hook_event_name",
+        "permission_mode",
+        "prompt_id",
+        "session_id",
+        "tool_input",
+        "tool_name",
+        "transcript_path"
+      ]
+    },
+    {
+      "offsetMs": 6228,
+      "hook_event_name": "Notification",
+      "notification_type": "permission_prompt",
+      "message": "Claude needs your permission",
+      "keys": [
+        "cwd",
+        "hook_event_name",
+        "message",
+        "notification_type",
+        "prompt_id",
+        "session_id",
+        "transcript_path"
+      ]
+    },
+    {
+      "offsetMs": 16536,
+      "hook_event_name": "PostToolUse",
+      "tool_name": "AskUserQuestion",
+      "permission_mode": "default",
+      "tool_use_id": "toolu_fixture_ask_1",
+      "keys": [
+        "cwd",
+        "duration_ms",
+        "effort",
+        "hook_event_name",
+        "permission_mode",
+        "prompt_id",
+        "session_id",
+        "tool_input",
+        "tool_name",
+        "tool_response",
+        "tool_use_id",
+        "transcript_path"
+      ]
+    },
+    {
+      "offsetMs": 16850,
+      "hook_event_name": "Stop",
+      "permission_mode": "default",
+      "keys": [
+        "background_tasks",
+        "cwd",
+        "effort",
+        "hook_event_name",
+        "last_assistant_message",
+        "permission_mode",
+        "prompt_id",
+        "session_crons",
+        "session_id",
+        "stop_hook_active",
+        "transcript_path"
+      ]
+    }
+  ],
+  "findings": [
+    "In permission_mode default the sequence and field names are identical to the auto-mode capture: PreToolUse(tool_use_id) -> PermissionRequest(AskUserQuestion, no tool_use_id, same tool_input and prompt_id) -> permission_prompt Notification about 6.2 s later (prompt_id, no tool fields) -> PostToolUse(original tool_use_id) -> Stop.",
+    "The only observed difference is the permission_mode value reported on hooks that carry it (default instead of auto); the Notification carries no permission_mode.",
+    "The question dialog's PermissionRequest and permission_prompt are therefore not specific to auto mode."
+  ],
+  "unverified": [
+    "acceptEdits, plan and bypassPermissions modes",
+    "whether the permission_prompt still fires when the dialog is answered within the provider delay"
+  ]
+}

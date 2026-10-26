@@ -1,0 +1,72 @@
+{
+  "provider": "codex",
+  "version": "0.164.0",
+  "mode": "interactive TUI, --no-daemon, isolated CODEX_HOME, features.default_mode_request_user_input = true (Default collaboration mode with the dialog enabled), loopback fixture Responses endpoint",
+  "captured": "2026-10-26",
+  "task": "2A.5",
+  "note": "Offset 0 = PreToolUse. IDs, paths, prompts and payloads omitted. The probe did not answer the dialog; its window was visible on the interactive desktop and PostToolUse arrived about 7.7 s later, so the source of the response cannot be excluded and is not attributed.",
+  "sequence": [
+    {
+      "offsetMs": 0,
+      "hook_event_name": "PreToolUse",
+      "tool_name": "request_user_input",
+      "permission_mode": "default",
+      "tool_use_id": "call_fixture_ask_1",
+      "keys": [
+        "cwd",
+        "hook_event_name",
+        "model",
+        "permission_mode",
+        "session_id",
+        "tool_input",
+        "tool_name",
+        "tool_use_id",
+        "transcript_path",
+        "turn_id"
+      ]
+    },
+    {
+      "offsetMs": 7698,
+      "hook_event_name": "PostToolUse",
+      "tool_name": "request_user_input",
+      "permission_mode": "default",
+      "tool_use_id": "call_fixture_ask_1",
+      "keys": [
+        "cwd",
+        "hook_event_name",
+        "model",
+        "permission_mode",
+        "session_id",
+        "tool_input",
+        "tool_name",
+        "tool_response",
+        "tool_use_id",
+        "transcript_path",
+        "turn_id"
+      ]
+    },
+    {
+      "offsetMs": 8144,
+      "hook_event_name": "Stop",
+      "permission_mode": "default",
+      "keys": [
+        "cwd",
+        "hook_event_name",
+        "last_assistant_message",
+        "model",
+        "permission_mode",
+        "session_id",
+        "stop_hook_active",
+        "transcript_path",
+        "turn_id"
+      ]
+    }
+  ],
+  "findings": [
+    "With the experimental feature enabled the Default-mode request_user_input call shows a dialog (no rejection); PreToolUse, then PostToolUse and Stop after the response. No PermissionRequest hook is emitted at any point.",
+    "The hook shape matches the Plan-mode capture: the question wait created by PreToolUse is cleared by the correlated PostToolUse."
+  ],
+  "unverified": [
+    "whether the experimental feature changes in later versions"
+  ]
+}

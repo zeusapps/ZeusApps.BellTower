@@ -96,7 +96,9 @@ public sealed class AttachmentHealthTests
                 Provider = provider,
                 Directory = workspace.Root,
                 IngressAt = when,
-                TurnId = null
+                TurnId = null,
+                HumanPrompt = kind == EventKind.Permission,
+                ProviderDelay = kind == EventKind.Permission ? TimeSpan.FromSeconds(5) : null
             };
             return new() { Id = observation.Id, IngressAt = when, Observation = observation, Attachment = target, Dedicated = true };
         }
@@ -135,7 +137,7 @@ public sealed class AttachmentHealthTests
         attachments.Adopt(new("attachment-1", provider, null, new(), workspace.Root, DateTimeOffset.UtcNow), DateTimeOffset.UtcNow);
         Assert.Equal(shell, attachments.Get("attachment-1")!.Host.Shell);
         new IdentityStore(workspace.Paths).Get(provider + ":session-1", workspace.Root, initialPalette: prepared.Palette);
-        new EventStore(workspace.Paths).Publish(TestWorkspace.Event(EventKind.Permission) with { Provider = provider, Directory = workspace.Root });
+        new EventStore(workspace.Paths).Publish(TestWorkspace.ConfirmedPermission() with { Provider = provider, Directory = workspace.Root });
         var original = new StateStore(workspace.Paths).Drain().Sessions[provider + ":session-1"];
         attachments.Adopt(attachments.Get("attachment-1")! with { Process = shell }, DateTimeOffset.UtcNow);
         var repaired = new StateStore(workspace.Paths).Drain().Sessions[original.Key];
@@ -154,7 +156,7 @@ public sealed class AttachmentHealthTests
         var at = DateTimeOffset.UtcNow.AddHours(-1);
         var attachments = new AttachmentStore(workspace.Paths);
         attachments.Save(new("attachment-1", provider, null, new("future-host"), workspace.Root, at));
-        new EventStore(workspace.Paths).Publish(TestWorkspace.Event(EventKind.Permission, at) with { Provider = provider });
+        new EventStore(workspace.Paths).Publish(TestWorkspace.ConfirmedPermission(at) with { Provider = provider });
         var first = new StateStore(workspace.Paths).Drain().Sessions[provider + ":session-1"];
         Assert.False(first.Ended);
         Assert.Equal("unavailable", first.AttachmentHealth);
@@ -241,7 +243,7 @@ public sealed class AttachmentHealthTests
                 AdditionalData = new() { ["futureAttachment"] = extra.RootElement.Clone() }
             };
             new AttachmentStore(workspace.Paths).Save(attachment);
-            new EventStore(workspace.Paths).Publish(TestWorkspace.Event(EventKind.Permission, at) with { Provider = provider, AttachmentId = provider });
+            new EventStore(workspace.Paths).Publish(TestWorkspace.ConfirmedPermission(at) with { Provider = provider, AttachmentId = provider });
         }
         var state = new StateStore(workspace.Paths).Drain();
         Assert.Equal("verified-live", state.Sessions["claude:session-1"].AttachmentHealth);

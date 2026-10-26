@@ -54,7 +54,7 @@ public sealed class TerminalTitleTests
         using var workspace = new TestWorkspace();
         var process = ProcessProbe.Identify(Environment.ProcessId)!;
         new AttachmentStore(workspace.Paths).Save(new("attachment-1", "claude", process, new("vscode", process), workspace.Root, DateTimeOffset.UtcNow, ManagedTitle: true));
-        new EventStore(workspace.Paths).Publish(TestWorkspace.Event(EventKind.Permission) with { Directory = workspace.Root });
+        new EventStore(workspace.Paths).Publish(TestWorkspace.ConfirmedPermission() with { Directory = workspace.Root });
         var state = new StateStore(workspace.Paths).Drain();
         var episode = state.Sessions["claude:session-1"].Episode;
         var identity = new IdentityStore(workspace.Paths).Get("claude:session-1", workspace.Root, "First name");

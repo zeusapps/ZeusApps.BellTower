@@ -1,0 +1,84 @@
+{
+  "provider": "codex",
+  "version": "0.164.0",
+  "task": "2A.4",
+  "captured": "2026-10-26",
+  "probe": "artifacts/askq-probe-tools/codex-appserver-probe.js (ignored local tool): a hidden codex app-server on a loopback websocket with a capability token, isolated CODEX_HOME and a loopback fixture model; a client starts one thread and one turn whose model calls request_user_input, never answers, and polls thread/read for about 12 s. No person involved.",
+  "scenarios": {
+    "defaultModeWithFeature": {
+      "config": "features.default_mode_request_user_input = true",
+      "statusEvents": [
+        {
+          "event": "thread/status/changed",
+          "status": "active",
+          "activeFlags": []
+        },
+        {
+          "event": "thread/status/changed",
+          "status": "active",
+          "activeFlags": [
+            "waitingOnUserInput"
+          ]
+        },
+        {
+          "event": "server request",
+          "method": "item/tool/requestUserInput",
+          "params": [
+            "threadId",
+            "turnId",
+            "itemId",
+            "questions",
+            "isBlocking",
+            "autoResolutionMs"
+          ]
+        }
+      ],
+      "threadReadCounts": {
+        "{\"flags\": [\"waitingOnUserInput\"], \"type\": \"active\"}": 24
+      }
+    },
+    "planMode": {
+      "config": "turn/start collaborationMode.mode = plan (needs initialize capabilities.experimentalApi)",
+      "statusEvents": [
+        {
+          "event": "thread/status/changed",
+          "status": "active",
+          "activeFlags": []
+        },
+        {
+          "event": "thread/status/changed",
+          "status": "active",
+          "activeFlags": [
+            "waitingOnUserInput"
+          ]
+        },
+        {
+          "event": "server request",
+          "method": "item/tool/requestUserInput",
+          "params": [
+            "threadId",
+            "turnId",
+            "itemId",
+            "questions",
+            "isBlocking",
+            "autoResolutionMs"
+          ]
+        }
+      ],
+      "threadReadCounts": {
+        "{\"flags\": [\"waitingOnUserInput\"], \"type\": \"active\"}": 24
+      }
+    }
+  },
+  "findings": [
+    "The owning runtime exposes a user-input wait signal: thread/status becomes active with activeFlags [waitingOnUserInput] when the question dialog is raised, thread/read keeps returning it while the dialog is unanswered, and the server sends item/tool/requestUserInput to the client. It is the question analogue of waitingOnApproval.",
+    "The signal appears in Plan mode and in Default mode with the experimental feature, within about 20 ms of the tool call.",
+    "No waitingOnApproval flag appeared in either scenario: in the Codex runtime the question dialog is not an approval request (unlike Claude, where it runs through the approval flow).",
+    "Default mode without the feature rejects the call before any dialog (pre-apply capture), so no flag is expected there."
+  ],
+  "unverified": [
+    "request_user_input_async (no such tool offered)",
+    "shared-backend (daemon) mode",
+    "attached remote sessions"
+  ]
+}

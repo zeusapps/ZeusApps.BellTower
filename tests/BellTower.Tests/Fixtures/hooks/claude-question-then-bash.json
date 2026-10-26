@@ -1,0 +1,16 @@
+{
+  "provider": "claude",
+  "version": "2.1.310",
+  "mode": "interactive, permission_mode default",
+  "kind": "redacted fixture derived from the 2026-10-26 isolated capture of a question followed by a Bash approval in one message",
+  "events": [
+    { "offsetMs": 0, "payload": { "session_id": "session-fixture", "hook_event_name": "PreToolUse", "cwd": "D:/example", "permission_mode": "default", "tool_name": "AskUserQuestion", "tool_use_id": "toolu_fixture_ask_1", "tool_input": { "questions": [ { "question": "Fixture question?", "options": [ "one", "two" ] } ] } } },
+    { "offsetMs": 107, "payload": { "session_id": "session-fixture", "hook_event_name": "PermissionRequest", "cwd": "D:/example", "permission_mode": "default", "tool_name": "AskUserQuestion", "tool_input": { "questions": [ { "question": "Fixture question?", "options": [ "one", "two" ] } ] } } },
+    { "offsetMs": 6132, "payload": { "session_id": "session-fixture", "hook_event_name": "Notification", "cwd": "D:/example", "notification_type": "permission_prompt", "message": "Claude needs your permission" } },
+    { "offsetMs": 36505, "payload": { "session_id": "session-fixture", "hook_event_name": "PostToolUse", "cwd": "D:/example", "permission_mode": "default", "tool_name": "AskUserQuestion", "tool_use_id": "toolu_fixture_ask_1", "tool_input": { "questions": [ { "question": "Fixture question?", "options": [ "one", "two" ] } ] }, "tool_response": {} } },
+    { "offsetMs": 36602, "payload": { "session_id": "session-fixture", "hook_event_name": "PreToolUse", "cwd": "D:/example", "permission_mode": "default", "tool_name": "Bash", "tool_use_id": "toolu_fixture_bash_1", "tool_input": { "command": "example" } } },
+    { "offsetMs": 36727, "payload": { "session_id": "session-fixture", "hook_event_name": "PermissionRequest", "cwd": "D:/example", "permission_mode": "default", "tool_name": "Bash", "tool_input": { "command": "example" } } },
+    { "offsetMs": 42454, "payload": { "session_id": "session-fixture", "hook_event_name": "PostToolUse", "cwd": "D:/example", "permission_mode": "default", "tool_name": "Bash", "tool_use_id": "toolu_fixture_bash_1", "tool_input": { "command": "example" }, "tool_response": {} } },
+    { "offsetMs": 42569, "payload": { "session_id": "session-fixture", "hook_event_name": "Stop", "cwd": "D:/example", "permission_mode": "default" } }
+  ]
+}

@@ -25,7 +25,18 @@ public sealed class CodexConnection : ICodexNameClient, ICodexAttentionClient
         return PermissionPending(result.GetProperty("thread"));
     }
 
-    public static bool? PermissionPending(JsonElement thread)
+    public async Task<bool?> ReadUserInputPendingAsync(string thread, CancellationToken cancellation)
+    {
+        var result = await CallAsync("thread/read", new { threadId = thread, includeTurns = false }, cancellation).ConfigureAwait(false);
+        return Pending(result.GetProperty("thread"), "waitingOnUserInput");
+    }
+
+    public static bool? PermissionPending(JsonElement thread) => Pending(thread, "waitingOnApproval");
+
+    public static bool? UserInputPending(JsonElement thread) => Pending(thread, "waitingOnUserInput");
+
+    // Probe-verified at Codex 0.164.0: both flags come from the owning runtime's thread status.
+    private static bool? Pending(JsonElement thread, string flag)
     {
         if (!thread.TryGetProperty("status", out var status))
         {
@@ -37,7 +48,7 @@ public sealed class CodexConnection : ICodexNameClient, ICodexAttentionClient
             case "systemError":
                 return false;
             case "active" when status.TryGetProperty("activeFlags", out var flags) && flags.ValueKind == JsonValueKind.Array:
-                return flags.EnumerateArray().Any(flag => flag.ValueKind == JsonValueKind.String && flag.GetString() == "waitingOnApproval");
+                return flags.EnumerateArray().Any(item => item.ValueKind == JsonValueKind.String && item.GetString() == flag);
             default:
                 return null;
         }

@@ -1,0 +1,28 @@
+{
+  "provider": "claude",
+  "version": "2.1.310",
+  "mode": "interactive TUI, --permission-mode default, isolated config, loopback fixture model returning AskUserQuestion and Bash tool_use blocks in one assistant message",
+  "captured": "2026-10-26",
+  "purpose": "Settle ANALYSIS-100: whether a question and a permission are pending together and whether each dialog sends its own permission_prompt.",
+  "note": "Field names and relative timing are actual. Session IDs, paths, prompts and tool payloads are omitted; tool_use_ids are fixture values. The user answered the question and approved Bash in the probe window.",
+  "sequence": [
+    { "offsetMs": 0, "hook_event_name": "PreToolUse", "tool_name": "AskUserQuestion", "tool_use_id": "toolu_fixture_ask_1" },
+    { "offsetMs": 107, "hook_event_name": "PermissionRequest", "tool_name": "AskUserQuestion" },
+    { "offsetMs": 6132, "hook_event_name": "Notification", "notification_type": "permission_prompt" },
+    { "offsetMs": 36505, "hook_event_name": "PostToolUse", "tool_name": "AskUserQuestion", "tool_use_id": "toolu_fixture_ask_1" },
+    { "offsetMs": 36602, "hook_event_name": "PreToolUse", "tool_name": "Bash", "tool_use_id": "toolu_fixture_bash_1" },
+    { "offsetMs": 36727, "hook_event_name": "PermissionRequest", "tool_name": "Bash" },
+    { "offsetMs": 42454, "hook_event_name": "PostToolUse", "tool_name": "Bash", "tool_use_id": "toolu_fixture_bash_1" },
+    { "offsetMs": 42569, "hook_event_name": "Stop" }
+  ],
+  "findings": [
+    "Claude runs the two tool calls sequentially in the main agent: the Bash PreToolUse and PermissionRequest arrive only after PostToolUse(AskUserQuestion). The question and the Bash permission were never pending together.",
+    "The single permission_prompt during the question dialog was the question's own (6.0 s after its PermissionRequest); no Bash wait existed at that time.",
+    "Bash was approved 5.7 s after its PermissionRequest, before the documented ~6 s notification delay, so no Bash permission_prompt was emitted. This run therefore does not show a second prompt; Claude's hooks documentation states the notification fires per waiting prompt after ~6 s without typing.",
+    "Consequence for 2A.6: re-evaluating a held prompt by elimination when the question resolves would credit the question's own prompt to a later permission. Re-evaluation by elimination is withdrawn; a later human permission relies on its own permission_prompt."
+  ],
+  "unverified": [
+    "Parallel question and permission from different agents (main plus subagent) in one session",
+    "A Bash permission_prompt in this combined sequence when left unanswered for more than 6 s"
+  ]
+}

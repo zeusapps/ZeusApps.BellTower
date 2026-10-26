@@ -8,6 +8,22 @@ public sealed class CaptureConsumer(DataPaths paths)
 {
     public const int BatchSize = 128;
 
+    // Diagnostics evidence is best effort and never affects ingestion.
+    private void RecordEvidence(Observation observation, bool legacyProducer)
+    {
+        try
+        {
+            if (observation.HumanPrompt)
+            {
+                ConfirmationEvidence.Record(paths, observation.Provider, ConfirmationEvidence.ClaudeSignal, observation.PermissionMode, DateTimeOffset.UtcNow);
+            }
+            ConfirmationEvidence.RecordProducer(paths, observation.Provider, legacyProducer, DateTimeOffset.UtcNow);
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+        {
+        }
+    }
+
     public List<string> Prepare(AppState state)
     {
         var accepted = new List<string>();
@@ -38,7 +54,9 @@ public sealed class CaptureConsumer(DataPaths paths)
             state.CaptureReceipts[envelope.Id] = Path.GetFileName(path);
             if (!state.AppliedEvents.Contains(envelope.Id))
             {
-                var observation = envelope.Observation with { ProcessedAt = DateTimeOffset.UtcNow };
+                // A producer older than the human-wait fields is re-derived (permission_prompt shape) and reported by doctor.
+                var legacyProducer = envelope.Observation.AdapterRevision is null;
+                var observation = SessionReducer.Normalize(envelope.Observation with { ProcessedAt = DateTimeOffset.UtcNow });
                 var attachments = new AttachmentStore(paths);
                 var attachment = attachments.Adopt(envelope.Attachment with { Ownership = envelope.Dedicated ? envelope.Attachment.Ownership : "shared-runtime" },
                     observation.At, observation.Kind == EventKind.Register && observation.RegistrationSource == "resume");
@@ -54,6 +72,7 @@ public sealed class CaptureConsumer(DataPaths paths)
                 });
                 new OpenSpecSelectionObserver(paths).Observe(envelope);
                 SessionReducer.Apply(state, observation);
+                RecordEvidence(observation, legacyProducer);
                 AtomicFile.Write(Path.Combine(paths.Root, observation.Provider + "-observed.json"), IO.Json.Encode(new
                 {
                     At = envelope.IngressAt,

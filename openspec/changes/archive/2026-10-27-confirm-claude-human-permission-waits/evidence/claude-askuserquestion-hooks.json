@@ -1,0 +1,24 @@
+{
+  "provider": "claude",
+  "version": "2.1.310",
+  "mode": "interactive TUI, permission_mode auto, isolated config, loopback fixture model returning one AskUserQuestion tool_use",
+  "captured": "2026-10-26",
+  "note": "Field names and relative timing are actual. Session IDs, paths, prompts and tool payloads are omitted; tool_use_id is the fixture model's synthetic value.",
+  "sequence": [
+    { "offsetMs": 0, "hook_event_name": "PreToolUse", "tool_name": "AskUserQuestion", "tool_use_id": "toolu_fixture_ask_1", "keys": ["cwd", "effort", "hook_event_name", "permission_mode", "prompt_id", "session_id", "tool_input", "tool_name", "tool_use_id", "transcript_path"] },
+    { "offsetMs": 127, "hook_event_name": "PermissionRequest", "tool_name": "AskUserQuestion", "keys": ["cwd", "effort", "hook_event_name", "permission_mode", "prompt_id", "session_id", "tool_input", "tool_name", "transcript_path"] },
+    { "offsetMs": 6274, "hook_event_name": "Notification", "notification_type": "permission_prompt", "message": "Claude needs your permission", "keys": ["cwd", "hook_event_name", "message", "notification_type", "prompt_id", "session_id", "transcript_path"] },
+    { "offsetMs": 89148, "hook_event_name": "PostToolUse", "tool_name": "AskUserQuestion", "tool_use_id": "toolu_fixture_ask_1", "keys": ["cwd", "duration_ms", "effort", "hook_event_name", "permission_mode", "prompt_id", "session_id", "tool_input", "tool_name", "tool_response", "tool_use_id", "transcript_path"] },
+    { "offsetMs": 89371, "hook_event_name": "Stop", "keys": ["background_tasks", "cwd", "effort", "hook_event_name", "last_assistant_message", "permission_mode", "prompt_id", "session_crons", "session_id", "stop_hook_active", "transcript_path"] }
+  ],
+  "findings": [
+    "PermissionRequest is emitted for AskUserQuestion itself, without tool_use_id; it shares tool_name, tool_input and prompt_id with the preceding PreToolUse.",
+    "The ~6 s permission_prompt Notification is emitted for the question dialog and carries no tool name or ID; prompt_id is present.",
+    "The question resolves with PostToolUse carrying the original tool_use_id, followed by Stop.",
+    "Current HookAdapter maps PreToolUse(AskUserQuestion) to Question but PermissionRequest and permission_prompt to Permission, producing the field-observed Question -> Permission flip."
+  ],
+  "unverified": [
+    "permission_mode default/acceptEdits behavior",
+    "Codex request_user_input / request_user_input_async sequence"
+  ]
+}

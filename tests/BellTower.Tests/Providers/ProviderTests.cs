@@ -115,6 +115,55 @@ public sealed class ProviderTests
             HookAdapter.Parse("codex", second.RootElement, Attachment)!.OperationFingerprint);
     }
 
+    [Theory]
+    [InlineData("claude", "AskUserQuestion")]
+    [InlineData("codex", "request_user_input")]
+    [InlineData("codex", "request_user_input_async")]
+    public void QuestionToolApprovalFlowIsMarkedSoSharedPolicyKeepsItAQuestion(string provider, string tool)
+    {
+        foreach (var hook in new[] { "PreToolUse", "PermissionRequest", "PostToolUse" })
+        {
+            using var json = JsonDocument.Parse(JsonSerializer.Serialize(new
+            {
+                session_id = "test",
+                hook_event_name = hook,
+                tool_name = tool,
+                tool_input = new { questions = new[] { new { question = "Fixture question?" } } }
+            }));
+            var observation = HookAdapter.Parse(provider, json.RootElement, Attachment)!;
+            Assert.True(observation.QuestionTool);
+            Assert.False(observation.HumanPrompt);
+        }
+        using var bash = JsonDocument.Parse("""{"session_id":"test","hook_event_name":"PermissionRequest","tool_name":"Bash","tool_input":{"command":"example"}}""");
+        Assert.False(HookAdapter.Parse(provider, bash.RootElement, Attachment)!.QuestionTool);
+        // The question dialog's approval request correlates with its tool start by tool name plus input.
+        using var start = JsonDocument.Parse("""{"session_id":"test","hook_event_name":"PreToolUse","tool_name":"AskUserQuestion","tool_use_id":"a","tool_input":{"q":1}}""");
+        using var request = JsonDocument.Parse("""{"session_id":"test","hook_event_name":"PermissionRequest","tool_name":"AskUserQuestion","tool_input":{"q":1}}""");
+        Assert.Equal(HookAdapter.Parse("claude", start.RootElement, Attachment)!.OperationFingerprint,
+            HookAdapter.Parse("claude", request.RootElement, Attachment)!.OperationFingerprint);
+        Assert.Null(HookAdapter.Parse("claude", request.RootElement, Attachment)!.OperationId);
+    }
+
+    [Fact]
+    public void ClaudePermissionPromptIsAHumanPromptWithItsCreditedDelayAndAPermissionRequestIsNot()
+    {
+        using var prompt = JsonDocument.Parse("""{"session_id":"test","hook_event_name":"Notification","notification_type":"permission_prompt","prompt_id":"fixture"}""");
+        var confirming = HookAdapter.Parse("claude", prompt.RootElement, Attachment)!;
+        Assert.Equal(EventKind.Permission, confirming.Kind);
+        Assert.True(confirming.HumanPrompt);
+        Assert.Equal(HookAdapter.ClaudePermissionPromptDelay, confirming.ProviderDelay);
+        Assert.True(HookAdapter.ClaudePermissionPromptDelay >= SessionState.HumanWaitGrace);
+        Assert.Null(confirming.OperationId);
+        Assert.Null(confirming.OperationFingerprint);
+        using var request = JsonDocument.Parse("""{"session_id":"test","hook_event_name":"PermissionRequest","tool_name":"Bash","tool_input":{"command":"example"}}""");
+        foreach (var provider in new[] { "claude", "codex" })
+        {
+            var provisional = HookAdapter.Parse(provider, request.RootElement, Attachment)!;
+            Assert.False(provisional.HumanPrompt);
+            Assert.Null(provisional.ProviderDelay);
+        }
+    }
+
     [Fact]
     public void NotificationReasonsAndUnknownEventsAreExplicit()
     {

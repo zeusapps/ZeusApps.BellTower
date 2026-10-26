@@ -1,0 +1,41 @@
+{
+  "provider": "codex",
+  "version": "0.164.0",
+  "mode": "interactive TUI, --no-daemon, isolated CODEX_HOME, Default collaboration mode, loopback fixture Responses endpoint whose scripted model calls request_user_input_async",
+  "captured": "2026-10-26",
+  "task": "2A.5",
+  "sequence": [
+    {
+      "offsetMs": 0,
+      "hook_event_name": "UserPromptSubmit"
+    },
+    {
+      "offsetMs": 400,
+      "hook_event_name": "Stop"
+    }
+  ],
+  "toolList": [
+    "exec_command",
+    "write_stdin",
+    "list_mcp_resources",
+    "list_mcp_resource_templates",
+    "read_mcp_resource",
+    "request_user_input",
+    "view_image",
+    "multi_agent_v1",
+    "mcp__codex_worktrees",
+    "get_goal",
+    "create_goal",
+    "update_goal",
+    "web_search"
+  ],
+  "findings": [
+    "request_user_input_async is not in the tool list the TUI sends to the model at 0.164.0 in Default mode, so the scripted model could not call it and no PreToolUse(request_user_input_async) was produced; the turn ended with Stop.",
+    "codex features list at 0.164.0 shows no feature that enables an async request_user_input; the nearest name, send_message_to_user_async, is under development and disabled and was not enabled for this capture."
+  ],
+  "unverified": [
+    "request_user_input_async in Plan mode (needs a person to type /plan in the window; not performed)",
+    "request_user_input_async in other Codex versions"
+  ],
+  "policy": "The shared question-tool mapping includes request_user_input_async; its hook shape has not been observed, so it is covered only by assumption that it matches request_user_input."
+}

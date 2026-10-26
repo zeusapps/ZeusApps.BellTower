@@ -1,0 +1,130 @@
+# QA-001 independent reducer probe output (fixture: hook payloads through HookAdapter + SessionReducer + AlertPolicy; synthetic clock; no live sessions)
+== A auto approve 30s claude
+UserPromptSubmit @+0s: reason=- waits=[] attn=False due=- ndue=- collect=0
+PermissionRequest @+1s: reason=- waits=[Permission/Provisional] attn=False due=- ndue=- collect=0
+PermissionRequest @+20s: reason=- waits=[Permission/Provisional,Permission/Provisional] attn=False due=- ndue=- collect=0
+PostToolUse @+31s: reason=- waits=[] attn=False due=- ndue=- collect=0
+later @+32s: reason=- waits=[] attn=False due=- ndue=- collect=0
+later @+51s: reason=- waits=[] attn=False due=- ndue=- collect=0
+later @+151s: reason=- waits=[] attn=False due=- ndue=- collect=0
+== A2 auto approve >15s codex
+UserPromptSubmit @+0s: reason=- waits=[] attn=False due=- ndue=- collect=0
+PermissionRequest @+1s: reason=- waits=[Permission/Provisional] attn=False due=- ndue=- collect=0
+later @+2s: reason=- waits=[Permission/Provisional] attn=False due=- ndue=- collect=0
+later @+21s: reason=- waits=[Permission/Provisional] attn=False due=- ndue=- collect=0
+later @+121s: reason=- waits=[Permission/Provisional] attn=False due=- ndue=- collect=0
+== B claude human
+UserPromptSubmit @+0s: reason=- waits=[] attn=False due=- ndue=- collect=0
+PermissionRequest @+1s: reason=- waits=[Permission/Provisional] attn=False due=- ndue=- collect=0
+Notification @+7,3s: reason=Permission waits=[Permission/Confirmed] attn=True due=7,3 ndue=7,3 collect=1
+later @+8,3s: reason=Permission waits=[Permission/Confirmed] attn=True due=7,3 ndue=7,3 collect=0
+later @+27,3s: reason=Permission waits=[Permission/Confirmed] attn=True due=7,3 ndue=7,3 collect=0
+later @+127,3s: reason=Permission waits=[Permission/Confirmed] attn=True due=7,3 ndue=7,3 collect=0
+== B2 prompt only no precursor
+UserPromptSubmit @+0s: reason=- waits=[] attn=False due=- ndue=- collect=0
+Notification @+7s: reason=Permission waits=[Permission/Confirmed] attn=True due=7,0 ndue=7,0 collect=1
+later @+8s: reason=Permission waits=[Permission/Confirmed] attn=True due=7,0 ndue=7,0 collect=0
+later @+27s: reason=Permission waits=[Permission/Confirmed] attn=True due=7,0 ndue=7,0 collect=0
+later @+127s: reason=Permission waits=[Permission/Confirmed] attn=True due=7,0 ndue=7,0 collect=0
+== C late prompt after resolve
+UserPromptSubmit @+0s: reason=- waits=[] attn=False due=- ndue=- collect=0
+PermissionRequest @+1s: reason=- waits=[Permission/Provisional] attn=False due=- ndue=- collect=0
+PostToolUse @+3s: reason=- waits=[] attn=False due=- ndue=- collect=0
+Notification @+7s: reason=- waits=[] attn=False due=- ndue=- collect=0
+Notification @+7s: reason=- waits=[] attn=False due=- ndue=- collect=0
+later @+8s: reason=- waits=[] attn=False due=- ndue=- collect=0
+later @+27s: reason=- waits=[] attn=False due=- ndue=- collect=0
+later @+127s: reason=- waits=[] attn=False due=- ndue=- collect=0
+== C2 late prompt after Stop
+UserPromptSubmit @+0s: reason=- waits=[] attn=False due=- ndue=- collect=0
+PermissionRequest @+1s: reason=- waits=[Permission/Provisional] attn=False due=- ndue=- collect=0
+Stop @+3s: reason=Done waits=[Done/] attn=False due=23,0 ndue=23,0 collect=0
+Notification @+7s: reason=Done waits=[Done/] attn=False due=23,0 ndue=23,0 collect=0
+later @+8s: reason=Done waits=[Done/] attn=False due=23,0 ndue=23,0 collect=0
+later @+27s: reason=Done waits=[Done/] attn=True due=23,0 ndue=23,0 collect=1
+later @+127s: reason=Done waits=[Done/] attn=True due=23,0 ndue=23,0 collect=0
+== D same-fp no PreToolUse, no ids, one result
+UserPromptSubmit @+0s: reason=- waits=[] attn=False due=- ndue=- collect=0
+PermissionRequest @+1s: reason=- waits=[Permission/Provisional] attn=False due=- ndue=- collect=0
+PermissionRequest @+1,1s: reason=- waits=[Permission/Provisional] attn=False due=- ndue=- collect=0
+PostToolUse @+2s: reason=- waits=[] attn=False due=- ndue=- collect=0
+Notification @+8s: reason=- waits=[] attn=False due=- ndue=- collect=0
+later @+9s: reason=- waits=[] attn=False due=- ndue=- collect=0
+later @+28s: reason=- waits=[] attn=False due=- ndue=- collect=0
+later @+128s: reason=- waits=[] attn=False due=- ndue=- collect=0
+== E question+permission+prompt
+UserPromptSubmit @+0s: reason=- waits=[] attn=False due=- ndue=- collect=0
+PreToolUse @+1s: reason=Question waits=[Question/Provisional] attn=True due=1,0 ndue=1,0 collect=1
+PermissionRequest @+2s: reason=Question waits=[Question/Provisional,Permission/Provisional] attn=True due=1,0 ndue=1,0 collect=0
+Notification @+8s: reason=Question waits=[Question/Provisional/amb,Permission/Provisional/amb] attn=True due=1,0 ndue=1,0 collect=0
+later @+9s: reason=Question waits=[Question/Provisional/amb,Permission/Provisional/amb] attn=True due=1,0 ndue=1,0 collect=0
+later @+28s: reason=Question waits=[Question/Provisional/amb,Permission/Provisional/amb] attn=True due=1,0 ndue=1,0 collect=0
+later @+128s: reason=Question waits=[Question/Provisional/amb,Permission/Provisional/amb] attn=True due=1,0 ndue=1,0 collect=0
+== F codex question default rejected
+UserPromptSubmit @+0s: reason=- waits=[] attn=False due=- ndue=- collect=0
+PreToolUse @+1s: reason=Question waits=[Question/Provisional] attn=True due=1,0 ndue=1,0 collect=1
+Stop @+3s: reason=Done waits=[Done/] attn=False due=23,0 ndue=23,0 collect=0
+later @+4s: reason=Done waits=[Done/] attn=False due=23,0 ndue=23,0 collect=0
+later @+23s: reason=Done waits=[Done/] attn=True due=23,0 ndue=23,0 collect=1
+later @+123s: reason=Done waits=[Done/] attn=True due=23,0 ndue=23,0 collect=0
+== G question dialog claude
+UserPromptSubmit @+0s: reason=- waits=[] attn=False due=- ndue=- collect=0
+PreToolUse @+1s: reason=Question waits=[Question/Provisional] attn=True due=1,0 ndue=1,0 collect=1
+PermissionRequest @+1,1s: reason=Question waits=[Question/Provisional] attn=True due=1,0 ndue=1,0 collect=0
+Notification @+7,3s: reason=Question waits=[Question/Confirmed] attn=True due=1,0 ndue=1,0 collect=0
+PostToolUse @+60s: reason=- waits=[] attn=False due=- ndue=- collect=0
+later @+61s: reason=- waits=[] attn=False due=- ndue=- collect=0
+later @+80s: reason=- waits=[] attn=False due=- ndue=- collect=0
+later @+180s: reason=- waits=[] attn=False due=- ndue=- collect=0
+== D2 two parallel Bash same cmd, PreToolUse ids, one result
+UserPromptSubmit @+0s: reason=- waits=[] attn=False due=- ndue=- collect=0
+PreToolUse @+1s: reason=- waits=[] attn=False due=- ndue=- collect=0
+PreToolUse @+1s: reason=- waits=[] attn=False due=- ndue=- collect=0
+PermissionRequest @+1,1s: reason=- waits=[Permission/Provisional] attn=False due=- ndue=- collect=0
+PermissionRequest @+1,2s: reason=- waits=[Permission/Provisional] attn=False due=- ndue=- collect=0
+PostToolUse @+2s: reason=- waits=[Permission/Provisional] attn=False due=- ndue=- collect=0
+Notification @+8s: reason=Permission waits=[Permission/Confirmed] attn=True due=8,0 ndue=8,0 collect=1
+later @+9s: reason=Permission waits=[Permission/Confirmed] attn=True due=8,0 ndue=8,0 collect=0
+later @+28s: reason=Permission waits=[Permission/Confirmed] attn=True due=8,0 ndue=8,0 collect=0
+later @+128s: reason=Permission waits=[Permission/Confirmed] attn=True due=8,0 ndue=8,0 collect=0
+== D3 same, prompt before result
+UserPromptSubmit @+0s: reason=- waits=[] attn=False due=- ndue=- collect=0
+PreToolUse @+1s: reason=- waits=[] attn=False due=- ndue=- collect=0
+PreToolUse @+1s: reason=- waits=[] attn=False due=- ndue=- collect=0
+PermissionRequest @+1,1s: reason=- waits=[Permission/Provisional] attn=False due=- ndue=- collect=0
+Notification @+7,5s: reason=Permission waits=[Permission/Confirmed] attn=True due=7,5 ndue=7,5 collect=1
+PostToolUse @+9s: reason=Permission waits=[Permission/Confirmed] attn=True due=7,5 ndue=7,5 collect=0
+Notification @+15s: reason=Permission waits=[Permission/Confirmed] attn=True due=7,5 ndue=7,5 collect=0
+later @+16s: reason=Permission waits=[Permission/Confirmed] attn=True due=7,5 ndue=7,5 collect=0
+later @+35s: reason=Permission waits=[Permission/Confirmed] attn=True due=7,5 ndue=7,5 collect=0
+later @+135s: reason=Permission waits=[Permission/Confirmed] attn=True due=7,5 ndue=7,5 collect=0
+== D4 Pre a, Req a(auto), Post a at 2, Pre b, Req b at 3, prompt at 9
+UserPromptSubmit @+0s: reason=- waits=[] attn=False due=- ndue=- collect=0
+PreToolUse @+1s: reason=- waits=[] attn=False due=- ndue=- collect=0
+PermissionRequest @+1,1s: reason=- waits=[Permission/Provisional] attn=False due=- ndue=- collect=0
+PostToolUse @+2s: reason=- waits=[] attn=False due=- ndue=- collect=0
+PreToolUse @+2,5s: reason=- waits=[] attn=False due=- ndue=- collect=0
+PermissionRequest @+3s: reason=- waits=[Permission/Provisional] attn=False due=- ndue=- collect=0
+Notification @+9s: reason=Permission waits=[Permission/Confirmed] attn=True due=9,0 ndue=9,0 collect=1
+later @+10s: reason=Permission waits=[Permission/Confirmed] attn=True due=9,0 ndue=9,0 collect=0
+later @+29s: reason=Permission waits=[Permission/Confirmed] attn=True due=9,0 ndue=9,0 collect=0
+later @+129s: reason=Permission waits=[Permission/Confirmed] attn=True due=9,0 ndue=9,0 collect=0
+== H codex native
+provisional @+30s: reason=- waits=[Permission/Provisional] attn=False due=- ndue=- collect=0
+native true since10 @12 @+12s: reason=Permission waits=[Permission/Provisional] attn=False due=15,0 ndue=6,0 collect=0
+native true @16 @+16s: reason=Permission waits=[Permission/Provisional] attn=True due=15,0 ndue=6,0 collect=1
+native false @40 @+40s: reason=- waits=[Permission/Provisional] attn=False due=- ndue=- collect=0
+native expired @50 @+50s: reason=- waits=[Permission/Provisional] attn=False due=- ndue=- collect=0
+restart policy @+120s: reason=Permission waits=[Permission/Provisional] attn=True due=15,0 ndue=6,0 collect=0
+reloaded reason= waits=Provisional
+== I claude confirmed restart
+restored @+120s: reason=Permission waits=[Permission/Confirmed] attn=True due=7,3 ndue=7,3 collect=0
+attn after restore: True
+== J mixed: claude question + codex permission
+claude:c1 reason=Question waits=Question/Confirmed ep=676f0c4ff0614a3f9b3840ce0301e26f
+codex:x1 reason= waits=Permission/Provisional ep=78d8e861fece4018a387f719e2602743
+== K stale prompt vs genuine confirmation-only soon after unrelated resolved wait
+prompt w/o precursor 10s after resolve @+14s: reason=- waits=[] attn=False due=- ndue=- collect=n/a
+LEGACY reason=- conf= attn=False
+roundtrip keeps: True True
+Done=0 Question=1 Permission=2 Error=3

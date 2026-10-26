@@ -18,6 +18,10 @@ public static class CapabilityMatrix
     public const string ClaudeVersion = "Claude Code 2.1.306 (Agent SDK 0.3.309)";
     public const string CodexVersion = "Codex 0.164.0";
 
+    // Version and mode evidence for the human-wait confirmation signals (doctor ConfirmationCoverage).
+    public const string ClaudeConfirmationEvidence = "Claude Code 2.1.310: Notification permission_prompt follows PermissionRequest by about 6.2 s in auto and default permission modes (isolated fixture captures); other permission modes unverified; live auto-versus-human acceptance on real sessions not performed";
+    public const string CodexConfirmationEvidence = "Codex 0.164.0: owning-runtime waitingOnApproval status for managed local sessions; waitingOnUserInput status probe-verified for question dialogs in Plan mode and in Default mode with default_mode_request_user_input; no hook-only human signal; live auto-versus-human acceptance not performed";
+
     private static ProviderCapability Yes(string detail) => new(Supported, detail);
     private static ProviderCapability Open(string detail) => new(Unverified, detail);
 
@@ -59,6 +63,15 @@ public static class CapabilityMatrix
         new("Color, reset and legacy badge import",
             Yes("shared allocation, rename --color/--reset and explicit OSC rgb import"),
             Yes("identical; Codex footer styling stays native")),
+        new("Human-wait confirmation (permission versus automatic approval)",
+            Yes("PermissionRequest is tracked as provisional and is never attention alone; Notification permission_prompt confirms it and is eligible on arrival because the shared five-second grace credits the provider's own delay (about 6.2 s observed; Claude documents about 6 s); timing-only evidence is unverified and never alerts, except that a session in which no permission_prompt has been observed (the provider can turn these notifications off, for example with CLAUDE_CODE_DISABLE_PERMISSION_PROMPT_NOTIFY_HOOKS) shows the same silent, visibly unverified \"possibly waiting for approval\" chip after 15 seconds; fixture-verified at 2.1.310 in auto and default modes; live auto-versus-human acceptance on real sessions not performed"),
+            Yes("PermissionRequest is provisional; the owning runtime's waitingOnApproval status confirms it with the same shared policy and a five-second grace from the first runtime report; a fresh negative status suppresses a stale request; fixture and fake-runtime verified; live auto-versus-human acceptance not performed")),
+        new("Human-wait confirmation without an owning runtime",
+            Yes("the confirming signal is a hook, so no runtime is needed"),
+            Open("unverified: Codex sessions without a verified owning runtime (explicit --no-daemon, existing or remote sessions) have no human-wait signal in the 0.164.0 hooks (PermissionRequest runs before guardian or user review: openai/codex codex-rs hooks permission_request event), so their approval requests are never confirmed. Supported unverified fallback (shared Core policy, applied to any session without a signal): a request pending 15 seconds shows a visibly unverified \"possibly waiting for approval\" chip with no sound and no reminder or escalation eligibility, cleared by the correlated resolution, stop or end; doctor reports these sessions as unavailable. Closing evidence for a confirmed wait: a supported hook or notification payload that distinguishes a human prompt, or a verified attach path to the owning runtime")),
+        new("Question-tool approval flows",
+            Yes("AskUserQuestion runs through the approval flow (PermissionRequest without tool_use_id, then permission_prompt about 6.2 s later) in auto and default modes at 2.1.310; both stay confirming evidence for the one question wait, never a permission wait; a question plus an uncorrelated permission makes an unattributed prompt ambiguous and it is never credited to the permission later by elimination (an isolated capture showed the question's own dialog emits that prompt and a following permission dialog is sequential and relies on its own prompt); a prompt cannot confirm a request younger than the documented notification delay (about 6 seconds, floor 5)"),
+            Yes("request_user_input emits PreToolUse and a correlated PostToolUse with no approval hook in Plan mode and in Default mode with default_mode_request_user_input; a Default-mode rejection clears at Stop; the owning runtime's waitingOnUserInput status (probe-verified) is read as confirmation evidence and never gates a question; request_user_input_async is not offered by 0.164.0 (hook shape unverified)")),
         new("Setup, configuration, diagnostics and tray controls",
             Yes("setup --clients, --status-line and --desktop; doctor; list; Sessions controls"),
             Yes("identical commands and controls; reversible config.toml footer fields")),

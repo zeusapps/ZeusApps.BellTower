@@ -183,7 +183,7 @@ public sealed class CodexNameTests
     {
         using var workspace = new TestWorkspace();
         var session = Prepare(workspace, "one", "Managed");
-        new EventStore(workspace.Paths).Publish(TestWorkspace.Event(EventKind.Permission) with
+        new EventStore(workspace.Paths).Publish(TestWorkspace.ConfirmedPermission() with
         {
             Provider = "codex",
             SessionId = "one",

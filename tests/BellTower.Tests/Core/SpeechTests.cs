@@ -10,7 +10,7 @@ public sealed class SpeechTests
     private static SessionState Waiting(string provider)
     {
         var state = new AppState();
-        SessionReducer.Apply(state, TestWorkspace.Event(EventKind.Permission) with { Provider = provider, SessionId = "one", AttachmentId = "attachment-" + provider });
+        SessionReducer.Apply(state, TestWorkspace.ConfirmedPermission() with { Provider = provider, SessionId = "one", AttachmentId = "attachment-" + provider });
         return state.Sessions.Values.Single();
     }
 

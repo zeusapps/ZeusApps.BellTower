@@ -1,0 +1,4 @@
+causal=False before stale response: oldGone=True, new=Provisional
+causal=False after stale response: new=Confirmed, attention=True, announcements=1
+causal=True before stale response: oldGone=True, new=Provisional
+causal=True after stale response: new=Confirmed, attention=True, announcements=1

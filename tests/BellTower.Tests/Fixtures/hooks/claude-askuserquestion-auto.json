@@ -1,0 +1,13 @@
+{
+  "provider": "claude",
+  "version": "2.1.310",
+  "mode": "interactive, permission_mode auto",
+  "kind": "redacted fixture derived from the 2026-10-26 isolated capture",
+  "events": [
+    { "offsetMs": 0, "payload": { "session_id": "session-fixture", "hook_event_name": "PreToolUse", "cwd": "D:/example", "permission_mode": "auto", "prompt_id": "prompt-fixture", "tool_name": "AskUserQuestion", "tool_use_id": "toolu_fixture_ask_1", "tool_input": { "questions": [ { "question": "Fixture question?", "options": [ "one", "two" ] } ] } } },
+    { "offsetMs": 127, "payload": { "session_id": "session-fixture", "hook_event_name": "PermissionRequest", "cwd": "D:/example", "permission_mode": "auto", "prompt_id": "prompt-fixture", "tool_name": "AskUserQuestion", "tool_input": { "questions": [ { "question": "Fixture question?", "options": [ "one", "two" ] } ] } } },
+    { "offsetMs": 6274, "payload": { "session_id": "session-fixture", "hook_event_name": "Notification", "cwd": "D:/example", "prompt_id": "prompt-fixture", "notification_type": "permission_prompt", "message": "Claude needs your permission" } },
+    { "offsetMs": 89148, "payload": { "session_id": "session-fixture", "hook_event_name": "PostToolUse", "cwd": "D:/example", "permission_mode": "auto", "prompt_id": "prompt-fixture", "tool_name": "AskUserQuestion", "tool_use_id": "toolu_fixture_ask_1", "tool_input": { "questions": [ { "question": "Fixture question?", "options": [ "one", "two" ] } ] }, "tool_response": {} } },
+    { "offsetMs": 89371, "payload": { "session_id": "session-fixture", "hook_event_name": "Stop", "cwd": "D:/example", "permission_mode": "auto", "prompt_id": "prompt-fixture" } }
+  ]
+}

@@ -3,6 +3,7 @@ using BellTower.Core;
 using BellTower.Distribution;
 using BellTower.Hosts;
 using BellTower.IO;
+using BellTower.Providers;
 using BellTower.Sessions;
 using BellTower.Updates;
 
@@ -205,6 +206,7 @@ public sealed class TrayApplication : ApplicationContext
             var live = state.Sessions.Values.Where(s => !s.Ended).ToArray();
             permissions.Update(live);
             permissions.Apply(live, now);
+            ClaudeConfirmationSignal.Apply(live);
             strip.UpdateChips(views.Chips(live, now, contexts));
             foreach (var s in policy.Collect(live, now, config.Muted))
             {

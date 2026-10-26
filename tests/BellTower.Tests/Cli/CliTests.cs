@@ -195,7 +195,7 @@ public sealed class CliTests
     {
         using var w = new TestWorkspace();
         var store = new StateStore(w.Paths);
-        new EventStore(w.Paths).Publish(TestWorkspace.Event(EventKind.Permission));
+        new EventStore(w.Paths).Publish(TestWorkspace.ConfirmedPermission());
         var episode = store.Drain().Sessions["claude:session-1"].Episode;
         var result = Run(w, null, "rename", "--session", "claude:session-1", "--name", "New task", "--change", "change-one");
         Assert.Equal(0, result.Code);
@@ -212,7 +212,7 @@ public sealed class CliTests
     public void TrayProcessesInboxWithoutSoundAndStopsCleanly()
     {
         using var w = new TestWorkspace();
-        new EventStore(w.Paths).Publish(TestWorkspace.Event(EventKind.Permission));
+        new EventStore(w.Paths).Publish(TestWorkspace.ConfirmedPermission());
         var result = Run(w, null, "tray", "--silent", "--duration-ms", "700");
         Assert.Equal(0, result.Code);
         Assert.Equal("", result.Error);
@@ -228,7 +228,7 @@ public sealed class CliTests
         new ConfigStore(workspace.Paths).Update(config => { config.Muted = true; config.Voice = false; config.Updates.Enabled = false; });
         var process = ProcessProbe.Identify(Environment.ProcessId)!;
         new AttachmentStore(workspace.Paths).Save(new("attachment-1", provider, process, new("unknown", process), workspace.Root, DateTimeOffset.UtcNow));
-        var observation = TestWorkspace.Event(EventKind.Permission) with { Provider = provider, Directory = workspace.Root };
+        var observation = TestWorkspace.ConfirmedPermission() with { Provider = provider, Directory = workspace.Root };
         new EventStore(workspace.Paths).Publish(observation);
         var before = new StateStore(workspace.Paths).Drain().Sessions[observation.Key];
         var palette = new IdentityStore(workspace.Paths).Get(observation.Key, workspace.Root).Palette;

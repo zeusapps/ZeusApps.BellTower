@@ -34,6 +34,48 @@ public sealed class CaptureTests
             new("fixture-attachment", provider, null, new(), "D:/unicode-Δ", DateTimeOffset.UtcNow), at ?? DateTimeOffset.UtcNow)!;
     }
 
+    [Fact]
+    public void ConfirmationFieldsSurviveTheCaptureProtocolAndAnOlderReaderStillSeesAPermissionObservation()
+    {
+        using var document = JsonDocument.Parse("""{"session_id":"fixture","cwd":"D:/example","hook_event_name":"Notification","notification_type":"permission_prompt"}""");
+        var envelope = CaptureFactory.Create("claude", document.RootElement,
+            new("fixture-attachment", "claude", null, new(), "D:/example", DateTimeOffset.UtcNow), DateTimeOffset.UtcNow)!;
+        using var stream = new MemoryStream(CaptureProtocol.Encode(envelope));
+        var read = CaptureProtocol.Decode(stream).Observation;
+        Assert.True(read.HumanPrompt);
+        Assert.Equal(HookAdapter.ClaudePermissionPromptDelay, read.ProviderDelay);
+        Assert.Equal(EventKind.Permission, read.Kind);
+        using var question = JsonDocument.Parse("""{"session_id":"fixture","cwd":"D:/example","hook_event_name":"PermissionRequest","tool_name":"AskUserQuestion","tool_input":{"q":1}}""");
+        var questionEnvelope = CaptureFactory.Create("claude", question.RootElement,
+            new("fixture-attachment", "claude", null, new(), "D:/example", DateTimeOffset.UtcNow), DateTimeOffset.UtcNow)!;
+        using var questionStream = new MemoryStream(CaptureProtocol.Encode(questionEnvelope));
+        Assert.True(CaptureProtocol.Decode(questionStream).Observation.QuestionTool);
+    }
+
+    [Fact]
+    public void RuntimeApprovalScopeIsAdditiveInInternalObservationJsonAndOlderObservationsStayUnscoped()
+    {
+        var original = new Observation
+        {
+            Provider = "codex",
+            SessionId = "fixture",
+            AttachmentId = "fixture-attachment",
+            Kind = EventKind.Permission,
+            RuntimeApproval = true,
+            RuntimeApprovalScope = ["opaque-wait-a", "opaque-wait-b"],
+            RuntimeApprovalRevision = 12
+        };
+        var node = JsonNode.Parse(BellTower.IO.Json.Encode(original))!;
+        node["futureObservation"] = true;
+        var decoded = BellTower.IO.Json.Decode<Observation>(node.ToJsonString());
+        var encoded = BellTower.IO.Json.Encode(decoded);
+        Assert.Equal(original.RuntimeApprovalScope, decoded.RuntimeApprovalScope);
+        Assert.Equal(original.RuntimeApprovalRevision, decoded.RuntimeApprovalRevision);
+        Assert.Contains("futureObservation", encoded);
+        Assert.Null(BellTower.IO.Json.Decode<Observation>("""{"provider":"codex","sessionId":"fixture","attachmentId":"fixture-attachment","kind":"Permission","runtimeApproval":true}""").RuntimeApprovalScope);
+        Assert.Null(BellTower.IO.Json.Decode<Observation>("""{"provider":"codex","sessionId":"fixture","attachmentId":"fixture-attachment","kind":"Permission","runtimeApproval":true}""").RuntimeApprovalRevision);
+    }
+
     [Theory]
     [InlineData("claude")]
     [InlineData("codex")]

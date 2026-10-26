@@ -1,0 +1,35 @@
+{
+  "provider": "codex",
+  "version": "0.164.0",
+  "mode": "interactive TUI, --no-daemon, isolated CODEX_HOME, loopback fixture Responses endpoint returning one request_user_input function call",
+  "captured": "2026-10-26",
+  "note": "Field names and relative timing are actual. Session/turn IDs, paths, prompts and tool payloads are omitted; tool_use_id is the fixture endpoint's synthetic call_id.",
+  "scenarios": {
+    "planMode": {
+      "entry": "User typed `/plan <prompt>` in the TUI; collaboration_mode.mode was plan.",
+      "sequence": [
+        { "offsetMs": 0, "hook_event_name": "PreToolUse", "tool_name": "request_user_input", "tool_use_id": "call_fixture_ask_1", "keys": ["cwd", "hook_event_name", "model", "permission_mode", "session_id", "tool_input", "tool_name", "tool_use_id", "transcript_path", "turn_id"] },
+        { "offsetMs": 17033, "hook_event_name": "PostToolUse", "tool_name": "request_user_input", "tool_use_id": "call_fixture_ask_1", "keys": ["cwd", "hook_event_name", "model", "permission_mode", "session_id", "tool_input", "tool_name", "tool_response", "tool_use_id", "transcript_path", "turn_id"] },
+        { "offsetMs": 17520, "hook_event_name": "Stop", "keys": ["cwd", "hook_event_name", "last_assistant_message", "model", "permission_mode", "session_id", "stop_hook_active", "transcript_path", "turn_id"] }
+      ]
+    },
+    "defaultModeRejected": {
+      "entry": "Default collaboration mode. The tool output was `request_user_input is unavailable in Default mode`; no dialog was shown.",
+      "sequence": [
+        { "offsetMs": 0, "hook_event_name": "PreToolUse", "tool_name": "request_user_input", "tool_use_id": "call_fixture_ask_1" },
+        { "offsetMs": 381, "hook_event_name": "Stop" }
+      ]
+    }
+  },
+  "findings": [
+    "Unlike Claude, Codex emits no PermissionRequest for request_user_input; the question dialog was open ~17 s with no intermediate hook.",
+    "The answered question resolves with PostToolUse carrying the original tool_use_id, followed by Stop.",
+    "A Default-mode rejection emits PreToolUse(request_user_input) and then Stop without PostToolUse, so a hook-only Question wait is created for a dialog that never appears and is cleared only by Stop.",
+    "Initial CLI prompt text beginning with /plan is sent to the model as plain text and does not enter Plan mode."
+  ],
+  "unverified": [
+    "request_user_input_async",
+    "Owning-runtime (app-server) question status for the same flows",
+    "Shared-backend (daemon) mode"
+  ]
+}

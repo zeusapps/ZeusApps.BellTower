@@ -1,0 +1,62 @@
+using System.Text.Json;
+using BellTower.Core;
+using BellTower.Providers;
+var t0 = new DateTimeOffset(2026,10,26,12,0,0,TimeSpan.Zero);
+bool legacy=false;
+Observation H(string prov, string json, double s, string sid="s1"){ using var d=JsonDocument.Parse(json); var a=new Attachment("att-"+prov,prov,null,new(),"D:/x",t0); var o=HookAdapter.Parse(prov,d.RootElement,a,t0.AddSeconds(s))! with {SessionId=sid}; if(legacy) o=o with{AdapterRevision=null,HumanPrompt=false,QuestionTool=false,ProviderDelay=null}; return o; }
+string Tool(string hook,string tool,string? id,string cmd="x")=>"{\"session_id\":\"s1\",\"hook_event_name\":\""+hook+"\",\"tool_name\":\""+tool+"\","+(id==null?"":"\"tool_use_id\":\""+id+"\",")+"\"tool_input\":{\"command\":\""+cmd+"\"}}";
+string Prompt="{\"session_id\":\"s1\",\"hook_event_name\":\"Notification\",\"notification_type\":\"permission_prompt\"}";
+string Plain(string hook)=>"{\"session_id\":\"s1\",\"hook_event_name\":\""+hook+"\"}";
+string Q(string hook,string? id)=>Tool(hook,"AskUserQuestion",id,"q");
+void Dump(string name,SessionState s,double now,AlertPolicy? p=null){ var n=t0.AddSeconds(now);
+  Console.WriteLine($"  {name} @+{now}s: reason={s.Reason?.ToString()??"-"} waits=[{string.Join(",",s.Waits.Select(w=>w.Reason+"/"+w.Confirmation+(w.Ambiguous?"/amb":"")+"@"+(w.Since-t0).TotalSeconds))}] attn={s.RequiresAttention(n)} possibly={s.PossiblyWaiting(n)} held={(s.HeldPrompt!=null)} due={(s.Due is {} d?(d-t0).TotalSeconds.ToString("0.0"):"-")} collect={(p==null?"n/a":p.Collect([s],n,false).Count.ToString())}"); }
+AppState Run(string name,string prov,bool leg,params (double,string)[] ev){ legacy=leg; var st=new AppState(); var p=new AlertPolicy(t0.AddSeconds(-1)); Console.WriteLine("== "+name+(leg?" [legacy producer]":""));
+  foreach(var (s,j) in ev){ SessionReducer.Apply(st,H(prov,j,s)); var ss=st.Sessions.Values.First(); Dump(JsonDocument.Parse(j).RootElement.GetProperty("hook_event_name").GetString()!+(j.Contains("permission_prompt")?"(prompt)":""),ss,s,p);}
+  foreach(var n in new[]{ev[^1].Item1+1,ev[^1].Item1+20}) Dump("later",st.Sessions.Values.First(),n,p); return st; }
+foreach(var leg in new[]{false,true}){
+ Run("L1 claude human permission","claude",leg,(0,Plain("UserPromptSubmit")),(1,Tool("PermissionRequest","Bash",null)),(7.3,Prompt));
+ Run("L1b claude auto 40s","claude",leg,(0,Plain("UserPromptSubmit")),(1,Tool("PermissionRequest","Bash",null)),(40,Plain("Stop")));
+ Run("L2 AskUserQuestion field","claude",leg,(0,Plain("UserPromptSubmit")),(1,Q("PreToolUse","q1")),(1.1,Q("PermissionRequest",null)),(7.3,Prompt),(60,Q("PostToolUse","q1")));
+ Run("L3 prompt alone","claude",leg,(0,Plain("UserPromptSubmit")),(7,Prompt));
+}
+Run("P4 young sibling","claude",false,(0,Plain("UserPromptSubmit")),(1,Tool("PermissionRequest","Bash",null,"a")),(5.8,Tool("PermissionRequest","Bash",null,"b")),(7.3,Prompt));
+Run("P5 racing prompt after resolve","claude",false,(0,Plain("UserPromptSubmit")),(1,Tool("PreToolUse","Bash","p1","a")),(1.1,Tool("PermissionRequest","Bash",null,"a")),(5.5,Tool("PreToolUse","Bash","p2","b")),(5.6,Tool("PermissionRequest","Bash",null,"b")),(6.0,Tool("PostToolUse","Bash","p1","a")),(6.4,Prompt));
+Run("P5b later real prompt for p2","claude",false,(0,Plain("UserPromptSubmit")),(1,Tool("PreToolUse","Bash","p1","a")),(1.1,Tool("PermissionRequest","Bash",null,"a")),(5.5,Tool("PreToolUse","Bash","p2","b")),(5.6,Tool("PermissionRequest","Bash",null,"b")),(6.0,Tool("PostToolUse","Bash","p1","a")),(6.4,Prompt),(11.8,Prompt));
+Run("H1 held, question resolves, one permission","claude",false,(0,Plain("UserPromptSubmit")),(1,Q("PreToolUse","q1")),(2,Tool("PermissionRequest","Bash",null,"a")),(8,Prompt),(20,Q("PostToolUse","q1")));
+Run("H2 held, two permissions","claude",false,(0,Plain("UserPromptSubmit")),(1,Q("PreToolUse","q1")),(2,Tool("PermissionRequest","Bash",null,"a")),(2.5,Tool("PermissionRequest","Bash",null,"b")),(8,Prompt),(20,Q("PostToolUse","q1")));
+Run("H3 held then Stop","claude",false,(0,Plain("UserPromptSubmit")),(1,Q("PreToolUse","q1")),(2,Tool("PermissionRequest","Bash",null,"a")),(8,Prompt),(20,Plain("Stop")),(21,Q("PostToolUse","q1")));
+Run("H4 permission resolves first then question","claude",false,(0,Plain("UserPromptSubmit")),(1,Q("PreToolUse","q1")),(1.5,Tool("PreToolUse","Bash","b1","a")),(2,Tool("PermissionRequest","Bash",null,"a")),(8,Prompt),(10,Tool("PostToolUse","Bash","b1","a")),(20,Q("PostToolUse","q1")));
+Run("H5 held; fresh permission arrives after, then question resolves","claude",false,(0,Plain("UserPromptSubmit")),(1,Q("PreToolUse","q1")),(2,Tool("PermissionRequest","Bash",null,"a")),(8,Prompt),(9,Tool("PermissionRequest","Bash",null,"b")),(12,Q("PostToolUse","q1")));
+foreach(var prov in new[]{"codex","claude"}){
+  legacy=false; var st=new AppState(); var p=new AlertPolicy(t0.AddSeconds(-1)); Console.WriteLine("== U unverified chip "+prov);
+  SessionReducer.Apply(st,H(prov,Plain("UserPromptSubmit"),0)); SessionReducer.Apply(st,H(prov,Tool("PermissionRequest","Bash",null),1));
+  var s=st.Sessions.Values.First(); s.ConfirmationSignalUnavailable=true;
+  foreach(var n in new[]{5.0,15.9,16.0,16.1,100}) { Dump("unavail",s,n,p); Console.WriteLine($"     UnverifiedSince={(s.UnverifiedSince-t0)?.TotalSeconds} eff={s.EffectiveConfirmation(s.Waits[0])}"); }
+  s.ConfirmationSignalUnavailable=false; Dump("signal back",s,100); s.NativePermissionPending=false; s.ConfirmationSignalUnavailable=true; Dump("flag+negative (no chip)",s,100);
+  s.NativePermissionPending=null;
+  s.AcknowledgedEpisode=s.Episode; Dump("dismissed",s,100); s.AcknowledgedEpisode=null;
+  var ro=new Observation{Provider=prov,SessionId="s1",AttachmentId="att-"+prov,Kind=EventKind.Permission,At=t0.AddSeconds(30),HumanPrompt=true,RuntimeApproval=true,AdapterRevision=1};
+  SessionReducer.Apply(st,ro); s=st.Sessions.Values.First(); Dump("runtime confirmed @30 (flag still set)",s,31,p); Dump("",s,36,p);
+  SessionReducer.Apply(st,H(prov,Tool("PostToolUse","Bash",null),40)); s=st.Sessions.Values.First(); Dump("post result",s,100);
+}
+foreach(var end in new[]{"Stop","SessionEnd"}){ legacy=false; var st=new AppState(); SessionReducer.Apply(st,H("codex",Plain("UserPromptSubmit"),0)); SessionReducer.Apply(st,H("codex",Tool("PermissionRequest","Bash",null),1)); var s=st.Sessions.Values.First(); s.ConfirmationSignalUnavailable=true; Dump("pre-"+end,s,20); SessionReducer.Apply(st,H("codex",Plain(end),25)); Dump(end,st.Sessions.Values.First(),100);}
+{ legacy=false; var st=new AppState(); SessionReducer.Apply(st,H("codex",Plain("UserPromptSubmit"),0)); SessionReducer.Apply(st,H("codex",Tool("PermissionRequest","Bash",null,"a"),1)); var s=st.Sessions.Values.First(); s.ConfirmationSignalUnavailable=true; SessionReducer.Apply(st,H("codex",Tool("PostToolUse","Bash","zzz","other"),20)); Dump("unrelated result",st.Sessions.Values.First(),30);}
+{ legacy=false; var st=new AppState(); SessionReducer.Apply(st,H("codex",Plain("UserPromptSubmit"),0)); SessionReducer.Apply(st,H("codex",Tool("PermissionRequest","Bash",null,"a"),1)); SessionReducer.Apply(st,H("codex",Tool("PreToolUse","request_user_input","c1","q"),20)); var s=st.Sessions.Values.First(); s.ConfirmationSignalUnavailable=true; Dump("question + unverified permission",s,40);}
+Console.WriteLine("== E causal vs unordered codex");
+foreach(var causal in new[]{false,true}){
+  legacy=false; var st=new AppState();
+  void Ap(Observation o){ o=o with{IngressAt=o.At}; if(causal) CausalSessionReducer.Apply(st,o); else SessionReducer.Apply(st,o);}
+  Ap(H("codex",Plain("UserPromptSubmit"),0)); Ap(H("codex",Tool("PermissionRequest","Bash",null,"a"),1));
+  var ro=new Observation{Provider="codex",SessionId="s1",AttachmentId="att-codex",Kind=EventKind.Permission,At=t0.AddSeconds(2),IngressAt=t0.AddSeconds(2),HumanPrompt=true,RuntimeApproval=true,AdapterRevision=1,Id="ra1"}; Ap(ro);
+  var s=st.Sessions.Values.First(); var ep1=s.Episode; s.AcknowledgedEpisode=s.Episode;
+  Ap(H("codex",Tool("PermissionRequest","Bash",null,"b"),20)); s=st.Sessions.Values.First();
+  Console.WriteLine($"  causal={causal} ep1={ep1} epAfter={s.Episode} same={ep1==s.Episode} acked={s.AcknowledgedEpisode==s.Episode} waits=[{string.Join(",",s.Waits.Select(w=>w.Confirmation))}] attn={s.RequiresAttention(t0.AddSeconds(40))}");
+}
+Console.WriteLine("== X1 dismiss unverified chip then runtime confirms");
+{ legacy=false; var st=new AppState(); var p=new AlertPolicy(t0.AddSeconds(-1)); SessionReducer.Apply(st,H("codex",Plain("UserPromptSubmit"),0)); SessionReducer.Apply(st,H("codex",Tool("PermissionRequest","Bash",null,"a"),1));
+ var s=st.Sessions.Values.First(); s.ConfirmationSignalUnavailable=true; Dump("chip",s,20,p); s.AcknowledgedEpisode=s.Episode; Dump("dismissed",s,25,p);
+ s.ConfirmationSignalUnavailable=false;
+ var ro=new Observation{Provider="codex",SessionId="s1",AttachmentId="att-codex",Kind=EventKind.Permission,At=t0.AddSeconds(30),HumanPrompt=true,RuntimeApproval=true,AdapterRevision=1};
+ SessionReducer.Apply(st,ro); s=st.Sessions.Values.First(); Dump("after confirm @31",s,31,p); Dump("after confirm @40",s,40,p); Console.WriteLine("  ack==episode "+(s.AcknowledgedEpisode==s.Episode)); }
+Console.WriteLine("== X2 racing real: p2 old enough, p1 resolves 0.4s before prompt");
+Run("X2","claude",false,(0,Plain("UserPromptSubmit")),(1,Tool("PreToolUse","Bash","p1","a")),(1.1,Tool("PermissionRequest","Bash",null,"a")),(1.2,Tool("PreToolUse","Bash","p2","b")),(1.3,Tool("PermissionRequest","Bash",null,"b")),(6.0,Tool("PostToolUse","Bash","p1","a")),(6.4,Prompt),(20,Prompt));

@@ -1,0 +1,63 @@
+PASS original-race/False in-flight cache rejected
+PASS original-race/False old response never confirms newer request
+PASS original-race/False no wrong announcement
+PASS ABA/False query captures original set and generation
+PASS ABA/False consumed result rejected against A+B
+PASS ABA/False old cached result stays stale after B resolves
+PASS ABA/False generation persists
+PASS ABA/False fresh query has independent dedupe ID
+PASS ABA/False stale consumption does not poison fresh confirmation
+PASS ABA/False replay of same observation remains idempotent
+PASS mutable/False captured evidence does not follow changed caller state
+PASS unchanged/False unrelated activity does not stale valid query
+PASS unchanged/False unchanged set confirms normally
+PASS candidate-set/False starts as ambiguous A+B
+PASS candidate-set/False narrowing changes scope generation
+PASS candidate-set/False old in-flight marker rejected after narrowing
+PASS candidate-set/False old transient result rejected after narrowing
+PASS candidate-set/False old stored response rejected after narrowing
+PASS candidate-set/False fresh narrowed-set query confirms
+PASS original-race/True in-flight cache rejected
+PASS original-race/True old response never confirms newer request
+PASS original-race/True no wrong announcement
+PASS ABA/True query captures original set and generation
+PASS ABA/True consumed result rejected against A+B
+PASS ABA/True old cached result stays stale after B resolves
+PASS ABA/True generation persists
+PASS ABA/True fresh query has independent dedupe ID
+PASS ABA/True stale consumption does not poison fresh confirmation
+PASS ABA/True replay of same observation remains idempotent
+PASS mutable/True captured evidence does not follow changed caller state
+PASS unchanged/True unrelated activity does not stale valid query
+PASS unchanged/True unchanged set confirms normally
+PASS candidate-set/True starts as ambiguous A+B
+PASS candidate-set/True narrowing changes scope generation
+PASS candidate-set/True old in-flight marker rejected after narrowing
+PASS candidate-set/True old transient result rejected after narrowing
+PASS candidate-set/True old stored response rejected after narrowing
+PASS candidate-set/True fresh narrowed-set query confirms
+PASS candidate-identity order canonical
+PASS candidate-identity membership distinct
+PASS candidate-identity no raw metadata
+PASS legacy candidate-identity canonical opaque fallback
+PASS legacy-runtime/False missing scope rejected
+PASS legacy-runtime/False fresh scoped query recovers
+PASS boundary/False/Stop old result cannot confirm
+PASS boundary/False/End old result cannot confirm
+PASS boundary/False/Prompt old result cannot confirm
+PASS boundary/False/Register old result cannot confirm
+PASS restore/False checkpoint revision persists
+PASS restore/False long-journal request set confirms
+PASS restore/False long-journal confirmation silent
+PASS mixed/False question and permission stay independent
+PASS legacy-runtime/True missing scope rejected
+PASS legacy-runtime/True fresh scoped query recovers
+PASS boundary/True/Stop old result cannot confirm
+PASS boundary/True/End old result cannot confirm
+PASS boundary/True/Prompt old result cannot confirm
+PASS boundary/True/Register old result cannot confirm
+PASS restore/True checkpoint revision persists
+PASS restore/True long-journal request set confirms
+PASS restore/True long-journal confirmation silent
+PASS mixed/True question and permission stay independent
+All independent Analysis 006 pump scope/revision probes passed.

@@ -1,0 +1,55 @@
+using BellTower.Core;
+using BellTower.IO;
+using BellTower.Providers;
+using BellTower.Sessions;
+
+foreach (var causal in new[] { false, true })
+{
+    var root = Path.GetFullPath(Path.Combine("artifacts", "analysis-004-pump-probe", "data-" + Guid.NewGuid().ToString("N")));
+    var paths = new DataPaths(root);
+    paths.Ensure();
+    var process = ProcessProbe.Identify(Environment.ProcessId)!;
+    var runtime = new CodexRuntime("runtime-probe", "fixture-endpoint", process, process);
+    var runtimes = new CodexRuntimeStore(paths);
+    AtomicFile.Write(runtimes.RecordPath(runtime.Attachment), BellTower.IO.Json.Encode(runtime));
+    File.WriteAllText(runtimes.TokenPath(runtime.Attachment), "fixture-token");
+    new AttachmentStore(paths).Save(new(runtime.Attachment, "codex", process, new("unknown", process), root, DateTimeOffset.UtcNow));
+    Observation E(EventKind kind, string operation, DateTimeOffset at) => new()
+    {
+        Provider = "codex", SessionId = "probe", AttachmentId = runtime.Attachment, Directory = root,
+        At = at, IngressAt = causal ? at : null, Kind = kind, OperationId = operation,
+        OperationFingerprint = operation, AdapterRevision = Observation.HumanWaitRevision
+    };
+    var events = new EventStore(paths);
+    var store = new StateStore(paths);
+    events.Publish(E(EventKind.Permission, "old", DateTimeOffset.UtcNow.AddMinutes(-1)));
+    var before = store.Drain().Sessions["codex:probe"];
+    var status = new SlowStatus();
+    using var pump = new CodexPermissionPump(paths, () => status);
+    var refresh = pump.RefreshAsync([before]);
+    await status.Started.Task.WaitAsync(TimeSpan.FromSeconds(2));
+    // The positive status describes the old request. Its response is delayed while the old request resolves and a new
+    // automatically reviewed request starts. All changes are isolated fixtures; the provider is fake and no socket opens.
+    events.Publish(E(EventKind.ToolEnd, "old", DateTimeOffset.UtcNow));
+    events.Publish(E(EventKind.Permission, "new-auto-review", DateTimeOffset.UtcNow));
+    var middle = store.Drain().Sessions["codex:probe"];
+    Console.WriteLine($"causal={causal} before stale response: oldGone={middle.Waits.All(w => w.OperationId != "old")}, new={middle.Waits.Single().Confirmation}");
+    status.Result.SetResult(true);
+    await refresh;
+    var after = store.Drain().Sessions["codex:probe"];
+    var due = after.Due!.Value;
+    Console.WriteLine($"causal={causal} after stale response: new={after.Waits.Single().Confirmation}, attention={after.RequiresAttention(due)}, announcements={new AlertPolicy(DateTimeOffset.UtcNow.AddSeconds(-2)).Collect([after], due, false).Count}");
+}
+
+sealed class SlowStatus : ICodexAttentionClient
+{
+    public TaskCompletionSource Started { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+    public TaskCompletionSource<bool?> Result { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+    public Task ConnectAsync(string endpoint, string token, CancellationToken cancellation) => Task.CompletedTask;
+    public Task<bool?> ReadPermissionPendingAsync(string thread, CancellationToken cancellation)
+    {
+        Started.TrySetResult();
+        return Result.Task;
+    }
+    public void Dispose() { }
+}

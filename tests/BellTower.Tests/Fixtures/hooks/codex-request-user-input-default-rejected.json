@@ -1,0 +1,10 @@
+{
+  "provider": "codex",
+  "version": "0.164.0",
+  "mode": "interactive, Default collaboration mode (call rejected, no dialog)",
+  "kind": "redacted fixture derived from the 2026-10-26 isolated capture",
+  "events": [
+    { "offsetMs": 0, "payload": { "session_id": "session-fixture", "hook_event_name": "PreToolUse", "cwd": "D:/example", "turn_id": "turn-fixture", "tool_name": "request_user_input", "tool_use_id": "call_fixture_ask_1", "tool_input": { "questions": [ { "question": "Fixture question?" } ] } } },
+    { "offsetMs": 381, "payload": { "session_id": "session-fixture", "hook_event_name": "Stop", "cwd": "D:/example", "turn_id": "turn-fixture" } }
+  ]
+}

@@ -1,0 +1,184 @@
+== L1 claude human permission
+  UserPromptSubmit @+0s: reason=- waits=[] attn=False possibly=False held=False due=- collect=0
+  PermissionRequest @+1s: reason=- waits=[Permission/Provisional@1] attn=False possibly=False held=False due=- collect=0
+  Notification(prompt) @+7,3s: reason=Permission waits=[Permission/Confirmed@1] attn=True possibly=False held=False due=7,3 collect=1
+  later @+8,3s: reason=Permission waits=[Permission/Confirmed@1] attn=True possibly=False held=False due=7,3 collect=0
+  later @+27,3s: reason=Permission waits=[Permission/Confirmed@1] attn=True possibly=False held=False due=7,3 collect=0
+== L1b claude auto 40s
+  UserPromptSubmit @+0s: reason=- waits=[] attn=False possibly=False held=False due=- collect=0
+  PermissionRequest @+1s: reason=- waits=[Permission/Provisional@1] attn=False possibly=False held=False due=- collect=0
+  Stop @+40s: reason=Done waits=[Done/@40] attn=False possibly=False held=False due=60,0 collect=0
+  later @+41s: reason=Done waits=[Done/@40] attn=False possibly=False held=False due=60,0 collect=0
+  later @+60s: reason=Done waits=[Done/@40] attn=True possibly=False held=False due=60,0 collect=1
+== L2 AskUserQuestion field
+  UserPromptSubmit @+0s: reason=- waits=[] attn=False possibly=False held=False due=- collect=0
+  PreToolUse @+1s: reason=Question waits=[Question/Provisional@1] attn=True possibly=False held=False due=1,0 collect=1
+  PermissionRequest @+1,1s: reason=Question waits=[Question/Provisional@1] attn=True possibly=False held=False due=1,0 collect=0
+  Notification(prompt) @+7,3s: reason=Question waits=[Question/Confirmed@1] attn=True possibly=False held=False due=1,0 collect=0
+  PostToolUse @+60s: reason=- waits=[] attn=False possibly=False held=False due=- collect=0
+  later @+61s: reason=- waits=[] attn=False possibly=False held=False due=- collect=0
+  later @+80s: reason=- waits=[] attn=False possibly=False held=False due=- collect=0
+== L3 prompt alone
+  UserPromptSubmit @+0s: reason=- waits=[] attn=False possibly=False held=False due=- collect=0
+  Notification(prompt) @+7s: reason=Permission waits=[Permission/Confirmed@7] attn=True possibly=False held=False due=7,0 collect=1
+  later @+8s: reason=Permission waits=[Permission/Confirmed@7] attn=True possibly=False held=False due=7,0 collect=0
+  later @+27s: reason=Permission waits=[Permission/Confirmed@7] attn=True possibly=False held=False due=7,0 collect=0
+== L1 claude human permission [legacy producer]
+  UserPromptSubmit @+0s: reason=- waits=[] attn=False possibly=False held=False due=- collect=0
+  PermissionRequest @+1s: reason=- waits=[Permission/Provisional@1] attn=False possibly=False held=False due=- collect=0
+  Notification(prompt) @+7,3s: reason=Permission waits=[Permission/Confirmed@1] attn=True possibly=False held=False due=7,3 collect=1
+  later @+8,3s: reason=Permission waits=[Permission/Confirmed@1] attn=True possibly=False held=False due=7,3 collect=0
+  later @+27,3s: reason=Permission waits=[Permission/Confirmed@1] attn=True possibly=False held=False due=7,3 collect=0
+== L1b claude auto 40s [legacy producer]
+  UserPromptSubmit @+0s: reason=- waits=[] attn=False possibly=False held=False due=- collect=0
+  PermissionRequest @+1s: reason=- waits=[Permission/Provisional@1] attn=False possibly=False held=False due=- collect=0
+  Stop @+40s: reason=Done waits=[Done/@40] attn=False possibly=False held=False due=60,0 collect=0
+  later @+41s: reason=Done waits=[Done/@40] attn=False possibly=False held=False due=60,0 collect=0
+  later @+60s: reason=Done waits=[Done/@40] attn=True possibly=False held=False due=60,0 collect=1
+== L2 AskUserQuestion field [legacy producer]
+  UserPromptSubmit @+0s: reason=- waits=[] attn=False possibly=False held=False due=- collect=0
+  PreToolUse @+1s: reason=Question waits=[Question/Provisional@1] attn=True possibly=False held=False due=1,0 collect=1
+  PermissionRequest @+1,1s: reason=Question waits=[Question/Provisional@1,Permission/Provisional@1,1] attn=True possibly=False held=False due=1,0 collect=0
+  Notification(prompt) @+7,3s: reason=Question waits=[Question/Provisional/amb@1,Permission/Provisional/amb@1,1] attn=True possibly=False held=True due=1,0 collect=0
+  PostToolUse @+60s: reason=- waits=[] attn=False possibly=False held=False due=- collect=0
+  later @+61s: reason=- waits=[] attn=False possibly=False held=False due=- collect=0
+  later @+80s: reason=- waits=[] attn=False possibly=False held=False due=- collect=0
+== L3 prompt alone [legacy producer]
+  UserPromptSubmit @+0s: reason=- waits=[] attn=False possibly=False held=False due=- collect=0
+  Notification(prompt) @+7s: reason=Permission waits=[Permission/Confirmed@7] attn=True possibly=False held=False due=7,0 collect=1
+  later @+8s: reason=Permission waits=[Permission/Confirmed@7] attn=True possibly=False held=False due=7,0 collect=0
+  later @+27s: reason=Permission waits=[Permission/Confirmed@7] attn=True possibly=False held=False due=7,0 collect=0
+== P4 young sibling
+  UserPromptSubmit @+0s: reason=- waits=[] attn=False possibly=False held=False due=- collect=0
+  PermissionRequest @+1s: reason=- waits=[Permission/Provisional@1] attn=False possibly=False held=False due=- collect=0
+  PermissionRequest @+5,8s: reason=- waits=[Permission/Provisional@1,Permission/Provisional@5,7999999] attn=False possibly=False held=False due=- collect=0
+  Notification(prompt) @+7,3s: reason=Permission waits=[Permission/Confirmed@1,Permission/Provisional@5,7999999] attn=True possibly=False held=False due=7,3 collect=1
+  later @+8,3s: reason=Permission waits=[Permission/Confirmed@1,Permission/Provisional@5,7999999] attn=True possibly=False held=False due=7,3 collect=0
+  later @+27,3s: reason=Permission waits=[Permission/Confirmed@1,Permission/Provisional@5,7999999] attn=True possibly=False held=False due=7,3 collect=0
+== P5 racing prompt after resolve
+  UserPromptSubmit @+0s: reason=- waits=[] attn=False possibly=False held=False due=- collect=0
+  PreToolUse @+1s: reason=- waits=[] attn=False possibly=False held=False due=- collect=0
+  PermissionRequest @+1,1s: reason=- waits=[Permission/Provisional@1,1] attn=False possibly=False held=False due=- collect=0
+  PreToolUse @+5,5s: reason=- waits=[Permission/Provisional@1,1] attn=False possibly=False held=False due=- collect=0
+  PermissionRequest @+5,6s: reason=- waits=[Permission/Provisional@1,1,Permission/Provisional@5,5999999] attn=False possibly=False held=False due=- collect=0
+  PostToolUse @+6s: reason=- waits=[Permission/Provisional@5,5999999] attn=False possibly=False held=False due=- collect=0
+  Notification(prompt) @+6,4s: reason=- waits=[Permission/Provisional@5,5999999] attn=False possibly=False held=False due=- collect=0
+  later @+7,4s: reason=- waits=[Permission/Provisional@5,5999999] attn=False possibly=False held=False due=- collect=0
+  later @+26,4s: reason=- waits=[Permission/Provisional@5,5999999] attn=False possibly=False held=False due=- collect=0
+== P5b later real prompt for p2
+  UserPromptSubmit @+0s: reason=- waits=[] attn=False possibly=False held=False due=- collect=0
+  PreToolUse @+1s: reason=- waits=[] attn=False possibly=False held=False due=- collect=0
+  PermissionRequest @+1,1s: reason=- waits=[Permission/Provisional@1,1] attn=False possibly=False held=False due=- collect=0
+  PreToolUse @+5,5s: reason=- waits=[Permission/Provisional@1,1] attn=False possibly=False held=False due=- collect=0
+  PermissionRequest @+5,6s: reason=- waits=[Permission/Provisional@1,1,Permission/Provisional@5,5999999] attn=False possibly=False held=False due=- collect=0
+  PostToolUse @+6s: reason=- waits=[Permission/Provisional@5,5999999] attn=False possibly=False held=False due=- collect=0
+  Notification(prompt) @+6,4s: reason=- waits=[Permission/Provisional@5,5999999] attn=False possibly=False held=False due=- collect=0
+  Notification(prompt) @+11,8s: reason=Permission waits=[Permission/Confirmed@5,5999999] attn=True possibly=False held=False due=11,8 collect=1
+  later @+12,8s: reason=Permission waits=[Permission/Confirmed@5,5999999] attn=True possibly=False held=False due=11,8 collect=0
+  later @+31,8s: reason=Permission waits=[Permission/Confirmed@5,5999999] attn=True possibly=False held=False due=11,8 collect=0
+== H1 held, question resolves, one permission
+  UserPromptSubmit @+0s: reason=- waits=[] attn=False possibly=False held=False due=- collect=0
+  PreToolUse @+1s: reason=Question waits=[Question/Provisional@1] attn=True possibly=False held=False due=1,0 collect=1
+  PermissionRequest @+2s: reason=Question waits=[Question/Provisional@1,Permission/Provisional@2] attn=True possibly=False held=False due=1,0 collect=0
+  Notification(prompt) @+8s: reason=Question waits=[Question/Provisional/amb@1,Permission/Provisional/amb@2] attn=True possibly=False held=True due=1,0 collect=0
+  PostToolUse @+20s: reason=Permission waits=[Permission/Confirmed@2] attn=True possibly=False held=False due=8,0 collect=1
+  later @+21s: reason=Permission waits=[Permission/Confirmed@2] attn=True possibly=False held=False due=8,0 collect=0
+  later @+40s: reason=Permission waits=[Permission/Confirmed@2] attn=True possibly=False held=False due=8,0 collect=0
+== H2 held, two permissions
+  UserPromptSubmit @+0s: reason=- waits=[] attn=False possibly=False held=False due=- collect=0
+  PreToolUse @+1s: reason=Question waits=[Question/Provisional@1] attn=True possibly=False held=False due=1,0 collect=1
+  PermissionRequest @+2s: reason=Question waits=[Question/Provisional@1,Permission/Provisional@2] attn=True possibly=False held=False due=1,0 collect=0
+  PermissionRequest @+2,5s: reason=Question waits=[Question/Provisional@1,Permission/Provisional@2,Permission/Provisional@2,5] attn=True possibly=False held=False due=1,0 collect=0
+  Notification(prompt) @+8s: reason=Question waits=[Question/Provisional/amb@1,Permission/Provisional/amb@2,Permission/Provisional/amb@2,5] attn=True possibly=False held=True due=1,0 collect=0
+  PostToolUse @+20s: reason=- waits=[Permission/Provisional/amb@2,Permission/Provisional/amb@2,5] attn=False possibly=False held=False due=- collect=0
+  later @+21s: reason=- waits=[Permission/Provisional/amb@2,Permission/Provisional/amb@2,5] attn=False possibly=False held=False due=- collect=0
+  later @+40s: reason=- waits=[Permission/Provisional/amb@2,Permission/Provisional/amb@2,5] attn=False possibly=False held=False due=- collect=0
+== H3 held then Stop
+  UserPromptSubmit @+0s: reason=- waits=[] attn=False possibly=False held=False due=- collect=0
+  PreToolUse @+1s: reason=Question waits=[Question/Provisional@1] attn=True possibly=False held=False due=1,0 collect=1
+  PermissionRequest @+2s: reason=Question waits=[Question/Provisional@1,Permission/Provisional@2] attn=True possibly=False held=False due=1,0 collect=0
+  Notification(prompt) @+8s: reason=Question waits=[Question/Provisional/amb@1,Permission/Provisional/amb@2] attn=True possibly=False held=True due=1,0 collect=0
+  Stop @+20s: reason=Done waits=[Done/@20] attn=False possibly=False held=False due=40,0 collect=0
+  PostToolUse @+21s: reason=- waits=[] attn=False possibly=False held=False due=- collect=0
+  later @+22s: reason=- waits=[] attn=False possibly=False held=False due=- collect=0
+  later @+41s: reason=- waits=[] attn=False possibly=False held=False due=- collect=0
+== H4 permission resolves first then question
+  UserPromptSubmit @+0s: reason=- waits=[] attn=False possibly=False held=False due=- collect=0
+  PreToolUse @+1s: reason=Question waits=[Question/Provisional@1] attn=True possibly=False held=False due=1,0 collect=1
+  PreToolUse @+1,5s: reason=Question waits=[Question/Provisional@1] attn=True possibly=False held=False due=1,0 collect=0
+  PermissionRequest @+2s: reason=Question waits=[Question/Provisional@1,Permission/Provisional@2] attn=True possibly=False held=False due=1,0 collect=0
+  Notification(prompt) @+8s: reason=Question waits=[Question/Provisional/amb@1,Permission/Provisional/amb@2] attn=True possibly=False held=True due=1,0 collect=0
+  PostToolUse @+10s: reason=Question waits=[Question/Provisional/amb@1] attn=True possibly=False held=True due=1,0 collect=0
+  PostToolUse @+20s: reason=- waits=[] attn=False possibly=False held=False due=- collect=0
+  later @+21s: reason=- waits=[] attn=False possibly=False held=False due=- collect=0
+  later @+40s: reason=- waits=[] attn=False possibly=False held=False due=- collect=0
+== H5 held; fresh permission arrives after, then question resolves
+  UserPromptSubmit @+0s: reason=- waits=[] attn=False possibly=False held=False due=- collect=0
+  PreToolUse @+1s: reason=Question waits=[Question/Provisional@1] attn=True possibly=False held=False due=1,0 collect=1
+  PermissionRequest @+2s: reason=Question waits=[Question/Provisional@1,Permission/Provisional@2] attn=True possibly=False held=False due=1,0 collect=0
+  Notification(prompt) @+8s: reason=Question waits=[Question/Provisional/amb@1,Permission/Provisional/amb@2] attn=True possibly=False held=True due=1,0 collect=0
+  PermissionRequest @+9s: reason=Question waits=[Question/Provisional/amb@1,Permission/Provisional/amb@2,Permission/Provisional@9] attn=True possibly=False held=True due=1,0 collect=0
+  PostToolUse @+12s: reason=Permission waits=[Permission/Confirmed@2,Permission/Provisional@9] attn=True possibly=False held=False due=8,0 collect=1
+  later @+13s: reason=Permission waits=[Permission/Confirmed@2,Permission/Provisional@9] attn=True possibly=False held=False due=8,0 collect=0
+  later @+32s: reason=Permission waits=[Permission/Confirmed@2,Permission/Provisional@9] attn=True possibly=False held=False due=8,0 collect=0
+== U unverified chip codex
+  unavail @+5s: reason=- waits=[Permission/Provisional@1] attn=False possibly=False held=False due=- collect=0
+     UnverifiedSince=1 eff=Provisional
+  unavail @+15,9s: reason=- waits=[Permission/Provisional@1] attn=False possibly=False held=False due=- collect=0
+     UnverifiedSince=1 eff=Provisional
+  unavail @+16s: reason=- waits=[Permission/Provisional@1] attn=False possibly=True held=False due=- collect=0
+     UnverifiedSince=1 eff=Provisional
+  unavail @+16,1s: reason=- waits=[Permission/Provisional@1] attn=False possibly=True held=False due=- collect=0
+     UnverifiedSince=1 eff=Provisional
+  unavail @+100s: reason=- waits=[Permission/Provisional@1] attn=False possibly=True held=False due=- collect=0
+     UnverifiedSince=1 eff=Provisional
+  signal back @+100s: reason=- waits=[Permission/Provisional@1] attn=False possibly=False held=False due=- collect=n/a
+  flag+negative (no chip) @+100s: reason=- waits=[Permission/Provisional@1] attn=False possibly=True held=False due=- collect=n/a
+  dismissed @+100s: reason=- waits=[Permission/Provisional@1] attn=False possibly=False held=False due=- collect=n/a
+  runtime confirmed @30 (flag still set) @+31s: reason=Permission waits=[Permission/Confirmed@1] attn=False possibly=False held=False due=35,0 collect=0
+   @+36s: reason=Permission waits=[Permission/Confirmed@1] attn=True possibly=False held=False due=35,0 collect=1
+  post result @+100s: reason=- waits=[] attn=False possibly=False held=False due=- collect=n/a
+== U unverified chip claude
+  unavail @+5s: reason=- waits=[Permission/Provisional@1] attn=False possibly=False held=False due=- collect=0
+     UnverifiedSince=1 eff=Provisional
+  unavail @+15,9s: reason=- waits=[Permission/Provisional@1] attn=False possibly=False held=False due=- collect=0
+     UnverifiedSince=1 eff=Provisional
+  unavail @+16s: reason=- waits=[Permission/Provisional@1] attn=False possibly=True held=False due=- collect=0
+     UnverifiedSince=1 eff=Provisional
+  unavail @+16,1s: reason=- waits=[Permission/Provisional@1] attn=False possibly=True held=False due=- collect=0
+     UnverifiedSince=1 eff=Provisional
+  unavail @+100s: reason=- waits=[Permission/Provisional@1] attn=False possibly=True held=False due=- collect=0
+     UnverifiedSince=1 eff=Provisional
+  signal back @+100s: reason=- waits=[Permission/Provisional@1] attn=False possibly=False held=False due=- collect=n/a
+  flag+negative (no chip) @+100s: reason=- waits=[Permission/Provisional@1] attn=False possibly=True held=False due=- collect=n/a
+  dismissed @+100s: reason=- waits=[Permission/Provisional@1] attn=False possibly=False held=False due=- collect=n/a
+  runtime confirmed @30 (flag still set) @+31s: reason=Permission waits=[Permission/Confirmed@1] attn=False possibly=False held=False due=35,0 collect=0
+   @+36s: reason=Permission waits=[Permission/Confirmed@1] attn=True possibly=False held=False due=35,0 collect=1
+  post result @+100s: reason=- waits=[] attn=False possibly=False held=False due=- collect=n/a
+  pre-Stop @+20s: reason=- waits=[Permission/Provisional@1] attn=False possibly=True held=False due=- collect=n/a
+  Stop @+100s: reason=Done waits=[Done/@25] attn=True possibly=False held=False due=45,0 collect=n/a
+  pre-SessionEnd @+20s: reason=- waits=[Permission/Provisional@1] attn=False possibly=True held=False due=- collect=n/a
+  SessionEnd @+100s: reason=- waits=[] attn=False possibly=False held=False due=- collect=n/a
+  unrelated result @+30s: reason=- waits=[Permission/Provisional@1] attn=False possibly=True held=False due=- collect=n/a
+  question + unverified permission @+40s: reason=Question waits=[Permission/Provisional@1,Question/Provisional@20] attn=True possibly=False held=False due=20,0 collect=n/a
+== E causal vs unordered codex
+  causal=False ep1=9b6096421e7c4526a5ccd3c14bb84966 epAfter=9b6096421e7c4526a5ccd3c14bb84966 same=True acked=True waits=[Confirmed,Provisional] attn=False
+  causal=True ep1=de686e3a944d450e95e2e82d91a4eec5 epAfter=de686e3a944d450e95e2e82d91a4eec5 same=True acked=True waits=[Confirmed,Provisional] attn=False
+== X1 dismiss unverified chip then runtime confirms
+  chip @+20s: reason=- waits=[Permission/Provisional@1] attn=False possibly=True held=False due=- collect=0
+  dismissed @+25s: reason=- waits=[Permission/Provisional@1] attn=False possibly=False held=False due=- collect=0
+  after confirm @31 @+31s: reason=Permission waits=[Permission/Confirmed@1] attn=False possibly=False held=False due=35,0 collect=0
+  after confirm @40 @+40s: reason=Permission waits=[Permission/Confirmed@1] attn=False possibly=False held=False due=35,0 collect=0
+  ack==episode True
+== X2 racing real: p2 old enough, p1 resolves 0.4s before prompt
+== X2
+  UserPromptSubmit @+0s: reason=- waits=[] attn=False possibly=False held=False due=- collect=0
+  PreToolUse @+1s: reason=- waits=[] attn=False possibly=False held=False due=- collect=0
+  PermissionRequest @+1,1s: reason=- waits=[Permission/Provisional@1,1] attn=False possibly=False held=False due=- collect=0
+  PreToolUse @+1,2s: reason=- waits=[Permission/Provisional@1,1] attn=False possibly=False held=False due=- collect=0
+  PermissionRequest @+1,3s: reason=- waits=[Permission/Provisional@1,1,Permission/Provisional@1,3] attn=False possibly=False held=False due=- collect=0
+  PostToolUse @+6s: reason=- waits=[Permission/Provisional@1,3] attn=False possibly=False held=False due=- collect=0
+  Notification(prompt) @+6,4s: reason=- waits=[Permission/Provisional/amb@1,3] attn=False possibly=False held=False due=- collect=0
+  Notification(prompt) @+20s: reason=Permission waits=[Permission/Confirmed/amb@1,3] attn=True possibly=False held=False due=20,0 collect=1
+  later @+21s: reason=Permission waits=[Permission/Confirmed/amb@1,3] attn=True possibly=False held=False due=20,0 collect=0
+  later @+40s: reason=Permission waits=[Permission/Confirmed/amb@1,3] attn=True possibly=False held=False due=20,0 collect=0

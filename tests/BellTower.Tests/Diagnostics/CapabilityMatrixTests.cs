@@ -87,4 +87,12 @@ public sealed class CapabilityMatrixTests
         Assert.Null(skill.Proof);
         Assert.DoesNotContain(CapabilityMatrix.Rows, row => row.Claude.Status == CapabilityMatrix.Restricted || row.Codex.Status == CapabilityMatrix.Restricted);
     }
+
+    [Fact]
+    public void TheHumanWaitRowNamesTheClaudeDisablingSettingAndTheDocumentedNotificationDelay()
+    {
+        var row = CapabilityMatrix.Rows.Single(item => item.Surface.StartsWith("Human-wait confirmation (permission", StringComparison.Ordinal));
+        Assert.Contains("CLAUDE_CODE_DISABLE_PERMISSION_PROMPT_NOTIFY_HOOKS", row.Claude.Detail);
+        Assert.Contains("documents about 6 s", row.Claude.Detail);
+    }
 }

@@ -45,7 +45,7 @@ public sealed class PresentationSchedulerTests
         var current = ProcessProbe.Identify(Environment.ProcessId)!;
         new AttachmentStore(workspace.Paths).Save(new(provider, provider, current, new("windows-terminal", current), workspace.Root,
             DateTimeOffset.UtcNow, ManagedTitle: true));
-        new EventStore(workspace.Paths).Publish(TestWorkspace.Event(EventKind.Permission) with
+        new EventStore(workspace.Paths).Publish(TestWorkspace.ConfirmedPermission() with
         {
             Provider = provider,
             AttachmentId = provider,

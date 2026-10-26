@@ -12,7 +12,7 @@ public sealed class StorageTests
     public void InboxSurvivesMissingTrayAndRestoresState()
     {
         using var w = new TestWorkspace();
-        var e = TestWorkspace.Event(EventKind.Permission, DateTimeOffset.UtcNow.AddMinutes(-1));
+        var e = TestWorkspace.ConfirmedPermission(DateTimeOffset.UtcNow.AddMinutes(-1));
         new EventStore(w.Paths).Publish(e);
         Assert.Single(Directory.GetFiles(w.Paths.Inbox));
         var state = new StateStore(w.Paths).Drain();
@@ -28,7 +28,7 @@ public sealed class StorageTests
     {
         using var w = new TestWorkspace();
         var store = new StateStore(w.Paths);
-        new EventStore(w.Paths).Publish(TestWorkspace.Event(EventKind.Permission));
+        new EventStore(w.Paths).Publish(TestWorkspace.ConfirmedPermission());
         store.Drain();
         new EventStore(w.Paths).Publish(TestWorkspace.Event(EventKind.Prompt));
         store.Drain();
@@ -41,7 +41,7 @@ public sealed class StorageTests
     {
         using var w = new TestWorkspace();
         File.WriteAllText(Path.Combine(w.Paths.Inbox, "bad.json"), "{invalid");
-        new EventStore(w.Paths).Publish(TestWorkspace.Event(EventKind.Permission));
+        new EventStore(w.Paths).Publish(TestWorkspace.ConfirmedPermission());
         Assert.Single(new StateStore(w.Paths).Drain().Sessions);
         Assert.Empty(Directory.GetFiles(w.Paths.Inbox));
     }
@@ -52,7 +52,7 @@ public sealed class StorageTests
         using var w = new TestWorkspace();
         var store = new StateStore(w.Paths);
         new AttachmentStore(w.Paths).Save(new("attachment-1", "claude", new(int.MaxValue, 1), new(), w.Root, DateTimeOffset.UtcNow));
-        new EventStore(w.Paths).Publish(TestWorkspace.Event(EventKind.Permission));
+        new EventStore(w.Paths).Publish(TestWorkspace.ConfirmedPermission());
         Assert.True(store.Drain().Sessions["claude:session-1"].Ended);
     }
 
@@ -62,7 +62,7 @@ public sealed class StorageTests
         using var w = new TestWorkspace();
         var store = new StateStore(w.Paths);
         new AttachmentStore(w.Paths).Save(new("attachment-1", "claude", ProcessProbe.Identify(Environment.ProcessId), new(), w.Root, DateTimeOffset.UtcNow));
-        new EventStore(w.Paths).Publish(TestWorkspace.Event(EventKind.Permission, DateTimeOffset.UtcNow.AddDays(-2)));
+        new EventStore(w.Paths).Publish(TestWorkspace.ConfirmedPermission(DateTimeOffset.UtcNow.AddDays(-2)));
         Assert.False(store.Drain().Sessions["claude:session-1"].Ended);
     }
 

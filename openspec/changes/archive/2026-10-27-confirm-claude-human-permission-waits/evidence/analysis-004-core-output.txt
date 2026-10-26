@@ -1,0 +1,27 @@
+PASS claude/False silent-chip boundary
+PASS claude/False no unverified sound
+PASS claude/False QA-100 fresh confirmation episode
+PASS claude/False no duplicate announcement
+PASS codex/False silent-chip boundary
+PASS codex/False no unverified sound
+PASS codex/False QA-100 fresh confirmation episode
+PASS codex/False no duplicate announcement
+PASS codex/False ANALYSIS-002 continuing status not credited to new request
+PASS claude/False ANALYSIS-100 no elimination
+PASS claude/False permission's own later prompt confirms
+PASS codex/False ANALYSIS-101 restores all after journal window
+PASS codex/False restored confirmation silent
+PASS claude/True silent-chip boundary
+PASS claude/True no unverified sound
+PASS claude/True QA-100 fresh confirmation episode
+PASS claude/True no duplicate announcement
+PASS codex/True silent-chip boundary
+PASS codex/True no unverified sound
+PASS codex/True QA-100 fresh confirmation episode
+PASS codex/True no duplicate announcement
+PASS codex/True ANALYSIS-002 continuing status not credited to new request
+PASS claude/True ANALYSIS-100 no elimination
+PASS claude/True permission's own later prompt confirms
+PASS codex/True ANALYSIS-101 restores all after journal window
+PASS codex/True restored confirmation silent
+All independent reducer probes passed.
