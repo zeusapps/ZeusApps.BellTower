@@ -62,6 +62,7 @@ No publication, installed-app change, production provider/settings write, real a
 ## History
 
 - 2026-10-27 User requested archive, commit, then a new bug change. Delta specs synced into `openspec/specs/attention-notifications` (modified Completion and permission grace; added three requirements) and `openspec/specs/session-tracking` (added two); strict spec validation passes. Change archived as `2026-10-27-confirm-claude-human-permission-waits`. Docs wording that live acceptance "on real sessions" was not performed is left as is (still literally true) and moves to the H-1 follow-up change. Commit on new branch `confirm-claude-human-permission-waits`; SHA recorded in a follow-up ledger commit.
+- 2026-10-27 Completion commit `088b600` on branch `confirm-claude-human-permission-waits`. Not pushed.
 
 - 2026-10-27 User-operated native trials 2–6 completed; user verdict "ok" for each (scenarios 1–6 all ok). Recorded with observer timelines in `../evidence/live-trials-001.md`, labeling user, observer and derived evidence separately. Scenario 4 derived flag discrepancy explained there (rendered and user evidence agree: no chip). Tasks 3.4 and 4.1 reconciled complete on this named live acceptance plus earlier build/format/suite evidence. Remaining out-of-scope items: H-1 (user now suspects their real Codex notifications were missing; pre-existing, separate change proposed), H-2, H-4, chip-click terminal activation in the harness.
 
