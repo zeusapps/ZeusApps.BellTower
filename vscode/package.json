@@ -3,7 +3,7 @@
   "displayName": "Bell Tower Focus",
   "description": "Local terminal registration and focusing for Bell Tower.",
   "publisher": "zeusapps",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "engines": {
     "vscode": "^1.90.0"
   },

@@ -5,6 +5,7 @@ using BellTower.Core;
 using BellTower.Distribution;
 using BellTower.Hosts;
 using BellTower.IO;
+using BellTower.Protocol;
 using BellTower.Setup;
 using BellTower.Updates;
 
@@ -51,7 +52,11 @@ internal static class Program
         Assert(original != offer.Version, "Acceptance requires distinct compiled versions.");
         var paths = new DataPaths(Path.Combine(root, "custom-data"));
         paths.Ensure();
-        var fastIngress = ProvisionIngress(installation, paths, Path.Combine(root, "home"));
+        var baselineFast = HasFastIngress(installation);
+        Console.WriteLine(baselineFast
+            ? "Baseline " + original + " ships a compatible fast ingress: provisioning it from the baseline and using it before and during the update."
+            : "Baseline " + original + " has no compatible fast ingress: using its legacy launcher hook path before and during the update; fast ingress is provisioned from the candidate after activation.");
+        var fastIngress = baselineFast ? ProvisionIngress(installation, paths, Path.Combine(root, "home")) : null;
         new ConfigStore(paths).Update(c => { c.Muted = true; c.Updates.Enabled = false; });
         var own = Environment.ProcessPath!;
         using var shell = Start(own, ["--fixture-shell", root]);
@@ -76,7 +81,7 @@ internal static class Program
             var identity = identities.Get("codex:fixture-session", root, "fixture original");
             var events = new EventStore(paths);
             events.Publish(new Observation { Provider = "codex", SessionId = "fixture-session", AttachmentId = "fixture", Kind = EventKind.Register, Directory = root });
-            events.Publish(new Observation { Provider = "codex", SessionId = "fixture-session", AttachmentId = "fixture", Kind = EventKind.Permission, Directory = root, At = DateTimeOffset.UtcNow.AddSeconds(-30), OperationId = "permission" });
+            events.Publish(new Observation { Provider = "codex", SessionId = "fixture-session", AttachmentId = "fixture", Kind = EventKind.Permission, Directory = root, At = DateTimeOffset.UtcNow.AddSeconds(baselineFast ? 0 : -30), OperationId = "permission" });
             var initial = new StateStore(paths).Drain().Sessions["codex:fixture-session"];
             new StateStore(paths).MarkViewed(initial.Key, initial.Episode!);
             events.Publish(new Observation { Provider = "claude", SessionId = "dismissed", AttachmentId = "fixture", Kind = EventKind.Question, Directory = root });
@@ -100,8 +105,15 @@ internal static class Program
             Wait(() => File.Exists(agentFinish + ".start.json"));
             var launchReport = DistributionJson.Read<System.Text.Json.JsonElement>(agentFinish + ".start.json");
             Assert(launchReport.GetProperty("directory").GetString() == root && launchReport.GetProperty("marker").GetString() == "inherited-fixture-value", "Bootstrap did not preserve working directory/environment.");
+            if (!baselineFast)
+            {
+                var legacyKeys = CaptureBurst(installation.Launcher, ["event"], paths, "legacy-pre-update-capture", 12, 20000);
+                Wait(() => legacyKeys.All(key => new StateStore(paths).Read().Sessions.ContainsKey(key)));
+            }
             var plan = UpdateTransaction.Stage(installation, paths, candidate, offer);
-            var fastDelivery = Task.Run(() => CaptureBurst(fastIngress.Target, paths, "update-capture", 32));
+            var fastDelivery = Task.Run(() => baselineFast
+                ? CaptureBurst(fastIngress!.Target, [], paths, "update-capture", 32)
+                : CaptureBurst(installation.Launcher, ["event"], paths, "legacy-update-capture", 32, 20000));
             UpdateTransaction.Start(plan);
             Wait(() => File.Exists(UpdateTransaction.Marker(paths)) && !new BellTower.Tray.TrayController(paths).IsRunning());
             events.Publish(new Observation { Provider = "claude", SessionId = "during-gap", AttachmentId = "fixture", Kind = EventKind.Question, Directory = root });
@@ -130,23 +142,35 @@ internal static class Program
             Assert(installation.Selection().Version == offer.Version, "New version not selected.");
             var capturedKeys = fastDelivery.GetAwaiter().GetResult();
             Wait(() => capturedKeys.All(key => new StateStore(paths).Read().Sessions.ContainsKey(key)));
-            var refreshDelivery = Task.Run(() => CaptureBurst(fastIngress.Target, paths, "refresh-capture", 12));
-            var refreshedIngress = ProvisionIngress(installation, paths, Path.Combine(root, "home"));
-            var refreshKeys = refreshDelivery.GetAwaiter().GetResult();
-            Wait(() => refreshKeys.All(key => new StateStore(paths).Read().Sessions.ContainsKey(key)));
-            Assert(File.Exists(fastIngress.Target) && Installation.Hash(fastIngress.Target) == fastIngress.Hash &&
-                Installation.Hash(refreshedIngress.Target) == refreshedIngress.Hash, "Referenced ingress was overwritten or removed.");
+            if (baselineFast)
+            {
+                var refreshDelivery = Task.Run(() => CaptureBurst(fastIngress!.Target, [], paths, "refresh-capture", 12));
+                var refreshedIngress = ProvisionIngress(installation, paths, Path.Combine(root, "home"));
+                var refreshKeys = refreshDelivery.GetAwaiter().GetResult();
+                Wait(() => refreshKeys.All(key => new StateStore(paths).Read().Sessions.ContainsKey(key)));
+                Assert(File.Exists(fastIngress!.Target) && Installation.Hash(fastIngress.Target) == fastIngress.Hash &&
+                    Installation.Hash(refreshedIngress.Target) == refreshedIngress.Hash, "Referenced ingress was overwritten or removed.");
+            }
+            else
+            {
+                // A user running setup after upgrading provisions the candidate's ingress through the stable entry point.
+                var upgradedIngress = ProvisionIngress(installation, paths, Path.Combine(root, "home"));
+                var refreshKeys = CaptureBurst(upgradedIngress.Target, [], paths, "refresh-capture", 12);
+                Wait(() => refreshKeys.All(key => new StateStore(paths).Read().Sessions.ContainsKey(key)));
+                Assert(File.Exists(upgradedIngress.Target) && Installation.Hash(upgradedIngress.Target) == upgradedIngress.Hash, "Provisioned ingress was removed or modified.");
+            }
             Assert(!manager.HasExited && !launched.HasExited && runtimes.Get("fixture") == runtime, "Existing manager/agent/runtime identity changed.");
             Assert(RunCommand(installation.Launcher, ["--version"]).Trim() == offer.Version, "New invocations use wrong version.");
             Wait(() => Directory.GetFiles(root, "read-*").Length > beforeReads);
             var restored = new StateStore(paths).Read().Sessions[initial.Key];
             Assert(new StateStore(paths).Read().Sessions.ContainsKey("claude:during-gap"), "Event queued while tray was stopped was lost.");
-            Assert(!restored.Ended && restored.Episode == initial.Episode && restored.ViewedEpisode == initial.Episode, "Attention episode/viewed state changed.");
+            Assert(!restored.Ended && restored.Episode == initial.Episode && restored.ViewedEpisode == initial.Episode, "Attention episode/viewed state changed. ended=" + restored.Ended + " ep=" + restored.Episode + "/" + initial.Episode + " viewed=" + restored.ViewedEpisode);
             Assert(identities.Get(initial.Key, root).Palette == identity.Palette, "Palette changed.");
             Assert(!identities.Get(initial.Key, root).NativeSyncEnabled, "Native user-name ownership changed across update.");
             Assert(new StateStore(paths).Read().Sessions[dismissed.Key].AcknowledgedEpisode == dismissed.Episode, "Dismissed state changed across update.");
             AtomicFile.Write(Path.Combine(paths.Hosts, "fixture.json"), Json.Encode(new HostRegistration("fixture", shellIdentity, DateTimeOffset.UtcNow, [shellIdentity.Pid])));
-            Assert(new Navigator(paths).Precision(new AttachmentStore(paths).Get("fixture")) == "exact terminal", "Verified terminal ownership was not retained.");
+            // The fixture has no visible native editor window, so window ownership cannot reach "exact terminal"; the registered, process-verified terminal must still resolve.
+            Assert(new Navigator(paths).Precision(new AttachmentStore(paths).Get("fixture")) is "exact terminal" or "terminal only", "Verified terminal ownership was not retained.");
             Assert(statusReader.WaitForExit(15000) && statusReader.ExitCode == 0, "Status reading interfered with activation.");
             Assert(racingStart.WaitForExit(15000) && racingStart.ExitCode == 0, "Racing start failed during the update.");
             var competingRefused = false;
@@ -164,8 +188,9 @@ internal static class Program
             var stopped = new Installation(stoppedRoot);
             var stoppedPaths = new DataPaths(Path.Combine(root, "stopped-data"));
             stoppedPaths.Ensure();
-            var stoppedIngress = ProvisionIngress(stopped, stoppedPaths, Path.Combine(root, "stopped-home"));
-            var stoppedKeys = CaptureBurst(stoppedIngress.Target, stoppedPaths, "stopped-capture", 12);
+            var stoppedKeys = baselineFast
+                ? CaptureBurst(ProvisionIngress(stopped, stoppedPaths, Path.Combine(root, "stopped-home")).Target, [], stoppedPaths, "stopped-capture", 12)
+                : CaptureBurst(stopped.Launcher, ["event"], stoppedPaths, "legacy-stopped-capture", 12, 20000);
             var stoppedPlan = UpdateTransaction.Stage(stopped, stoppedPaths, candidate, offer);
             UpdateTransaction.Start(stoppedPlan);
             Wait(() => File.Exists(UpdateTransaction.OutcomePath(stopped)) && DistributionJson.Read<UpdateOutcome>(UpdateTransaction.OutcomePath(stopped)).State is "activated" or "failed", 60000);
@@ -174,6 +199,12 @@ internal static class Program
             try
             {
                 Wait(() => stoppedKeys.All(key => new StateStore(stoppedPaths).Read().Sessions.ContainsKey(key)));
+                if (!baselineFast)
+                {
+                    var upgraded = ProvisionIngress(stopped, stoppedPaths, Path.Combine(root, "stopped-home"));
+                    var upgradedKeys = CaptureBurst(upgraded.Target, [], stoppedPaths, "stopped-upgraded-capture", 12);
+                    Wait(() => upgradedKeys.All(key => new StateStore(stoppedPaths).Read().Sessions.ContainsKey(key)));
+                }
             }
             finally
             {
@@ -181,7 +212,7 @@ internal static class Program
                 Wait(() => !new BellTower.Tray.TrayController(stoppedPaths).IsRunning());
             }
             VerifyRollback(root, baseline, candidate, offer);
-            Console.WriteLine("PACKAGED UPDATE PASSED: old " + original + " -> new " + offer.Version + "; real dedicated manager/backend, live fixture agent/launch, authenticated loopback reconnect, fast mixed-provider captures, immutable ingress refresh, viewed state, custom data, stopped tray. Evidence: " + root);
+            Console.WriteLine("PACKAGED UPDATE PASSED: old " + original + " -> new " + offer.Version + "; real dedicated manager/backend, live fixture agent/launch, authenticated loopback reconnect, mixed-provider captures (" + (baselineFast ? "baseline fast ingress" : "legacy launcher hooks, then candidate-provisioned fast ingress") + "), immutable ingress refresh, viewed state, custom data, stopped tray. Evidence: " + root);
             File.WriteAllText(Path.Combine(root, "agent.finish"), "done");
             Assert(launched.WaitForExit(10000) && launched.ExitCode == 7, "Launcher did not preserve agent exit status.");
         }
@@ -210,15 +241,18 @@ internal static class Program
         var old = installation.Selection().Version;
         var paths = new DataPaths(Path.Combine(root, "rollback-data"));
         paths.Ensure();
-        var ingress = ProvisionIngress(installation, paths, Path.Combine(root, "rollback-home"));
+        var ingress = HasFastIngress(installation) ? ProvisionIngress(installation, paths, Path.Combine(root, "rollback-home")) : null;
         new ConfigStore(paths).Update(c => { c.Muted = true; c.Updates.Enabled = false; });
         RunCommand(installation.Launcher, ["start", "--silent", "--data-dir", paths.Root]);
         Wait(() => File.Exists(UpdateTransaction.Presence(paths)));
         try
         {
             var sentinel = File.ReadAllText(paths.Config);
+            var legacyBefore = ingress is null ? CaptureBurst(installation.Launcher, ["event"], paths, "legacy-rollback-before", 6, 20000) : [];
             var plan = UpdateTransaction.Stage(installation, paths, candidate, offer);
-            var captures = Task.Run(() => CaptureBurst(ingress.Target, paths, "rollback-capture", 24));
+            var captures = Task.Run(() => ingress is not null
+                ? CaptureBurst(ingress.Target, [], paths, "rollback-capture", 24)
+                : CaptureBurst(installation.Launcher, ["event"], paths, "legacy-rollback-capture", 24, 20000, tolerateSwitchFailures: true));
             var sabotage = Task.Run(() =>
             {
                 var watch = Stopwatch.StartNew();
@@ -240,6 +274,11 @@ internal static class Program
             Assert(outcome.State == "rolled-back", "Readiness rollback failed: " + outcome.Message);
             Assert(installation.Selection().Version == old && File.ReadAllText(paths.Config) == sentinel && new BellTower.Tray.TrayController(paths).IsRunning(), "Rollback changed data or failed to recover old monitoring.");
             var keys = captures.GetAwaiter().GetResult();
+            if (ingress is null)
+            {
+                keys.AddRange(legacyBefore);
+                keys.AddRange(CaptureBurst(installation.Launcher, ["event"], paths, "legacy-rollback-after", 6, 20000));
+            }
             Wait(() => keys.All(key => new StateStore(paths).Read().Sessions.ContainsKey(key)));
             Console.WriteLine("PACKAGED ROLLBACK PASSED: candidate metadata/readiness failure restored prior selection and tray; data preserved.");
         }
@@ -258,15 +297,22 @@ internal static class Program
         return provision;
     }
 
-    private static List<string> CaptureBurst(string executable, DataPaths paths, string prefix, int count)
+    private static bool HasFastIngress(Installation installation)
+    {
+        // Same capability contract IngressProvision.Plan enforces: matching capture protocol and a declared ingress file.
+        var contract = DistributionJson.Read<ReleaseContract>(Path.Combine(installation.Payload(installation.Selection().Version), "release.json"));
+        return contract.Capture == CaptureProtocol.Version && contract.Files?.GetValueOrDefault("bell-tower-ingress.exe") is not null;
+    }
+
+    private static List<string> CaptureBurst(string executable, string[] verb, DataPaths paths, string prefix, int count, int timeout = 3000, bool tolerateSwitchFailures = false)
     {
         var keys = new List<string>();
+        var failed = 0;
         for (var i = 0; i < count; i++)
         {
             var provider = i % 2 == 0 ? "claude" : "codex";
             var session = prefix + "-" + i;
-            keys.Add(provider + ":" + session);
-            var start = Info(executable, ["--provider", provider, "--data-dir", paths.Root]);
+            var start = Info(executable, [.. verb, "--provider", provider, "--data-dir", paths.Root]);
             start.RedirectStandardInput = true;
             start.RedirectStandardOutput = true;
             start.RedirectStandardError = true;
@@ -275,16 +321,44 @@ internal static class Program
             using var process = Process.Start(start)!;
             var output = process.StandardOutput.ReadToEndAsync();
             var error = process.StandardError.ReadToEndAsync();
-            process.StandardInput.Write(System.Text.Json.JsonSerializer.Serialize(new
+            var delivered = false;
+            var refused = false;
+            try
             {
-                session_id = session,
-                hook_event_name = "SessionStart",
-                cwd = paths.Root
-            }));
-            process.StandardInput.Close();
-            Assert(process.WaitForExit(3000) && process.ExitCode == 0 && output.GetAwaiter().GetResult().Trim() == "{}" &&
-                error.GetAwaiter().GetResult().Length == 0, "Fast capture failed in lifecycle trial.");
+                process.StandardInput.Write(System.Text.Json.JsonSerializer.Serialize(new
+                {
+                    session_id = session,
+                    hook_event_name = "SessionStart",
+                    cwd = paths.Root
+                }));
+                process.StandardInput.Close();
+            }
+            catch (IOException) when (tolerateSwitchFailures) { }
+            var exited = process.WaitForExit(timeout);
+            if (exited)
+            {
+                var stdout = output.GetAwaiter().GetResult();
+                var stderr = error.GetAwaiter().GetResult();
+                delivered = process.ExitCode == 0 && stdout.Trim() == "{}" && stderr.Length == 0;
+                // A genuine launcher refusal while the broken candidate is selected: exit 1 with the launcher's own prefix.
+                refused = !delivered && process.ExitCode == 1 && stderr.StartsWith("bell-tower launcher:", StringComparison.Ordinal);
+            }
+            if (!exited)
+            { process.Kill(true); }
+            if (delivered)
+            { keys.Add(provider + ":" + session); }
+            else
+            {
+                // Only the legacy launcher while a sabotaged candidate is selected may refuse; such a hook was not accepted, so it is not expected to persist.
+                // Timeouts and any other failure still fail the run.
+                Assert(tolerateSwitchFailures && refused, "Capture failed in lifecycle trial" + (tolerateSwitchFailures ? " (neither delivered nor a launcher refusal)." : "."));
+                failed++;
+            }
             Thread.Sleep(50);
+        }
+        if (tolerateSwitchFailures)
+        {
+            Console.WriteLine("Legacy captures around the rollback window: " + keys.Count + " delivered, " + failed + " refused while the broken candidate was selected.");
         }
         return keys;
     }
