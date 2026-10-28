@@ -6,7 +6,7 @@
 - Session identity: codex-microphone-20261028
 - Since (UTC): 2026-10-28T15:20:00Z
 - Previous owner: none
-- Status: finished; accepted implementation committed locally. No active specialist work remains.
+- Status: implementation and archive/spec-sync review complete; user-authorized local archive commit and fast-forward integration follow this recorded assessment.
 
 ## Assignments and reservations
 
@@ -26,6 +26,12 @@
 | DEV-004 | developer | Codex / gpt-6-luna | none: role default | User-authorized extra round; QA-021; target38fed194f59c /a12d62f18a64 | Only native source clock seam and queue tests changed; build/format/4 targeted checks pass | none | returned |
 | QA-RECHECK-004 | QA | Codex / gpt-6-luna | none: role default | QA-021 and REGRESSION-001 plus affected regression; target38fed194f59c /a12d62f18a64 | reports/qa-004.md | QA-061 through QA-080 | returned |
 | ANALYSIS-RECHECK-004 | code-analyzer | Codex / gpt-6.1-sol | none: role default, high reasoning | QA-021 clock semantics and deterministic fixtures plus affected regression; target38fed194f59c /a12d62f18a64 | reports/analysis-004.md | ANALYSIS-061 through ANALYSIS-080 | returned |
+
+| QA-ARCHIVE-005 | QA | Codex / gpt-6-luna | none: role default | Archive/spec-sync correctness, history preservation and hygiene; baseline103bbc5; specs4452fe2e0132 /7f7ded8e1ffd | reports/qa-005.md | QA-081 through QA-100 (unused) | returned |
+| ANALYSIS-ARCHIVE-005 | code-analyzer | Codex / gpt-6.1-sol | none: role default, high reasoning | Light archive/spec-sync review; baseline103bbc5; specs4452fe2e0132 /7f7ded8e1ffd | reports/analysis-005.md | ANALYSIS-081 through ANALYSIS-100 (unused) | returned |
+| DEV-ARCHIVE-005 | developer | Codex / gpt-6-luna | none: role default | One existing untracked release-handoff URL updated; separate draft identity103bbc5, files1, diffempty, untracked1/c0c4b028078d | Exact single-URL replacement verified; draft remains untracked/excluded from commit | none | returned |
+
+| QA-CLARIFICATION-006 | QA | Codex / gpt-6-luna | none: role default | Clarify QA-005 handoff hash label: before developer edit versus stable review target; no implementation change | reports/qa-006.md | none: factual clarification only | returned |
 
 ## Summary
 
@@ -293,7 +299,7 @@
 - Findings: 11 canonical findings verified, three duplicates linked; zero unresolved blocking findings or unapproved deferrals. No optional suggestions or follow-ups recorded.
 - Hygiene: QA-004 passed the required change-root/documentation scan. The orchestrator repeated the scan over all30 scoped committable files after task/ledger edits; no sensitive content was found. One broad assignment-pattern match was checked as the existing local COM voice-token variable, with a precise expression-only classification rather than a credential exception.
 - Evidence gaps / provider restrictions: shared best-effort capture-session observation is the user's accepted scope. Exclusive-mode capture may be missed; RDP/probe failures yield Unknown. No provider exception claimed. Physical microphone activity, sound, RDP and installed-build/live provider trials were not performed or claimed passed; acceptance uses silent fixtures, primary API contracts and prior read-only native metadata observations as specified.
-- Commit: implementation and change artifacts committed as `5dd94f908350376dbd516164b29f6872218ced18` on `suppress-voice-during-microphone-use`. Its implementation bytes match accepted review target38fed194f59c /a12d62f18a64; only orchestrator tasks/ledger changed after reviews. The completion record is committed separately. No push, archive or installation performed; unrelated untracked work preserved.
+- Commit: implementation and change artifacts committed as `5dd94f908350376dbd516164b29f6872218ced18`; completion record committed as `103bbc5d925bd52f9eceb15904775f6452427bbf`. Implementation bytes match accepted target38fed194f59c /a12d62f18a64. The user subsequently authorized the dated archive, spec sync, scoped commit and local main merge recorded below. No push or installation performed; unrelated untracked work preserved.
 - OpenSpec task reconciliation:11/11 complete. The user expressly authorized DEV-004 past the normal two-cycle limit; its corrected target received both required independent reviews.
 
 ### Verification dimensions
@@ -319,6 +325,17 @@
 | 3.2 | README/compatibility documentation, Release build, scoped format, whitespace and full1045/1045 regression |
 | 4.1 | Matched provider fixtures and mixed simultaneous-session cases through shared policy, QA-002/004 |
 | 4.2 | Shared defaults/config/control/diagnostics and explicit accepted platform scope, independent QA/analysis evidence |
+
+## Archive and local integration
+
+- User explicitly requested archive, commit and merge to local main on 2026-10-28.
+- Archived to `openspec/changes/archive/2026-10-28-suppress-voice-during-microphone-use/` after all five delta requirements matched their synced main-spec blocks. Ten unrelated attention requirements were preserved.
+- Created main microphone-aware-audio spec from its existing Purpose and three added requirements. Updated Serialized chime and voice and added the attention parity requirement. All eight main specs pass strict validation.
+- All15 change files retained identical SHA-256 hashes across the move, before subsequent orchestrator-only ledger edits and reserved archive review reports. Earlier reports remain historical evidence; old change-root labels inside them describe the original review location.
+- Production implementation, installation and active sessions are unchanged. Existing1045/1045 regression evidence remains applicable; this archive does not claim a live-call trial or publication.
+- One link in the existing untracked release handoff was corrected to the archived proposal by DEV-ARCHIVE-005. Exact reverse-replacement reproduced the original draft; the draft remains untracked and is excluded from this commit. Reviewers check this stable link-fix phase separately from the unchanged main-spec identity.
+- Archive reviews: [qa-005.md](qa-005.md), [analysis-005.md](analysis-005.md) and the hash-chronology clarification [qa-006.md](qa-006.md) accepted. Main-spec before/after identity4452fe2e0132 /7f7ded8e1ffd and separate stable handoff identityc0c4b028078d match. No archive findings; 78 internal links resolve and target archive lint passes. The repository-wide archive lint's two older incomplete-task entries are unrelated and unchanged.
+- Archive commit and local main merge: this pre-commit assessment authorizes the reviewed scoped archive commit and fast-forward-only merge into local main. Exact commit and integration outcome are recorded by Git and the session work journal after execution. No push requested.
 
 ## Platform investigation checkpoint
 
