@@ -118,6 +118,21 @@ public sealed class StorageTests
     }
 
     [Fact]
+    public void MicrophoneVoiceSettingDefaultsOnAndPersistsWithoutChangingVoiceMuteOrUnknownFields()
+    {
+        using var w = new TestWorkspace();
+        File.WriteAllText(w.Paths.Config, "{\"voice\":false,\"muted\":true,\"futureSetting\":{\"value\":42}}");
+        var config = new ConfigStore(w.Paths);
+        Assert.True(config.Read().MicrophoneAwareVoice);
+        config.Update(value => value.MicrophoneAwareVoice = false);
+        var reloaded = config.Read();
+        Assert.False(reloaded.MicrophoneAwareVoice);
+        Assert.False(reloaded.Voice);
+        Assert.True(reloaded.Muted);
+        Assert.Equal(42, reloaded.AdditionalData!["futureSetting"].GetProperty("value").GetInt32());
+    }
+
+    [Fact]
     public void LogsAreBoundedAndDoNotContainPayloads()
     {
         using var w = new TestWorkspace();

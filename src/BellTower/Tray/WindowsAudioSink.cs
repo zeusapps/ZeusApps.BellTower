@@ -6,7 +6,7 @@ namespace BellTower.Tray;
 
 public sealed class WindowsAudioSink(ToneLibrary tones) : IAudioSink
 {
-    public void Play(string? phrase, AttentionReason reason, Func<bool> cancelled)
+    public void Play(string? phrase, AttentionReason reason, Func<bool> cancelled, Func<bool> speechCancelled)
     {
         if (cancelled())
         {
@@ -33,7 +33,7 @@ public sealed class WindowsAudioSink(ToneLibrary tones) : IAudioSink
             player.Stop();
         }
 
-        if (phrase is null || cancelled())
+        if (phrase is null || cancelled() || speechCancelled())
         {
             return;
         }
@@ -53,22 +53,26 @@ public sealed class WindowsAudioSink(ToneLibrary tones) : IAudioSink
                 return;
             }
 
-            dynamic voices = voice.GetVoices("", "");
-            for (var i = 0; i < (int)voices.Count; i++)
+            if (!TryBeginSpeech(phrase, cancelled, speechCancelled, () =>
             {
-                dynamic token = voices.Item(i);
-                if (((string)token.GetDescription()).Contains("Zira", StringComparison.OrdinalIgnoreCase))
+                dynamic voices = voice.GetVoices("", "");
+                for (var i = 0; i < (int)voices.Count; i++)
                 {
-                    voice.Voice = token;
-                    break;
+                    dynamic token = voices.Item(i);
+                    if (((string)token.GetDescription()).Contains("Zira", StringComparison.OrdinalIgnoreCase))
+                    {
+                        voice.Voice = token;
+                        break;
+                    }
                 }
+            }, text => voice.Speak(text, 1)))
+            {
+                return;
             }
-
-            voice.Speak(phrase, 1);
             var deadline = DateTime.UtcNow.AddSeconds(15);
             while (!(bool)voice.WaitUntilDone(30))
             {
-                if (cancelled() || DateTime.UtcNow > deadline)
+                if (cancelled() || speechCancelled() || DateTime.UtcNow > deadline)
                 {
                     voice.Speak("", 3);
                     break;
@@ -89,5 +93,17 @@ public sealed class WindowsAudioSink(ToneLibrary tones) : IAudioSink
 
     public void Dispose()
     {
+    }
+
+    internal static bool TryBeginSpeech(string phrase, Func<bool> cancelled, Func<bool> speechCancelled, Action initialize, Action<string> speak)
+    {
+        initialize();
+        if (cancelled() || speechCancelled())
+        {
+            return false;
+        }
+
+        speak(phrase);
+        return true;
     }
 }

@@ -7,6 +7,7 @@ public sealed class AppConfig
     public Dictionary<string, System.Text.Json.JsonElement>? AdditionalData { get; set; }
     public bool Voice { get; set; } = true;
     public bool Muted { get; set; }
+    public bool MicrophoneAwareVoice { get; set; } = true;
     public string? ToneFile { get; set; }
     public string? ToneName { get; set; }
     public int AttachmentEvidenceGraceMinutes { get; set; } = 10;

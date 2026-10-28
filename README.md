@@ -45,6 +45,8 @@ Code organization and formatting follow the [development conventions](docs/devel
 
 Audio tests use silent substitutes. Test sound only plays when explicitly invoked in the running application.
 
+The tray menu includes **Suppress voice while microphone is active** (enabled by default). Bell Tower checks shared-mode capture sessions on active capture endpoints and keeps notification tones while suppressing speech when a stream is active. Exclusive-mode capture may be missed; Remote Desktop sessions and probe failures are reported as unknown and suppress speech. `doctor` reports the current state and scope. Disable the option to restore the existing Voice/Mute behavior.
+
 ## Useful commands
 
 ```powershell

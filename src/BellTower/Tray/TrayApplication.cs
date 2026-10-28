@@ -34,6 +34,7 @@ public sealed class TrayApplication : ApplicationContext
     private readonly CodexPermissionPump permissions;
     private readonly AlertPolicy policy = new(DateTimeOffset.UtcNow);
     private readonly AudioQueue audio;
+    private readonly IMicrophoneActivitySource microphone = new WindowsMicrophoneActivitySource();
     private AppState state = new();
     private AppConfig config = new();
     private DateTimeOffset nextOverview;
@@ -63,7 +64,7 @@ public sealed class TrayApplication : ApplicationContext
         if (Installation.ForPayload(Environment.ProcessPath!) is not null)
         { _ = Task.Run(() => updates.RunAsync(updateCancellation.Token)); }
         overview.Icon = appIcon;
-        audio = new(silent ? new SilentAudioSink() : new WindowsAudioSink(new ToneLibrary(paths)), IsCurrentAlert, () => config);
+        audio = new(silent ? new SilentAudioSink() : new WindowsAudioSink(new ToneLibrary(paths)), IsCurrentAlert, () => config, microphone);
         var menu = new ContextMenuStrip();
         menu.Items.Add(new ToolStripMenuItem("Bell Tower v" + ApplicationInfo.Display) { Enabled = false });
         menu.Items.Add("Check for updates", null, async (_, _) => await CheckUpdateAsync(false));
@@ -93,7 +94,9 @@ public sealed class TrayApplication : ApplicationContext
             CheckOnClick = true
         };
         voice.Click += (_, _) => configuration.Update(c => c.Voice = voice.Checked);
-        menu.Items.AddRange([mute, voice]);
+        var microphoneAwareVoice = new ToolStripMenuItem("Suppress voice while microphone is active") { CheckOnClick = true };
+        microphoneAwareVoice.Click += (_, _) => configuration.Update(c => c.MicrophoneAwareVoice = microphoneAwareVoice.Checked);
+        menu.Items.AddRange([mute, voice, microphoneAwareVoice]);
         var tones = new ToolStripMenuItem("Notification tone");
         tones.DropDownItems.Add("Default event tones", null, (_, _) => new ToneLibrary(paths).Reset());
         tones.DropDownItems.Add("Classic chime", null, (_, _) => new ToneLibrary(paths).UseClassicChime());
@@ -125,6 +128,8 @@ public sealed class TrayApplication : ApplicationContext
         {
             mute.Checked = config.Muted;
             voice.Checked = config.Voice;
+            microphoneAwareVoice.Checked = config.MicrophoneAwareVoice;
+            microphoneAwareVoice.ToolTipText = microphone.GetSnapshot().Reason;
             tones.Text = "Notification tone: " + (config.ToneName ?? "Event tones");
         };
         menu.Items.Add("Test sound", null, (_, _) =>

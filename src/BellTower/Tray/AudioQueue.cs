@@ -11,12 +11,14 @@ public sealed class AudioQueue : IDisposable
     private readonly IAudioSink sink;
     private readonly Func<AudioItem, bool> valid;
     private readonly Func<AppConfig> config;
+    private readonly IMicrophoneActivitySource microphone;
     private volatile bool stopped;
-    public AudioQueue(IAudioSink sink, Func<AudioItem, bool> valid, Func<AppConfig> config)
+    public AudioQueue(IAudioSink sink, Func<AudioItem, bool> valid, Func<AppConfig> config, IMicrophoneActivitySource? microphone = null)
     {
         this.sink = sink;
         this.valid = valid;
         this.config = config;
+        this.microphone = microphone ?? new UnavailableMicrophoneActivitySource();
         worker = new Thread(Run)
         {
             IsBackground = true,
@@ -60,7 +62,7 @@ public sealed class AudioQueue : IDisposable
 
             if (items.Count > 2)
             {
-                Play(items, SelectPhrase(items, config().Voice));
+                Play(items, SelectPhrase(items, SpeechAllowed(config())));
             }
             else
             {
@@ -68,7 +70,7 @@ public sealed class AudioQueue : IDisposable
                 {
                     if (item.Test || valid(item))
                     {
-                        Play([item], config().Voice ? item.Phrase : null);
+                        Play([item], SpeechAllowed(config()) ? item.Phrase : null);
                     }
                 }
             }
@@ -81,10 +83,38 @@ public sealed class AudioQueue : IDisposable
     {
         try
         {
-            sink.Play(phrase, items.Max(item => item.Reason), () => stopped || config().Muted || !items.Any(item => item.Test || valid(item)));
+            bool Cancelled() => stopped || config().Muted || !items.Any(item => item.Test || valid(item));
+            bool SpeechCancelled() => !SpeechAllowed(config());
+            // Re-evaluate after dequeue and immediately before entering the sink. Suppressed phrases
+            // are discarded with this queue batch and are never retained for later playback.
+            sink.Play(SpeechAllowed(config()) ? phrase : null, items.Max(item => item.Reason), Cancelled, SpeechCancelled);
         }
         catch (Exception e) when (e is InvalidOperationException or System.Runtime.InteropServices.COMException or System.ComponentModel.Win32Exception)
         {
+        }
+    }
+
+    private bool SpeechAllowed(AppConfig current)
+    {
+        if (!current.Voice)
+        {
+            return false;
+        }
+
+        if (!current.MicrophoneAwareVoice)
+        {
+            return true;
+        }
+
+        try
+        {
+            var snapshot = microphone.GetSnapshot();
+            return snapshot.State == MicrophoneUsageState.Inactive &&
+                snapshot.IsFresh(DateTimeOffset.UtcNow, TimeSpan.FromSeconds(1));
+        }
+        catch (Exception exception) when (exception is not (OutOfMemoryException or StackOverflowException))
+        {
+            return false;
         }
     }
 
