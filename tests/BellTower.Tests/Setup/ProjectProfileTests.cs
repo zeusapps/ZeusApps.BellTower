@@ -57,6 +57,44 @@ public sealed class ProjectProfileTests
         Assert.Equal(original, File.ReadAllText(fixture.Code));
     }
 
+    [Fact]
+    public void ProjectOnlyCodexRemovalPreservesGlobalHookShellMetadata()
+    {
+        using var workspace = new TestWorkspace();
+        var fixture = Prepare(workspace);
+        var project = Path.Combine(workspace.Root, "registered-codex-project");
+        Directory.CreateDirectory(project);
+        var setup = new IntegrationSetup(workspace.Paths, "C:/BellTower/bell-tower.exe", fixture.Home);
+        setup.Plan("codex", project: project).Apply(workspace.Paths);
+
+        var manifestPath = Path.Combine(workspace.Paths.Root, "integration.json");
+        var manifest = JsonNode.Parse(File.ReadAllText(manifestPath))!;
+        manifest["selectedCodexHookShell"] = "Cmd";
+        manifest["futureShellMetadata"] = "preserve-me";
+        File.WriteAllText(manifestPath, manifest.ToJsonString());
+        var codexSettings = Path.Combine(fixture.Home, ".codex", "hooks.json");
+        var settingsBefore = File.ReadAllBytes(codexSettings);
+
+        var projectRemoval = setup.Plan("codex", remove: true, project: project);
+        Assert.DoesNotContain(projectRemoval.Changes, change => change.Path.Equals(codexSettings, StringComparison.OrdinalIgnoreCase));
+        projectRemoval.Apply(workspace.Paths);
+        var afterProjectRemoval = JsonNode.Parse(File.ReadAllText(manifestPath))!;
+        Assert.Equal("Cmd", afterProjectRemoval["selectedCodexHookShell"]!.GetValue<string>());
+        Assert.Equal("preserve-me", afterProjectRemoval["futureShellMetadata"]!.GetValue<string>());
+        Assert.Equal(settingsBefore, File.ReadAllBytes(codexSettings));
+
+        setup.Plan("claude").Apply(workspace.Paths);
+        var afterClaudeSetup = JsonNode.Parse(File.ReadAllText(manifestPath))!;
+        Assert.Equal("Cmd", afterClaudeSetup["selectedCodexHookShell"]!.GetValue<string>());
+        Assert.Equal("preserve-me", afterClaudeSetup["futureShellMetadata"]!.GetValue<string>());
+        Assert.Equal(settingsBefore, File.ReadAllBytes(codexSettings));
+
+        setup.Plan("codex", remove: true).Apply(workspace.Paths);
+        var afterCodexRemoval = JsonNode.Parse(File.ReadAllText(manifestPath))!;
+        Assert.Null(afterCodexRemoval["selectedCodexHookShell"]);
+        Assert.Equal("preserve-me", afterCodexRemoval["futureShellMetadata"]!.GetValue<string>());
+    }
+
     private static (string Home, string Code, string Terminal) Prepare(TestWorkspace workspace)
     {
         var home = Path.Combine(workspace.Root, "home");

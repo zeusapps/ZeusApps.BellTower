@@ -7,9 +7,9 @@ using BellTower.Updates;
 
 namespace BellTower.Setup;
 
-public sealed record IngressProvision(string Source, string Hash, string Target)
+public sealed record IngressProvision(string Source, string Hash, string Target, string[] Providers, CodexHookShell? CodexShell = null)
 {
-    public static IngressProvision? Plan(string executable, DataPaths paths)
+    public static IngressProvision? Plan(string executable, DataPaths paths, IEnumerable<string>? providers = null)
     {
         var root = Path.GetDirectoryName(Path.GetFullPath(executable))!;
         if (!File.Exists(Path.Combine(root, "installation.json")))
@@ -29,7 +29,11 @@ public sealed record IngressProvision(string Source, string Hash, string Target)
             throw new InvalidDataException("Packaged ingress hash mismatch.");
         }
         var target = Path.Combine(paths.Root, "integrations", "provider-ingress", "1", hash, "bell-tower-ingress.exe");
-        return new(source, hash, target);
+        var selectedProviders = (providers ?? []).Distinct(StringComparer.Ordinal).ToArray();
+        CodexHookShell? codexShell = OperatingSystem.IsWindows() && selectedProviders.Contains("codex", StringComparer.Ordinal)
+            ? ProviderHookProbe.SelectCodexShell(executable, source)
+            : null;
+        return new(source, hash, target, selectedProviders, codexShell);
     }
 
     public void Apply(DataPaths paths)
@@ -47,52 +51,73 @@ public sealed record IngressProvision(string Source, string Hash, string Target)
         {
             throw new IOException("Ingress changed since preview; rerun setup.");
         }
-        Directory.CreateDirectory(Path.GetDirectoryName(Target)!);
-        if (!File.Exists(Target))
+        var createdTarget = false;
+        try
         {
-            var temporary = Target + "." + Guid.NewGuid().ToString("N") + ".tmp";
-            try
+            Directory.CreateDirectory(Path.GetDirectoryName(Target)!);
+            if (!File.Exists(Target))
             {
-                File.Copy(Source, temporary);
-                if (Installation.Hash(temporary) != Hash)
+                var temporary = Target + "." + Guid.NewGuid().ToString("N") + ".tmp";
+                try
                 {
-                    throw new IOException("Ingress copy verification failed.");
+                    File.Copy(Source, temporary);
+                    if (Installation.Hash(temporary) != Hash)
+                    {
+                        throw new IOException("Ingress copy verification failed.");
+                    }
+                    File.Move(temporary, Target);
+                    createdTarget = true;
                 }
-                File.Move(temporary, Target);
+                finally
+                {
+                    if (File.Exists(temporary))
+                    {
+                        File.Delete(temporary);
+                    }
+                }
             }
-            finally
+            if (Installation.Hash(Target) != Hash)
             {
-                if (File.Exists(temporary))
-                {
-                    File.Delete(temporary);
-                }
+                throw new IOException("Retained ingress was modified; referenced images are never overwritten.");
             }
+
+            // Validate the exact immutable helper path that will be written into provider settings.
+            // Provider events still go to a disposable data directory until both provider probes pass.
+            foreach (var provider in Providers)
+            {
+                ProviderHookProbe.Verify(provider, Source, Target, provider == "codex" ? CodexShell : null);
+            }
+
+            var start = new ProcessStartInfo(Target)
+            {
+                UseShellExecute = false,
+                CreateNoWindow = true,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true
+            };
+            start.ArgumentList.Add("--protocol-info");
+            using var process = Process.Start(start) ?? throw new IOException("Ingress probe could not start.");
+            var output = process.StandardOutput.ReadToEndAsync();
+            var error = process.StandardError.ReadToEndAsync();
+            if (!process.WaitForExit(3000))
+            {
+                process.Kill(); // Only the disposable protocol-probe process belongs to this operation.
+                throw new IOException("Ingress protocol probe timed out.");
+            }
+            if (process.ExitCode != 0 || error.GetAwaiter().GetResult().Length != 0 ||
+                output.GetAwaiter().GetResult().Trim() != "{\"protocol\":1,\"minimumConsumer\":1,\"maximumConsumer\":1}")
+            {
+                throw new InvalidDataException("Ingress protocol probe failed.");
+            }
+            AtomicFile.Write(Path.Combine(paths.Root, "capture-protocol.json"), "{\"protocol\":1}");
         }
-        if (Installation.Hash(Target) != Hash)
+        catch
         {
-            throw new IOException("Retained ingress was modified; referenced images are never overwritten.");
+            if (createdTarget && File.Exists(Target) && Installation.Hash(Target) == Hash)
+            {
+                File.Delete(Target);
+            }
+            throw;
         }
-        var start = new ProcessStartInfo(Target)
-        {
-            UseShellExecute = false,
-            CreateNoWindow = true,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true
-        };
-        start.ArgumentList.Add("--protocol-info");
-        using var process = Process.Start(start) ?? throw new IOException("Ingress probe could not start.");
-        var output = process.StandardOutput.ReadToEndAsync();
-        var error = process.StandardError.ReadToEndAsync();
-        if (!process.WaitForExit(3000))
-        {
-            process.Kill(); // Only the disposable protocol-probe process belongs to this operation.
-            throw new IOException("Ingress protocol probe timed out.");
-        }
-        if (process.ExitCode != 0 || error.GetAwaiter().GetResult().Length != 0 ||
-            output.GetAwaiter().GetResult().Trim() != "{\"protocol\":1,\"minimumConsumer\":1,\"maximumConsumer\":1}")
-        {
-            throw new InvalidDataException("Ingress protocol probe failed.");
-        }
-        AtomicFile.Write(Path.Combine(paths.Root, "capture-protocol.json"), "{\"protocol\":1}");
     }
 }

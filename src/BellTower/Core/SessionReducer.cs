@@ -216,50 +216,28 @@ public static class SessionReducer
 
     private static void ResumeForeground(SessionState session, Observation observation)
     {
-        for (var index = session.Waits.Count - 1; index >= 0; index--)
+        // A start does not prove its operation was approved. Keep attributed waits
+        // until their correlated result arrives; unrelated foreground work may run
+        // while a separate request remains pending.
+        if (!observation.IsMainThread)
         {
-            var wait = session.Waits[index];
-            if (wait.Reason != AttentionReason.Permission)
-            {
-                continue;
-            }
-            if (wait.Candidates is { } candidates)
-            {
-                var remaining = candidates.Where(id => id != observation.OperationId && !session.CompletedOperations.Contains(id)).ToArray();
-                if (remaining.Length == 0)
-                {
-                    Resolve(session, wait, observation.At);
-                    session.Waits.RemoveAt(index);
-                }
-                else
-                {
-                    session.Waits[index] = wait with { Candidates = remaining };
-                }
-            }
-            else if (Matches(wait, observation, session.CompletedOperations))
-            {
-                Resolve(session, wait, observation.At);
-                session.Waits.RemoveAt(index);
-            }
+            return;
         }
-        // A new foreground action establishes resumption after an uncorrelated provider notification.
-        if (observation.IsMainThread)
+        if (observation.OperationId is not null)
         {
-            if (observation.OperationId is not null)
-            {
-                session.CompletedOperations.Remove(observation.OperationId);
-            }
-
-            if (observation.OperationFingerprint is not null)
-            {
-                session.CompletedOperations.Remove(observation.OperationFingerprint);
-            }
-
-            session.ForegroundStopped = false;
-            session.CompletionPending = false;
-            RemoveResolved(session, wait => wait.Reason is AttentionReason.Done or AttentionReason.Error ||
-                (wait.OperationId is null && wait.Fingerprint is null && wait.Reason != AttentionReason.Error), observation.At);
+            session.CompletedOperations.Remove(observation.OperationId);
         }
+
+        if (observation.OperationFingerprint is not null)
+        {
+            session.CompletedOperations.Remove(observation.OperationFingerprint);
+        }
+
+        session.ForegroundStopped = false;
+        session.CompletionPending = false;
+        RemoveResolved(session, wait => wait.Reason is AttentionReason.Done or AttentionReason.Error ||
+            (wait.OperationId is null && wait.Candidates is null && wait.Fingerprint is null &&
+             wait.Reason != AttentionReason.Error && observation.At > wait.Since), observation.At);
     }
 
     private static void CompleteOperation(SessionState session, Observation observation)
@@ -279,6 +257,25 @@ public static class SessionReducer
         if (observation.OperationFingerprint is not null)
         {
             session.CompletedOperations.Add(observation.OperationFingerprint);
+        }
+
+        for (var index = session.Waits.Count - 1; index >= 0; index--)
+        {
+            var wait = session.Waits[index];
+            if (wait.Candidates is not { } candidates)
+            {
+                continue;
+            }
+            var remaining = candidates.Where(id => !session.CompletedOperations.Contains(id)).ToArray();
+            if (remaining.Length == 0)
+            {
+                Resolve(session, wait, observation.At);
+                session.Waits.RemoveAt(index);
+            }
+            else if (remaining.Length != candidates.Length)
+            {
+                session.Waits[index] = wait with { Candidates = remaining };
+            }
         }
 
         RemoveResolved(session, wait => Matches(wait, observation, session.CompletedOperations), observation.At);

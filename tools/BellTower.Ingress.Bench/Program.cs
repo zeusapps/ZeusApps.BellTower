@@ -15,7 +15,11 @@ try
 }
 catch (Exception exception) when (exception is not (OutOfMemoryException or StackOverflowException))
 {
-    Console.Error.WriteLine("Isolated benchmark failed: " + exception.GetType().Name + ". No performance pass is claimed.");
+    var detail = exception.Message
+        .Replace(Path.GetFullPath(args.Length > 1 ? args[1] : "<trial>"), "<trial>", StringComparison.OrdinalIgnoreCase)
+        .Replace(Path.GetFullPath(args.Length > 0 ? args[0] : "<package>"), "<package>", StringComparison.OrdinalIgnoreCase)
+        .Replace(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "<user>", StringComparison.OrdinalIgnoreCase);
+    Console.Error.WriteLine("Isolated benchmark failed: " + exception.GetType().Name + ": " + detail + ". No performance pass is claimed.");
     return 1;
 }
 
@@ -42,52 +46,128 @@ static async Task Execute(string[] args)
     var provision = IngressProvision.Plan(installation.Launcher, paths)!;
     provision.Apply(paths);
     var report = new List<object>();
+    var comparisonFailures = new List<string>();
     foreach (var provider in new[] { "claude", "codex" })
     {
         var settings = JsonNode.Parse(File.ReadAllText(Path.Combine(home, "." + provider, provider == "claude" ? "settings.json" : "hooks.json")))!;
         var direct = settings["hooks"]!["Stop"]![0]!["hooks"]![0]!["command"]!.GetValue<string>();
         var legacy = new HookCommandBuilder(installation.Launcher, paths).Build("event", provider);
-        foreach (var transport in new[] { (Name: "legacy-chain", Command: legacy, Samples: 24), (Name: "native-ingress", Command: direct, Samples: 120) })
+        const int parallelSamples = 120;
+        const int parallelism = 8;
+        var baseline = new ConcurrentBag<TimingSample>();
+        var native = new ConcurrentBag<TimingSample>();
+
+        // Keep one serial first sample plus 120 concurrent samples for both legs.
+        // Run matched eight-sample batches, alternating which leg goes first, so
+        // long-term machine drift is less likely to favor one measurement.
+        baseline.Add(await RunNoop(provider, 0));
+        native.Add(await Run(provider, direct, 0, true));
+        for (var batch = 0; batch < parallelSamples / parallelism; batch++)
         {
-            var results = new ConcurrentBag<(double Milliseconds, bool Success)>();
-            var cold = await Run(provider, transport.Command, 0, transport.Name == "native-ingress");
-            await Parallel.ForEachAsync(Enumerable.Range(1, transport.Samples), new ParallelOptions { MaxDegreeOfParallelism = 8 }, async (sample, _) =>
+            var sampleNumbers = Enumerable.Range(1 + batch * parallelism, parallelism).ToArray();
+            async Task<TimingSample[]> RunBatch(bool isNative)
             {
-                results.Add(await Run(provider, transport.Command, sample, transport.Name == "native-ingress"));
-            });
-            results.Add(cold);
-            var ordered = results.Select(r => r.Milliseconds).Order().ToArray();
-            double Percentile(double quantile) => ordered[Math.Max(0, (int)Math.Ceiling(quantile * ordered.Length) - 1)];
-            report.Add(new
-            {
-                Provider = provider,
-                Transport = transport.Name,
-                Samples = results.Count,
-                Parallelism = 8,
-                FirstCaptureMilliseconds = cold.Milliseconds,
-                MedianMilliseconds = Percentile(0.5),
-                P95Milliseconds = Percentile(0.95),
-                P99Milliseconds = Percentile(0.99),
-                MaxMilliseconds = ordered[^1],
-                Failed = results.Count(r => !r.Success),
-                OverThreeSeconds = results.Count(r => r.Milliseconds >= 3000)
-            });
-            if (results.Any(r => !r.Success))
-            {
-                throw new IOException("Hook dependency or neutral-output check failed; no successful performance claim was recorded.");
+                var results = new ConcurrentBag<TimingSample>();
+                await Parallel.ForEachAsync(sampleNumbers, new ParallelOptions { MaxDegreeOfParallelism = parallelism }, async (sample, _) =>
+                {
+                    results.Add(isNative
+                        ? await Run(provider, direct, sample, true)
+                        : await RunNoop(provider, sample));
+                });
+                return results.OrderBy(item => item.Sample).ToArray();
             }
-            if (transport.Name == "native-ingress" && (Percentile(0.5) >= 300 || ordered[^1] >= 3000))
+
+            if ((batch + (provider == "codex" ? 1 : 0)) % 2 == 0)
             {
-                throw new IOException("Native capture latency budget failed.");
+                foreach (var item in await RunBatch(false))
+                {
+                    baseline.Add(item);
+                }
+
+                foreach (var item in await RunBatch(true))
+                {
+                    native.Add(item);
+                }
+            }
+            else
+            {
+                foreach (var item in await RunBatch(true))
+                {
+                    native.Add(item);
+                }
+
+                foreach (var item in await RunBatch(false))
+                {
+                    baseline.Add(item);
+                }
             }
         }
-        Console.WriteLine(provider + " provider-shell samples complete.");
+
+        var legacyResults = new ConcurrentBag<TimingSample>();
+        legacyResults.Add(await Run(provider, legacy, 0, false));
+        await Parallel.ForEachAsync(Enumerable.Range(1, 24), new ParallelOptions { MaxDegreeOfParallelism = parallelism }, async (sample, _) =>
+        {
+            legacyResults.Add(await Run(provider, legacy, sample, false));
+        });
+
+        var baselineStats = Statistics(baseline, "echo 1", parallelism, parallelSamples);
+        var nativeStats = Statistics(native, "native-ingress", parallelism, parallelSamples);
+        var legacyStats = Statistics(legacyResults, "legacy-chain", parallelism, 24);
+        var estimate = nativeStats.MeanMilliseconds - baselineStats.MeanMilliseconds;
+        var comparisonValid = baselineStats.FailedCalls == 0 && nativeStats.FailedCalls == 0;
+        var estimatedMeanPass = comparisonValid && estimate < 300;
+        var rawMaximumPass = nativeStats.MaximumMilliseconds < 3000;
+        report.Add(new
+        {
+            Provider = provider,
+            Shell = provider == "claude" ? "configured Git Bash or standard Git for Windows Bash" : "PowerShell selected by benchmark resolver",
+            Mode = "one serial first sample; 120 matched samples in alternating concurrent batches; same shell args, environment and event input",
+            Baseline = baselineStats,
+            NativeIngress = nativeStats,
+            LegacyControl = legacyStats,
+            EstimatedAddedMeanMilliseconds = estimate,
+            ComparisonValid = comparisonValid,
+            EstimatedMeanBelow300Milliseconds = estimatedMeanPass,
+            NativeRawMaximumBelow3000Milliseconds = rawMaximumPass
+        });
+        Console.WriteLine(provider + " echo 1: n=" + baselineStats.Samples + ", mean=" + baselineStats.MeanMilliseconds.ToString("F2") + " ms, median=" + baselineStats.MedianMilliseconds.ToString("F2") + " ms, p95=" + baselineStats.P95Milliseconds.ToString("F2") + " ms, p99=" + baselineStats.P99Milliseconds.ToString("F2") + " ms, max=" + baselineStats.MaximumMilliseconds.ToString("F2") + " ms, failed=" + baselineStats.FailedCalls + ".");
+        Console.WriteLine(provider + " native ingress: n=" + nativeStats.Samples + ", mean=" + nativeStats.MeanMilliseconds.ToString("F2") + " ms, median=" + nativeStats.MedianMilliseconds.ToString("F2") + " ms, p95=" + nativeStats.P95Milliseconds.ToString("F2") + " ms, p99=" + nativeStats.P99Milliseconds.ToString("F2") + " ms, max=" + nativeStats.MaximumMilliseconds.ToString("F2") + " ms, estimated added mean=" + estimate.ToString("F2") + " ms, failed=" + nativeStats.FailedCalls + ".");
+        Console.WriteLine(provider + " legacy control: n=" + legacyStats.Samples + ", mean=" + legacyStats.MeanMilliseconds.ToString("F2") + " ms, median=" + legacyStats.MedianMilliseconds.ToString("F2") + " ms, p95=" + legacyStats.P95Milliseconds.ToString("F2") + " ms, p99=" + legacyStats.P99Milliseconds.ToString("F2") + " ms, max=" + legacyStats.MaximumMilliseconds.ToString("F2") + " ms, failed=" + legacyStats.FailedCalls + ".");
+        File.WriteAllText(Path.Combine(trialRoot, "latency-report.json"), IOJson(report));
+
+        if (!comparisonValid)
+        {
+            comparisonFailures.Add(provider + " echo-1/hook comparison contains failed calls");
+        }
+
+        if (!estimatedMeanPass)
+        {
+            comparisonFailures.Add(provider + " estimated added mean is not below 300 ms");
+        }
+
+        if (!rawMaximumPass)
+        {
+            comparisonFailures.Add(provider + " raw hook maximum is not below 3000 ms");
+        }
+
+        if (legacyStats.FailedCalls != 0)
+        {
+            comparisonFailures.Add(provider + " legacy control contains failed calls");
+        }
+
+        if (nativeStats.OverThreeSeconds != 0)
+        {
+            comparisonFailures.Add(provider + " native hook duration reached or exceeded 3000 ms");
+        }
+
+        Console.WriteLine(provider + " matched benchmark samples complete.");
     }
     var inbox = Path.Combine(paths.Root, CaptureProtocol.InboxName);
     var captures = Directory.GetFiles(inbox, "*.json");
-    if (captures.Length != 242 || Directory.GetFiles(paths.Inbox, "*.json").Length != 50)
+    var legacyCaptureCount = Directory.GetFiles(paths.Inbox, "*.json").Length;
+    if (captures.Length != 242 || legacyCaptureCount != 50)
     {
-        throw new IOException("Durable event count mismatch.");
+        throw new IOException("Durable event count mismatch: native=" + captures.Length + "/242, legacy=" + legacyCaptureCount + "/50.");
     }
     // Retain one committed receipt to reproduce a consumer crash between commit and deletion.
     var retainedPath = captures[0];
@@ -109,21 +189,92 @@ static async Task Execute(string[] args)
     {
         At = DateTimeOffset.UtcNow,
         Mode = "isolated generated provider-shell commands; synthetic hooks; no authenticated provider trial",
-        Package = packageRoot,
+        PackageVersion = installation.Selection().Version,
         HelperBytes = new FileInfo(provision.Target).Length,
         DurableCaptures = captures.Length,
-        DurableLegacyEvents = 50,
+        DurableLegacyEvents = legacyCaptureCount,
         SessionsAfterDrain = store.Read().Sessions.Count,
         CrashReplay = "passed",
-        Reports = report
+        Reports = report,
+        ComparisonFailures = comparisonFailures
     }));
     Console.WriteLine(resultPath);
+    if (comparisonFailures.Count > 0)
+    {
+        throw new IOException("Matched provider-shell latency or neutral-output gate failed: " + string.Join("; ", comparisonFailures));
+    }
 
     string IOJson<T>(T value) => BellTower.IO.Json.Encode(value);
 
-    async Task<(double Milliseconds, bool Success)> Run(string provider, string command, int sample, bool requireSilent)
+    TimingSummary Statistics(IEnumerable<TimingSample> samples, string mode, int parallelism, int parallelSamples)
     {
-        var start = new ProcessStartInfo(provider == "claude" ? "C:/Program Files/Git/bin/bash.exe" : "cmd.exe")
+        var measured = samples.OrderBy(item => item.Sample).ToArray();
+        var ordered = measured.Select(item => item.Milliseconds).Order().ToArray();
+        double Percentile(double quantile) => ordered[Math.Max(0, (int)Math.Ceiling(quantile * ordered.Length) - 1)];
+        return new TimingSummary(
+            mode,
+            measured.Length,
+            1,
+            parallelSamples,
+            parallelism,
+            measured[0].Milliseconds,
+            ordered.Average(),
+            Percentile(0.5),
+            Percentile(0.95),
+            Percentile(0.99),
+            ordered[^1],
+            measured.Count(item => !item.Success),
+            measured.Count(item => item.Milliseconds >= 3000),
+            measured.Select(item => new SampleDuration(item.Sample, item.Milliseconds, item.Success)).ToArray());
+    }
+
+    string ResolveClaudeBash()
+    {
+        var configured = Environment.GetEnvironmentVariable("CLAUDE_CODE_GIT_BASH_PATH");
+        if (!string.IsNullOrWhiteSpace(configured))
+        {
+            var fullPath = Path.GetFullPath(configured);
+            if (!File.Exists(fullPath))
+            {
+                throw new IOException("Configured Claude Git Bash path is unavailable.");
+            }
+
+            return fullPath;
+        }
+        var standard = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "Git", "bin", "bash.exe");
+        if (File.Exists(standard))
+        {
+            return standard;
+        }
+
+        throw new IOException("Claude Git Bash is unavailable for the provider-shell benchmark.");
+    }
+
+    string ResolveCodexPowerShell()
+    {
+        var standardPwsh = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "PowerShell", "7", "pwsh.exe");
+        if (File.Exists(standardPwsh))
+        {
+            return standardPwsh;
+        }
+
+        foreach (var name in new[] { "pwsh.exe", "powershell.exe" })
+        {
+            foreach (var entry in (Environment.GetEnvironmentVariable("PATH") ?? "").Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries))
+            {
+                var candidate = Path.Combine(entry, name);
+                if (File.Exists(candidate))
+                {
+                    return candidate;
+                }
+            }
+        }
+        throw new IOException("Codex PowerShell is unavailable for the provider-shell benchmark.");
+    }
+
+    ProcessStartInfo ShellStart(string provider)
+    {
+        var start = new ProcessStartInfo(provider == "claude" ? ResolveClaudeBash() : ResolveCodexPowerShell())
         {
             UseShellExecute = false,
             CreateNoWindow = true,
@@ -136,13 +287,33 @@ static async Task Execute(string[] args)
         if (provider == "claude")
         {
             start.ArgumentList.Add("-c");
-            start.ArgumentList.Add(command);
         }
         else
         {
-            // Match Codex's Windows raw /C argument construction.
-            start.Arguments = "/C \"" + command + "\"";
+            start.ArgumentList.Add("-NoLogo");
+            start.ArgumentList.Add("-NoProfile");
+            start.ArgumentList.Add("-NonInteractive");
+            start.ArgumentList.Add("-Command");
         }
+        return start;
+    }
+
+    async Task<TimingSample> RunNoop(string provider, int sample)
+    {
+        var start = ShellStart(provider);
+        start.ArgumentList.Add("echo 1");
+        return await RunStarted(start, provider, sample, "1", true);
+    }
+
+    async Task<TimingSample> Run(string provider, string command, int sample, bool requireSilent)
+    {
+        var start = ShellStart(provider);
+        start.ArgumentList.Add(command);
+        return await RunStarted(start, provider, sample, "{}", requireSilent);
+    }
+
+    async Task<TimingSample> RunStarted(ProcessStartInfo start, string provider, int sample, string expectedOutput, bool requireSilent)
+    {
         foreach (var key in start.Environment.Keys.Where(k => k.StartsWith("BELLTOWER_", StringComparison.Ordinal)).ToArray())
         {
             start.Environment.Remove(key);
@@ -159,7 +330,7 @@ static async Task Execute(string[] args)
             hook_event_name = "Stop",
             cwd = paths.Root,
             last_assistant_message = "private-fixture-message"
-        }));
+        }) + "\n");
         process.StandardInput.Close();
         using var deadline = new CancellationTokenSource(TimeSpan.FromSeconds(30));
         try
@@ -176,9 +347,10 @@ static async Task Execute(string[] args)
         var stderr = await error;
         // Windows PowerShell emits first-use progress CLIXML on stderr in the legacy control.
         // Native ingress must be silent; both paths must return neutral JSON and persist every event.
-        var success = process.ExitCode == 0 && stdout.Trim() == "{}" && (!requireSilent || stderr.Length == 0);
+        var success = process.ExitCode == 0 && stdout.Trim() == expectedOutput && (!requireSilent || stderr.Length == 0);
         if (!success)
         {
+            Console.Error.WriteLine(provider + " provider-shell fixture failed: exit=" + process.ExitCode + ", stdoutLength=" + stdout.Length + ", stderrLength=" + stderr.Length + ".");
             File.WriteAllText(Path.Combine(trialRoot, provider + "-fixture-failure-" + sample + ".json"), IOJson(new
             {
                 ExitCode = process.ExitCode,
@@ -186,6 +358,12 @@ static async Task Execute(string[] args)
                 StandardError = stderr
             }));
         }
-        return (clock.Elapsed.TotalMilliseconds, success);
+        return new TimingSample(sample, clock.Elapsed.TotalMilliseconds, success);
     }
 }
+
+internal sealed record TimingSample(int Sample, double Milliseconds, bool Success);
+internal sealed record SampleDuration(int Sample, double Milliseconds, bool Success);
+internal sealed record TimingSummary(string Mode, int Samples, int FirstSampleCount, int ParallelSamples, int Parallelism,
+    double FirstSampleMilliseconds, double MeanMilliseconds, double MedianMilliseconds, double P95Milliseconds,
+    double P99Milliseconds, double MaximumMilliseconds, int FailedCalls, int OverThreeSeconds, SampleDuration[] Timings);

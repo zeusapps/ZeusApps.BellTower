@@ -55,6 +55,14 @@ public sealed class PermissionNotificationTests
         Assert.False(session.RequiresAttention(start.AddSeconds(resolvedAt - 1)));
         Assert.Empty(policy.Collect([session], start.AddSeconds(resolvedAt - 1), false));
         Apply(resolution, resolvedAt, "tool");
+        if (resolution == "PreToolUse")
+        {
+            var pending = Assert.Single(session.Waits);
+            Assert.Equal(HumanConfirmation.Provisional, pending.Confirmation);
+            Assert.False(session.RequiresAttention(start.AddSeconds(resolvedAt)));
+            Assert.Empty(policy.Collect([session], start.AddSeconds(resolvedAt), false));
+            Apply("PostToolUse", resolvedAt + 7, "tool");
+        }
         Assert.Empty(session.Waits);
         Assert.False(session.RequiresAttention(start.AddSeconds(60)));
         Assert.Empty(policy.Collect([session], start.AddSeconds(60), false));

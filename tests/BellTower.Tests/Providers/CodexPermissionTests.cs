@@ -522,7 +522,7 @@ public sealed class CodexPermissionTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public async Task DelayedStatusForAmbiguousPermissionCannotConfirmAfterOneCandidateResumes(bool causal)
+    public async Task DelayedStatusForAmbiguousPermissionCannotConfirmUntilCandidateCompletes(bool causal)
     {
         using var workspace = new TestWorkspace();
         var prepared = Prepare(workspace);
@@ -552,7 +552,14 @@ public sealed class CodexPermissionTests
         var oldRead = pump.RefreshAsync([first]);
         await delayed.Started.Task.WaitAsync(TimeSpan.FromSeconds(2));
 
-        events.Publish(Request(EventKind.ToolStart, "A", DateTimeOffset.UtcNow));
+        var resumedAt = DateTimeOffset.UtcNow;
+        events.Publish(Request(EventKind.ToolStart, "A", resumedAt));
+        var afterLateStart = store.Drain().Sessions["codex:one"];
+        var stillAmbiguous = Assert.Single(afterLateStart.Waits);
+        Assert.Equal(["A", "B"], stillAmbiguous.Candidates!);
+        Assert.Equal(first.ApprovalRevision, afterLateStart.ApprovalRevision);
+
+        events.Publish(Request(EventKind.ToolEnd, "A", resumedAt.AddMilliseconds(1)));
         var narrowed = store.Drain().Sessions["codex:one"];
         var remaining = Assert.Single(narrowed.Waits);
         Assert.Equal(["B"], remaining.Candidates!);

@@ -120,7 +120,7 @@ public sealed class ReducerTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public void MatchingOperationResumptionClearsPermissionWithoutResolvingOtherWaits(bool fingerprintOnly)
+    public void MatchingOperationStartKeepsPermissionUntilResultWithoutResolvingOtherWaits(bool fingerprintOnly)
     {
         var blocked = TestWorkspace.ConfirmedPermission(start, fingerprintOnly ? null : "blocked") with
         {
@@ -129,6 +129,13 @@ public sealed class ReducerTests
         Apply(blocked);
         Apply(TestWorkspace.Event(EventKind.Question, start.AddSeconds(1), "question"));
         Apply(TestWorkspace.Event(EventKind.ToolStart, start.AddSeconds(2), "blocked") with
+        {
+            OperationFingerprint = "arguments"
+        });
+        Assert.Equal(2, Session.Waits.Count);
+        Assert.Contains(Session.Waits, wait => wait.Reason == AttentionReason.Permission);
+        Assert.Contains(Session.Waits, wait => wait.Reason == AttentionReason.Question);
+        Apply(TestWorkspace.Event(EventKind.ToolEnd, start.AddSeconds(3), "blocked") with
         {
             OperationFingerprint = "arguments"
         });
@@ -144,12 +151,14 @@ public sealed class ReducerTests
         Apply(TestWorkspace.Event(EventKind.ToolStart, start.AddSeconds(1), "other") with { OperationFingerprint = "same" });
         Assert.Equal(AttentionReason.Permission, Session.Reason);
         Apply(TestWorkspace.Event(EventKind.ToolStart, start.AddSeconds(2), "blocked"));
+        Assert.Equal(AttentionReason.Permission, Session.Reason);
+        Apply(TestWorkspace.Event(EventKind.ToolEnd, start.AddSeconds(3), "blocked"));
         Assert.Null(Session.Reason);
         Assert.Null(Session.Episode);
     }
 
     [Fact]
-    public void AmbiguousParallelPermissionRequiresEveryCandidateToResumeOrComplete()
+    public void AmbiguousParallelPermissionRequiresEveryCandidateToComplete()
     {
         Apply(TestWorkspace.Event(EventKind.ToolStart, start, "one") with { OperationFingerprint = "same" });
         Apply(TestWorkspace.Event(EventKind.ToolStart, start.AddSeconds(1), "two") with { OperationFingerprint = "same" });
@@ -157,6 +166,9 @@ public sealed class ReducerTests
         Apply(TestWorkspace.Event(EventKind.ToolStart, start.AddSeconds(3), "one") with { OperationFingerprint = "same" });
         Assert.Equal(AttentionReason.Permission, Session.Reason);
         Apply(TestWorkspace.Event(EventKind.ToolEnd, start.AddSeconds(4), "two") with { OperationFingerprint = "same" });
+        Assert.Equal(AttentionReason.Permission, Session.Reason);
+        Assert.Equal(["one"], Assert.Single(Session.Waits).Candidates!);
+        Apply(TestWorkspace.Event(EventKind.ToolEnd, start.AddSeconds(5), "one") with { OperationFingerprint = "same" });
         Assert.Null(Session.Reason);
     }
 

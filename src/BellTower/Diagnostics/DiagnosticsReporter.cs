@@ -11,6 +11,7 @@ public sealed class DiagnosticsReporter(DataPaths paths)
         DataDirectory = paths.Root,
         TrayRunning = new TrayController(paths).IsRunning(),
         Capture = new CaptureHealthReporter(paths).Report(),
+        HookDelivery = new HookDeliveryReporter(paths).Report(),
         TranscriptTimeouts = transcript is null ? null : new TranscriptTimeoutReader().Read(transcriptProvider, transcript),
         Claude = new
         {

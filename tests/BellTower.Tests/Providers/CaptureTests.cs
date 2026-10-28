@@ -264,6 +264,139 @@ public sealed class CaptureTests
         Assert.False(state.Sessions[provider + ":fixture"].Ended);
     }
 
+    [Theory]
+    [InlineData("claude", true)]
+    [InlineData("claude", false)]
+    [InlineData("codex", true)]
+    [InlineData("codex", false)]
+    public void AStartDeliveredAfterItsApprovalRequestDoesNotClearTheWait(string provider, bool ingressOrderAvailable)
+    {
+        var at = DateTimeOffset.UtcNow.AddMinutes(-2);
+        var events = new[]
+        {
+            Envelope(provider, "SessionStart", at: at).Observation,
+            Envelope(provider, "UserPromptSubmit", at: at.AddSeconds(1)).Observation,
+            Envelope(provider, "PermissionRequest", "operation", at.AddSeconds(2)).Observation,
+            Envelope(provider, "PreToolUse", "operation", at.AddSeconds(2).AddMilliseconds(20)).Observation
+        };
+        var state = new AppState();
+        foreach (var original in events)
+        {
+            var observation = ingressOrderAvailable ? original : original with { IngressAt = null };
+            SessionReducer.Apply(state, observation);
+        }
+
+        var session = state.Sessions[provider + ":fixture"];
+        var wait = Assert.Single(session.Waits);
+        Assert.Equal(AttentionReason.Permission, wait.Reason);
+        Assert.Equal("operation", wait.OperationId);
+        Assert.Equal(HumanConfirmation.Provisional, wait.Confirmation);
+
+        SessionReducer.Apply(state, ingressOrderAvailable
+            ? Envelope(provider, "PostToolUse", "operation", at.AddSeconds(3)).Observation
+            : Envelope(provider, "PostToolUse", "operation", at.AddSeconds(3)).Observation with { IngressAt = null });
+        Assert.Empty(state.Sessions[provider + ":fixture"].Waits);
+    }
+
+    [Theory]
+    [InlineData("claude", true)]
+    [InlineData("claude", false)]
+    [InlineData("codex", true)]
+    [InlineData("codex", false)]
+    public void CandidateOperationStartsAndUnrelatedForegroundWorkDoNotClearApprovalWait(string provider, bool ingressOrderAvailable)
+    {
+        var at = DateTimeOffset.UtcNow.AddMinutes(-2);
+        Observation Ordered(Observation observation) => ingressOrderAvailable ? observation : observation with { IngressAt = null };
+        Observation Fingerprinted(Observation observation) => Ordered(observation with { OperationFingerprint = "same-command" });
+        var state = new AppState();
+        SessionReducer.Apply(state, Ordered(Envelope(provider, "SessionStart", at: at).Observation));
+        SessionReducer.Apply(state, Ordered(Envelope(provider, "UserPromptSubmit", at: at.AddSeconds(1)).Observation));
+        SessionReducer.Apply(state, Fingerprinted(Envelope(provider, "PreToolUse", "operation-one", at.AddSeconds(2)).Observation));
+        SessionReducer.Apply(state, Fingerprinted(Envelope(provider, "PreToolUse", "operation-two", at.AddSeconds(3)).Observation));
+        SessionReducer.Apply(state, Fingerprinted(Envelope(provider, "PermissionRequest", at: at.AddSeconds(4)).Observation));
+
+        var wait = Assert.Single(state.Sessions[provider + ":fixture"].Waits);
+        Assert.Equal(["operation-one", "operation-two"], wait.Candidates!);
+        SessionReducer.Apply(state, Fingerprinted(Envelope(provider, "PreToolUse", "operation-one", at.AddSeconds(5)).Observation));
+        Assert.Single(state.Sessions[provider + ":fixture"].Waits);
+        SessionReducer.Apply(state, Fingerprinted(Envelope(provider, "PreToolUse", "operation-two", at.AddSeconds(6)).Observation));
+        Assert.Single(state.Sessions[provider + ":fixture"].Waits);
+
+        var next = Ordered(Envelope(provider, "PreToolUse", "next-operation", at.AddSeconds(7)).Observation);
+        Assert.Equal("next-operation", next.OperationId);
+        Assert.True(next.At > wait.Since);
+        SessionReducer.Apply(state, next);
+        var afterUnrelatedStart = state.Sessions[provider + ":fixture"];
+        Assert.Equal(["operation-one", "operation-two"], Assert.Single(afterUnrelatedStart.Waits).Candidates!);
+        if (ingressOrderAvailable)
+        {
+            Assert.Contains(afterUnrelatedStart.CausalEvents, observation => observation.Id == next.Id);
+        }
+
+        SessionReducer.Apply(state, Fingerprinted(Envelope(provider, "PostToolUse", "operation-one", at.AddSeconds(8)).Observation));
+        Assert.Equal(["operation-two"], Assert.Single(state.Sessions[provider + ":fixture"].Waits).Candidates!);
+        SessionReducer.Apply(state, Fingerprinted(Envelope(provider, "PostToolUse", "operation-two", at.AddSeconds(9)).Observation));
+        Assert.Empty(state.Sessions[provider + ":fixture"].Waits);
+    }
+
+    [Theory]
+    [InlineData("claude", true)]
+    [InlineData("claude", false)]
+    [InlineData("codex", true)]
+    [InlineData("codex", false)]
+    public void UnrelatedSubagentAndForegroundStartsDoNotResolveApprovalWaits(string provider, bool ingressOrderAvailable)
+    {
+        var at = DateTimeOffset.UtcNow.AddMinutes(-2);
+        Observation Ordered(Observation observation) => ingressOrderAvailable ? observation : observation with { IngressAt = null };
+        Observation Fingerprinted(Observation observation) => Ordered(observation with { OperationFingerprint = "same-command" });
+
+        foreach (var candidateWait in new[] { false, true })
+        {
+            var state = new AppState();
+            SessionReducer.Apply(state, Ordered(Envelope(provider, "SessionStart", at: at).Observation));
+            SessionReducer.Apply(state, Ordered(Envelope(provider, "UserPromptSubmit", at: at.AddSeconds(1)).Observation));
+            if (candidateWait)
+            {
+                SessionReducer.Apply(state, Fingerprinted(Envelope(provider, "PreToolUse", "candidate-one", at.AddSeconds(2)).Observation));
+                SessionReducer.Apply(state, Fingerprinted(Envelope(provider, "PreToolUse", "candidate-two", at.AddSeconds(3)).Observation));
+                SessionReducer.Apply(state, Fingerprinted(Envelope(provider, "PermissionRequest", at: at.AddSeconds(4)).Observation));
+            }
+            else
+            {
+                SessionReducer.Apply(state, Ordered(Envelope(provider, "PermissionRequest", "foreground-operation", at.AddSeconds(4)).Observation));
+            }
+
+            var wait = Assert.Single(state.Sessions[provider + ":fixture"].Waits);
+            var subagent = Envelope(provider, "PreToolUse", "unrelated-subagent-operation", at: at.AddSeconds(5), agent: "subagent").Observation;
+            Assert.False(subagent.IsMainThread);
+            SessionReducer.Apply(state, candidateWait ? Fingerprinted(subagent) : Ordered(subagent));
+            var afterSubagentStart = Assert.Single(state.Sessions[provider + ":fixture"].Waits);
+            Assert.Equal(AttentionReason.Permission, afterSubagentStart.Reason);
+            Assert.Equal(wait.OperationId, afterSubagentStart.OperationId);
+            Assert.Equal(wait.Candidates, afterSubagentStart.Candidates);
+
+            var foreground = candidateWait
+                ? Fingerprinted(Envelope(provider, "PreToolUse", "resumed-foreground-operation", at.AddSeconds(6)).Observation)
+                : Ordered(Envelope(provider, "PreToolUse", "resumed-foreground-operation", at.AddSeconds(6)).Observation);
+            SessionReducer.Apply(state, foreground);
+            var afterForegroundStart = Assert.Single(state.Sessions[provider + ":fixture"].Waits);
+            Assert.Equal(wait.OperationId, afterForegroundStart.OperationId);
+            Assert.Equal(wait.Candidates, afterForegroundStart.Candidates);
+
+            if (candidateWait)
+            {
+                SessionReducer.Apply(state, Fingerprinted(Envelope(provider, "PostToolUse", "candidate-one", at.AddSeconds(7)).Observation));
+                Assert.Equal(["candidate-two"], Assert.Single(state.Sessions[provider + ":fixture"].Waits).Candidates!);
+                SessionReducer.Apply(state, Fingerprinted(Envelope(provider, "PostToolUse", "candidate-two", at.AddSeconds(8)).Observation));
+            }
+            else
+            {
+                SessionReducer.Apply(state, Ordered(Envelope(provider, "PostToolUse", "foreground-operation", at.AddSeconds(7)).Observation));
+            }
+            Assert.Empty(state.Sessions[provider + ":fixture"].Waits);
+        }
+    }
+
     [Fact]
     public void CustomMainAgentRemainsMainAndSubagentEvidenceIsExcluded()
     {

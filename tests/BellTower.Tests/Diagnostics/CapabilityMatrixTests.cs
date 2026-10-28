@@ -95,4 +95,15 @@ public sealed class CapabilityMatrixTests
         Assert.Contains("CLAUDE_CODE_DISABLE_PERMISSION_PROMPT_NOTIFY_HOOKS", row.Claude.Detail);
         Assert.Contains("documents about 6 s", row.Claude.Detail);
     }
+
+    [Fact]
+    public void HookEvidenceScopesCodexCmdFallbackAndLeavesExternalBashUnverified()
+    {
+        var row = CapabilityMatrix.Rows.Single(item => item.Surface == "Hook capture and lifecycle events");
+        Assert.Equal(CapabilityMatrix.Supported, row.Codex.Status);
+        Assert.Contains("both PowerShell directories denied in process-local MXC", row.Codex.Detail);
+        Assert.Contains("HookShell matched its cmd.exe ancestor", row.Codex.Detail);
+        Assert.Contains("no Bash selection branch", row.Codex.Detail);
+        Assert.Contains("External-host Bash and other versions/path-priority combinations remain unverified", row.Codex.Detail);
+    }
 }

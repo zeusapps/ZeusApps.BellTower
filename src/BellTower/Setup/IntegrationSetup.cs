@@ -36,16 +36,29 @@ public sealed class IntegrationSetup(DataPaths paths, string executable, string?
         {
             CodexFooters = new(previous.CodexFooters),
             Handlers = new(previous.Handlers),
+            SelectedCodexHookShell = previous.SelectedCodexHookShell,
             AdditionalData = previous.AdditionalData
         };
-        var ingress = remove || removeProject ? null : IngressProvision.Plan(executable, paths);
-        var editor = new ProviderSettingsEditor(new HookCommandBuilder(executable, paths, ingress?.Target));
+        var ingress = remove || removeProject ? null : IngressProvision.Plan(executable, paths, selected);
+        if (ingress?.CodexShell is { } selectedCodexShell)
+        {
+            ownership = ownership with { SelectedCodexHookShell = selectedCodexShell.ToString() };
+        }
+        else if (remove && !removeProject && selected.Contains("codex", StringComparer.Ordinal))
+        {
+            ownership = ownership with { SelectedCodexHookShell = null };
+        }
+        var editor = new ProviderSettingsEditor(new HookCommandBuilder(executable, paths, ingress?.Target, ingress?.CodexShell));
         var changes = new List<FileChange>();
         var actions = new List<SetupAction>();
         var notes = new List<string>();
         if (ingress is not null)
         {
             notes.Add("Provision verified immutable ingress: " + ingress.Target);
+            if (ingress.CodexShell is { } codexShell)
+            {
+                notes.Add("Codex hook shell selected by isolated native probe: " + codexShell + ". Apply re-verifies this exact shell and target before writing settings.");
+            }
         }
         foreach (var provider in selected)
         {

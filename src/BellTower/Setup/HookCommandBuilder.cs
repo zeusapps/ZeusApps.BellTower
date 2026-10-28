@@ -3,7 +3,14 @@ using BellTower.IO;
 
 namespace BellTower.Setup;
 
-public sealed class HookCommandBuilder(string executable, DataPaths paths, string? ingress = null)
+public enum CodexHookShell
+{
+    PowerShell,
+    Cmd,
+    Bash
+}
+
+public sealed class HookCommandBuilder(string executable, DataPaths paths, string? ingress = null, CodexHookShell? codexShell = null)
 {
     public bool Fast => ingress is not null;
 
@@ -13,7 +20,9 @@ public sealed class HookCommandBuilder(string executable, DataPaths paths, strin
         {
             return provider == "claude"
                 ? BashLiteral(ingress.Replace('\\', '/')) + " --provider claude --data-dir " + BashLiteral(paths.Root.Replace('\\', '/'))
-                : CmdLiteral(ingress) + " --provider codex --data-dir " + CmdLiteral(paths.Root);
+                : OperatingSystem.IsWindows()
+                    ? BuildWindowsCodex(ingress, codexShell ?? CodexHookShell.PowerShell, paths.Root)
+                    : BashLiteral(ingress) + " --provider codex --data-dir " + BashLiteral(paths.Root);
         }
         var script = "$OutputEncoding = [System.Text.UTF8Encoding]::new($false); " +
             "[Console]::InputEncoding = $OutputEncoding; $inputText = [Console]::In.ReadToEnd(); $inputText | & " +
@@ -24,13 +33,15 @@ public sealed class HookCommandBuilder(string executable, DataPaths paths, strin
 
     private static string Literal(string value) => "'" + value.Replace("'", "''") + "'";
     private static string BashLiteral(string value) => "'" + value.Replace("'", "'\"'\"'") + "'";
-    private static string CmdLiteral(string value)
+    private static string PowerShellLiteral(string value) => "'" + value.Replace("'", "''") + "'";
+
+    private static string BuildWindowsCodex(string ingress, CodexHookShell shell, string dataRoot) => shell switch
     {
-        if (value.Any(c => c is '"' or '%' or '\r' or '\n'))
-        {
-            throw new ArgumentException("The Codex Windows hook path contains unsupported command-shell expansion characters.");
-        }
-        var trailing = value.Length - value.TrimEnd('\\').Length;
-        return "\"" + value + new string('\\', trailing) + "\"";
-    }
+        CodexHookShell.PowerShell => "& " + PowerShellLiteral(ingress) + " --provider codex --data-dir " + PowerShellLiteral(dataRoot),
+        CodexHookShell.Cmd => CmdLiteral(ingress) + " --provider codex --data-dir " + CmdLiteral(dataRoot),
+        CodexHookShell.Bash => BashLiteral(ingress.Replace('\\', '/')) + " --provider codex --data-dir " + BashLiteral(dataRoot.Replace('\\', '/')),
+        _ => throw new ArgumentOutOfRangeException(nameof(shell))
+    };
+
+    private static string CmdLiteral(string value) => "\"" + value.Replace("%", "\"^%\"", StringComparison.Ordinal) + "\"";
 }
