@@ -6,6 +6,7 @@
 - Session identity: codex-microphone-20261028
 - Since (UTC): 2026-10-28T15:20:00Z
 - Previous owner: none
+- Status: finished; accepted implementation committed locally. No active specialist work remains.
 
 ## Assignments and reservations
 
@@ -292,7 +293,7 @@
 - Findings: 11 canonical findings verified, three duplicates linked; zero unresolved blocking findings or unapproved deferrals. No optional suggestions or follow-ups recorded.
 - Hygiene: QA-004 passed the required change-root/documentation scan. The orchestrator repeated the scan over all30 scoped committable files after task/ledger edits; no sensitive content was found. One broad assignment-pattern match was checked as the existing local COM voice-token variable, with a precise expression-only classification rather than a credential exception.
 - Evidence gaps / provider restrictions: shared best-effort capture-session observation is the user's accepted scope. Exclusive-mode capture may be missed; RDP/probe failures yield Unknown. No provider exception claimed. Physical microphone activity, sound, RDP and installed-build/live provider trials were not performed or claimed passed; acceptance uses silent fixtures, primary API contracts and prior read-only native metadata observations as specified.
-- Commit: accepted implementation ready for scoped local commit on suppress-voice-during-microphone-use; SHA will be recorded after commit. No push, archive or installation authorized/performed.
+- Commit: implementation and change artifacts committed as `5dd94f908350376dbd516164b29f6872218ced18` on `suppress-voice-during-microphone-use`. Its implementation bytes match accepted review target38fed194f59c /a12d62f18a64; only orchestrator tasks/ledger changed after reviews. The completion record is committed separately. No push, archive or installation performed; unrelated untracked work preserved.
 - OpenSpec task reconciliation:11/11 complete. The user expressly authorized DEV-004 past the normal two-cycle limit; its corrected target received both required independent reviews.
 
 ### Verification dimensions
