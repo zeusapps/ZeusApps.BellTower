@@ -6,7 +6,7 @@ Both clients share [attachment health and bounded terminal refresh](attachment-h
 
 New versioned packages include a dedicated native ingress for both providers. Setup provisions verified immutable bytes under the selected data directory and previews direct hooks. Regular hooks use async capture; SessionEnd uses fast synchronous capture. Restart an older monitoring tray with the selected version before enabling capture-v1. Agent sessions can remain open.
 
-Before writing provider settings, setup runs an isolated native hook probe with a loopback fake model endpoint. Claude uses its configured Git Bash (`CLAUDE_CODE_GIT_BASH_PATH`) or the standard Git for Windows Bash. Codex 0.164.0 inherits the shell program selected for its turn; setup records and displays only a command form that produces a durable capture. The generated Codex PowerShell form delivered through PowerShell 7 in two tested environments. Native cmd fallback is also verified when both PowerShell directories are denied in process-local MXC with `PATH` limited to System32; the capture identifies the actual `cmd.exe` hook parent ([evidence](../openspec/changes/fix-codex-hook-command-shell/evidence/native-investigation-009.md)). Pinned source shows the local Windows 0.164.0 resolver selects PowerShell or cmd and has no Bash selection branch; external-host Bash and other versions/path-priority combinations remain unverified ([source review](../openspec/changes/fix-codex-hook-command-shell/evidence/analysis-008-source-checks.md)). The tested command-array form was rejected by Codex 0.164.0's config parser. Apply rechecks the selected form against the exact retained helper path before writing settings; a failure or shell drift leaves provider settings unchanged. Doctor repeats the isolated native check and reports whether the recorded shell still matches.
+Before writing provider settings, setup runs an isolated native hook probe with a loopback fake model endpoint. Claude uses its configured Git Bash (`CLAUDE_CODE_GIT_BASH_PATH`) or the standard Git for Windows Bash. Codex 0.164.0 inherits the shell program selected for its turn; setup records and displays only a command form that produces a durable capture. The generated Codex PowerShell form delivered through PowerShell 7 in two tested environments. Native cmd fallback is also verified when both PowerShell directories are denied in process-local MXC with `PATH` limited to System32; the capture identifies the actual `cmd.exe` hook parent ([evidence](../openspec/changes/archive/2026-10-28-fix-codex-hook-command-shell/evidence/native-investigation-009.md)). Pinned source shows the local Windows 0.164.0 resolver selects PowerShell or cmd and has no Bash selection branch; external-host Bash and other versions/path-priority combinations remain unverified ([source review](../openspec/changes/archive/2026-10-28-fix-codex-hook-command-shell/evidence/analysis-008-source-checks.md)). The tested command-array form was rejected by Codex 0.164.0's config parser. Apply rechecks the selected form against the exact retained helper path before writing settings; a failure or shell drift leaves provider settings unchanged. Doctor repeats the isolated native check and reports whether the recorded shell still matches.
 
 Ordinary setup preserves edits to owned handlers, including `timeout: 3` / `async: true`. Preview with `setup --migrate-edited-hooks`, then add `--apply` when ready to replace edited entries with backups. Unrelated hooks remain, and repeated migration does not duplicate handlers.
 
@@ -26,8 +26,10 @@ Open a new terminal tab and select **Claude** or **Codex**. The profiles invoke 
 
 Generic Windows Terminal profiles explicitly start in the user home directory, avoiding the shell's System32 default. Add project profiles with one command:
 
+Replace `<project-directory>` with the absolute path to the checkout you want to register.
+
 ```powershell
-.\bell-tower.exe setup --desktop --project 'D:\Code\ZeusApps.BellTower' --apply
+.\bell-tower.exe setup --desktop --project '<project-directory>' --apply
 ```
 
 This adds **Claude (ZeusApps.BellTower)** and **Codex (ZeusApps.BellTower)** to both detected terminal hosts. The functions receive `-Directory` and the agent starts in that project; Windows Terminal also stores the explicit starting directory. Repeat with another path to add another project. Existing registrations persist across setup runs. Projects must have distinct folder names. `setup --project PATH --remove --apply` removes only the project's unchanged owned profiles and leaves provider hooks and generic profiles installed. Full `setup --remove --apply` removes all unchanged owned profiles. No files or managed instructions are written into the project itself.
@@ -39,7 +41,7 @@ Functions can also be called from a shell:
 ```powershell
 Start-ClaudeCode -Name 'session attention' -Change 'build-standalone-session-attention'
 Start-Codex -Name 'codex integration' -Silent
-Start-Codex -Directory 'D:\Code\ZeusApps.BellTower' -Name 'tab navigation'
+Start-Codex -Directory '<project-directory>' -Name 'tab navigation'
 # Optional native agent arguments:
 Start-Codex -AgentArguments @('--sandbox', 'read-only')
 ```

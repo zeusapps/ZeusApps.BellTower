@@ -5,14 +5,21 @@ Orchestrator-owned ledger.
 ## Current orchestrator
 
 - Client / version: Codex host version unavailable; installed Codex CLI 0.164.0
-- Session identity: codex-hook-shell-20261027
-- Since (UTC): 2026-10-27T08:25:53Z
-- Previous owner: none (no earlier ledger)
+- Session identity: codex-hook-shell-archive-20261028
+- Since (UTC): 2026-10-28T14:45:00Z
+- Previous owner: codex-hook-shell-20261027 (implementation complete and committed)
+- State: finished; archive and documentation reviews accepted
 
 ## Assignments and reservations
 
 | Assignment | Role / owner | Client / model | Model override rationale | Task IDs / target | Report / evidence paths | Reserved new finding IDs | State |
 | --- | --- | --- | --- | --- | --- | --- | --- |
+| Archive documentation links 013 | developer | Codex / gpt-6-luna | none: role default | archive follow-up to task 5.1; baseline 068606a; clean four-document target | docs/compatibility.md, docs/follow-ups.md, docs/hook-ingress.md, docs/installation.md | none | returned; four-file identity ea46aebdd900, links and whitespace passed |
+| Archive QA 013 | qa | Codex / gpt-6-luna | none: role default | light archive review; baseline 068606a; four documentation links and two synchronized main specs | reports/qa-013.md | QA-600 through QA-649 | returned; archive checks passed, QA-600 hygiene finding requires correction |
+| Archive hygiene correction 014 | developer | Codex / gpt-6-luna | none: role default | QA-600, replace two pre-existing concrete checkout paths with generic placeholders | docs/installation.md | none | returned; placeholder examples, whitespace passed; awaiting recheck |
+| Archive QA 014 | qa | Codex / gpt-6-luna | none: role default | QA-600 plus archive regression; baseline 068606a; six-file identity ccac8de85ad5 | reports/qa-014.md | QA-650 through QA-699 | returned; QA-600, archive regression, strict specs and content hygiene passed |
+| Archive analysis 013 | code-analyzer | Codex / gpt-6.1-sol | none: role default, high effort | QA-600 plus archive regression; same six-file identity as QA 014 | reports/analysis-013.md | ANALYSIS-600 through ANALYSIS-649 | returned; QA-600 and archive regression passed, no new findings |
+| Archive analysis 012 | code-analyzer | Codex / gpt-6.1-sol | none: role default, high effort | same archive target as QA 013 | reports/analysis-012.md | ANALYSIS-550 through ANALYSIS-599 | returned; links, spec merge, historical continuity passed; no findings |
 | Developer 001 | developer | Codex / gpt-6-luna | none: role default | 1.1-5.2; baseline aadbfb3; initial identity files=0 diff=e3b0c44298fc untracked=0/e3b0c44298fc | ignored artifacts/codex-hook-shell/; inline partial handoff | none | interrupted; edits preserved |
 | Developer 002 | developer | Codex / gpt-6-luna | none: role default | 1.1-5.2; handoff implementation files=16 diff=0d0d08a73d7c untracked=3/eaa17b92e513 | evidence/implementation-001.md; ignored artifacts/codex-hook-shell/ | none | returned partial |
 | QA 001 | qa | Codex / gpt-6-luna | none: role default | 1.1-5.2; baseline aadbfb3; files=16 diff=0d0d08a73d7c untracked=3/eaa17b92e513 | reports/qa-001.md; evidence/qa-001-* | QA-001 through QA-049 | returned; metadata corrections noted below |
@@ -78,6 +85,7 @@ Orchestrator-owned ledger.
 | ORCH-001 | completion-docs-010/011/012, [qa-012](qa-012.md), [analysis-011](analysis-011.md) | task 5.1 documentation coherence | warning | corrected and independently verified | verified | orchestrator | final one-sentence correction links completed benchmark reviews while preserving synthetic-versus-native/user limits; numeric values unchanged |
 | QA-500 | [qa-011](qa-011.md) | task 5.1 documentation coherence | warning | covered by ORCH-001 | duplicate | canonical owner | same stale benchmark-review sentence; default 1005/1005 and native cmd audit otherwise passed |
 | ORCH-002 | final staged whitespace inspection | historical QA evidence formatting | suggestion | nonblocking; preserve immutable evidence bytes | deferred | orchestrator | five QA evidence records have an extra terminal blank line; no source whitespace defect; future records should use one terminal newline |
+| QA-600 | [qa-013](qa-013.md), [qa-014](qa-014.md), [analysis-013](analysis-013.md) | task 5.1 archive hygiene | critical | corrected and independently verified; no remaining block | verified | orchestrator | both placeholder examples and archive regression pass on six-file target ccac8de85ad5 |
 
 H-1 and H-2 remain the originating observations; reviewer IDs above track current implementation findings.
 
@@ -181,3 +189,7 @@ H-1 and H-2 remain the originating observations; reviewer IDs above track curren
 - Implementation commit: 3a757de3c50e3683a6e6da0f476ba20e126705d5 on confirm-claude-human-permission-waits. This completion record is committed separately so it can cite the immutable implementation commit.
 - OpenSpec task reconciliation: 12/12, with current evidence notes in tasks.md. Development package 0.1.9018 remains installed; user-operated live checks and the final native fallback verification passed. Benchmark calculation revision is complete. No archive, push, or publication.
 - Final staged inspection found only terminal-blank-line formatting warnings in five immutable QA evidence records (QA 008 through QA 012). Preserve their bytes and recorded hashes rather than editing historical evidence for formatting. This optional formatting observation is ORCH-002, nonblocking and deferred to future record hygiene; all other staged whitespace categories are checked. No Git configuration or hooks are changed to commit.
+- 2026-10-28 archive authorization: user requested archival, commit, local merge to main and local branch deletion, followed by switching to the microphone-aware change. All tasks and required reviews were already complete. Synced the three modified requirements into session-tracking and standalone-setup, preserving other requirements and scenarios; exact block comparison and strict validation of all seven main specs passed. Archive destination is `openspec/changes/archive/2026-10-28-fix-codex-hook-command-shell`. Documentation evidence links require a mechanical destination update and fresh light reviews; no runtime changes or new installation.
+- 2026-10-28 archive QA 013 passed spec composition, documentation links, historical continuity and whitespace, but reported QA-600: two pre-existing concrete checkout paths in installation examples violate committable content hygiene. Assigned a minimal developer placeholder correction. No personal path values are repeated in this ledger. Original review target remains frozen until analysis 012 returns; new reviews follow the correction.
+- 2026-10-28 Analysis 012 independently passed all archive checks, including 61 preserved historical Git blobs, 17 evidence links and all prior scenarios. Developer subsequently replaced both concrete checkout examples with project-directory placeholders. Stable six-file identity is now `head=068606a baseline=068606a files=6 diff=ccac8de85ad5 untracked=0/e3b0c44298fc`. Reserve QA 014 and Analysis 013 for QA-600 plus regression; no runtime change or product retesting needed.
+- 2026-10-28 archive completion: accepted [QA 014](qa-014.md) and [Analysis 013](analysis-013.md), both with matching before/after identity `ccac8de85ad5`. Orchestrator marks QA-600 verified. All 17 documentation evidence links resolve, the three modified requirements match their main specs, 22 unrelated requirements and all prior scenarios remain, and 61 historical files retain their Git content. QA's current committable-content hygiene check and strict spec validation passed. Archive and spec synchronization are complete, with all 12 implementation tasks still satisfied and optional historical formatting follow-up ORCH-002 retained. This archive commit includes the current assessment; user-authorized local merge and branch cleanup follow it. No runtime change, push, publication or installation accompanies archival.
