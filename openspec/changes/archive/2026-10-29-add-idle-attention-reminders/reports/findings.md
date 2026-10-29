@@ -12,6 +12,8 @@
 
 | Assignment | Role / owner | Client / model | Model override rationale | Task IDs / target | Report / evidence paths | Reserved new finding IDs | State |
 | --- | --- | --- | --- | --- | --- | --- | --- |
+| archive-qa-008 | QA | Codex / gpt-6-luna | none: role default | Archive/spec sync only, baseline36406dd | reports/qa-008.md; evidence/qa-008.md | QA-141–QA-160 | returned |
+| archive-analysis-009 | code-analyzer | Codex / gpt-6.1-sol | none: role default | Archive/spec sync only, baseline36406dd | reports/analysis-009.md; evidence/analysis-009.md | ANALYSIS-161–ANALYSIS-180 | returned |
 | implementation-001 | developer | Codex / gpt-6-luna | none: role default | Tasks 1.1–4.2; baseline 47dfca9 | evidence/implementation-001.md | none | returned |
 | qa-001 | QA | Codex / gpt-6-luna | none: role default | Tasks 1.1–4.2; frozen target-001, diff dd04597165e1 / untracked 471dd618c9a9 | reports/qa-001.md; evidence/qa-001.md | QA-001–QA-020 | returned |
 | analysis-001 | code-analyzer | Codex / gpt-6.1-sol | none: role default | Tasks 1.1–4.2; frozen target-001, diff dd04597165e1 / untracked 471dd618c9a9 | reports/analysis-001.md; evidence/analysis-001.md | ANALYSIS-001–ANALYSIS-020 | returned |
@@ -57,6 +59,8 @@
 | ANALYSIS-101 | [analysis-006](analysis-006.md) | 2.4, 2.5, 3.3 | warning | yes: owned fixture cleanup must not depend on held worker | verified | orchestrator | qa-006 / analysis-007: driver-owned release and error propagation |
 
 ## Decisions and activity
+
+- 2026-10-29: User authorized dev installation, archive, local commit and merge to main. Synced four ADDED requirements into the new attention-reminders main capability; all nine main specs strict-pass. Archived all original files with identical hashes. Updated this orchestrator-owned external documentation link for the extra archive directory depth; historical report bytes remain unchanged. Installation will be packaged after local merge so the build records final main HEAD.
 
 - Final staging exposed an extra blank line at `src/BellTower/Core/ReminderPolicy.cs` EOF through `git diff --cached --check`; earlier unstaged checks did not include that then-untracked source file. ORCH-001 is a final formatting gate, not a behavior defect. Preserve a preimage under ignored artifacts, delegate deletion of only the extra EOF line, and obtain light QA/analysis byte-normalized rechecks. Carry current 1,089/1,089/runtime evidence forward explicitly; no broader rerun is warranted for an EOF-only correction.
 
@@ -300,8 +304,18 @@
 - Verification: Release build zero warnings/errors; QA full default suite 1,089 passed, zero failed/skipped; scoped format and final staged whitespace/hygiene pass; analyzer14checks pass. Strict OpenSpec validation passes. EOF-only reviews carry runtime evidence forward without a broad rerun.
 - Findings: all eleven canonical findings verified, five duplicates retained, zero unresolved blockers or unapproved deferrals. Historical failed runs remain intact; their causes remain unclassified.
 - Nonblocking follow-ups: none assigned in this change.
-- Exported successor contract: [attention-reminders documentation](../../../../docs/attention-reminders.md#escalation-record-for-the-webhook-consumer), protocol1, `StateStore.Escalations(currentSessions, now)`. Earned candidates retain opaque identity; current provider evidence is required; mute/audio outcome do not gate; no remote sends implemented here.
+- Exported successor contract: [attention-reminders documentation](../../../../../docs/attention-reminders.md#escalation-record-for-the-webhook-consumer), protocol1, `StateStore.Escalations(currentSessions, now)`. Earned candidates retain opaque identity; current provider evidence is required; mute/audio outcome do not gate; no remote sends implemented here.
 - Native/live boundary: native Windows/RDP, installed tray, authenticated provider sessions and physical audio/input were not exercised. These remain distinct integrated release acceptance work; no restriction or live-pass claim is made. Required change fixtures are complete; no user data/settings/session or installed build changed.
 - Staging clarification: EOF correction was staged before QA-007/Analysis-008. Stale unstaged wording in QA-007 is superseded by its passed cached-whitespace check, exact target-007 and Analysis-008 staging observation; history is preserved.
 - Commit: implementation and artifacts committed as `c371319ada7f9c3be224866bced8858168d22f6d` on `add-idle-attention-reminders`. Local completion-ledger follow-up records this SHA. No push, installation, archive or main-branch merge performed.
 - OpenSpec task reconciliation: 13/13 verified. Unrelated pre-existing untracked plans and handoffs remain excluded.
+
+## Archive assessment
+
+- User authorized archive, local commit/merge and dev installation on 2026-10-29.
+- Four ADDED requirements and ten scenarios synced into the new `attention-reminders` main spec; purpose/body retained, no other main spec changed. All nine main specs pass strict validation.
+- Archived to `openspec/changes/archive/2026-10-29-add-idle-attention-reminders`. All 48 original files preserved exactly at move; only the expected orchestrator ledger update followed, plus new review artifacts. Original reports/evidence remain byte-identical.
+- [QA-008](qa-008.md) and [Analysis-009](analysis-009.md) pass preservation, spec equality, archive links, scope, hygiene and exact before/after new-spec identity. The four-requirement spec SHA-256 is `90f05998277dd7128353cfeed08bfa2b632929d122a8c9a0bcc0b396e753736c`.
+- Feature/runtime acceptance carries forward unchanged: 13/13 tasks, 1,089/1,089 tests, current independent analysis and EOF-only final reviews. No new product change or runtime claim is introduced by archive.
+- Archive commit: pending local commit; implementation remains `c371319ada7f9c3be224866bced8858168d22f6d`.
+- Dev installation is a separate authorized operation recorded in ignored private install manifests and WorkLog. No provider settings migration, source publication or remote push is part of this archive.

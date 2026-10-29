@@ -1,0 +1,9 @@
+HEAD: 36406ddd7cccc86fd8be8d9a2cfa2d9ed07c250e
+Baseline: 36406ddd7cccc86fd8be8d9a2cfa2d9ed07c250e
+Paths: openspec/specs/attention-reminders/spec.md
+Manifest (A added, M modified, D deleted, ? untracked):
+  ? openspec/specs/attention-reminders/spec.md
+Tracked diff SHA-256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+Untracked file SHA-256:
+  90f05998277dd7128353cfeed08bfa2b632929d122a8c9a0bcc0b396e753736c  openspec/specs/attention-reminders/spec.md
+Summary: head=36406dd baseline=36406dd files=1 diff=e3b0c44298fc untracked=1/6f1f2fbcf554
