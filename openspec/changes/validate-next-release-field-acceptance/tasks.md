@@ -1,0 +1,37 @@
+# Tasks
+
+## 1. Scope and historical plan reconciliation
+
+- [ ] 1.1 Verify the eight retained predecessor task lists are implemented with actual evidence, not just planning status; create a coverage ledger for field findings 1-13, badge rules and the original VS Code activation report, recording the remote portion of finding 12 as user-cancelled on 2026-10-29 rather than passed or deferred.
+- [ ] 1.2 Reconcile shipped follow-openspec-session-titles and publish-github-with-session-safe-updates plans with current specs/source, preserve old unchecked evidence gaps and sync older deltas before newer requirements; verify composed specs enforce the shared policy while preserving safe native transports.
+- [ ] 1.3 Select one unpublished candidate version after checking tags/releases and synchronize app/extension/package/descriptor/probes; verify agreement and leave published 0.1.8 immutable.
+
+## 2. Installed field harness
+
+- [ ] 2.1 Retain the actual 0.1.8 archive as historical baseline and install it/candidate under disposable roots with isolated homes/data; verify the harness never writes production settings or data.
+- [ ] 2.2 Exercise matched five-conversation fixtures per provider plus mixed sessions sharing a main launch directory with distinct historical work associations/worktrees, role/custom/manual names and palette controls; verify independent badge/tab/chip/speech snapshots through resume and branch changes.
+- [ ] 2.3 Exercise the actual packaged Git Bash command plus ingress under representative load with at least 100 hooks; verify median below 300 ms, three-second durable completion, reported tail latency and exact accepted/delivered event counts.
+- [ ] 2.4 Inject lost/late pre hooks, shuffled/duplicate delivery, null-process startup, tray downtime and upgrade/rollback; verify stable final state, repaired/unavailable liveness and no resurrected waits or process termination.
+- [ ] 2.5 Measure stable title refresh and dead-target soak; verify no unchanged-tick writer/Git launches, bounded backoff/logs and no accumulated owned helpers.
+- [ ] 2.6 Run bridge rename-failure and owning-window background/minimized/duplicate-terminal fixtures; verify zero leaked temp files, exact destination and truthful foreground receipts.
+
+## 3. Combined attention and trust acceptance
+
+- [ ] 3.1 Verify auto-reviewed Claude calls stay silent and current human notifications alert without extra debounce, with matched Codex confirmation and safe-native-transport conformance; use silent sinks and schema-verified fixtures.
+- [ ] 3.2 Verify microphone transitions and idle reminders/caps/restart through fake device/input boundaries and silent sinks; verify acknowledgment/resolution cancellation and audio failure isolation for both providers and mixed sessions.
+- [ ] 3.3 Verify signed candidate authenticity, rejected invalid offers, managed check policy and real-baseline coexistence; use disposable signing keys for automation and independently record production signing readiness.
+- [ ] 3.4 Run formatting verification, Release build, complete .NET and Node suites, strict OpenSpec validation, scripts/update-acceptance.ps1 and the new field harness; retain reproducible commands/results and label any sandbox/desktop limitations.
+
+## 4. Targeted live evidence and candidate handoff
+
+- [ ] 4.1 Prepare targeted user-controlled Windows 11/RDP/PowerShell 5.1/VS Code/Claude checks for owning-window foreground activation, resumed identities and real human-versus-auto approvals; record versions/results separately from fixtures and preserve existing user-confirmed checks.
+- [ ] 4.2 Prepare explicit optional real microphone checks without opening devices or playing sound automatically; record required missing signing credentials/platform evidence as unmet release prerequisites until supplied. No remote endpoint provisioning or delivery test is required.
+- [ ] 4.3 Complete the ledger with implementation/test/evidence links for every required report item and distinguish failures/unobserved checks from passed evidence; verify no agreed feature is silently deferred.
+- [ ] 4.4 Prepare one verified immutable release candidate, release notes, signature/public-key instructions and publication handoff; verify final changed-file/spec review and request publication only when it is a concrete separately authorized action.
+
+
+## 5. Provider parity acceptance
+
+- [ ] 5.1 Implement and verify this feature for both Claude Code and Codex using shared policy and provider adapters; run matched provider fixtures plus a mixed-session case and retain version/mode-specific evidence.
+- [ ] 5.2 Audit setup, defaults, configuration, diagnostics and controls for equal feature availability; document any hard provider restriction with its proof, honest shared fallback and regression check, and treat missing implementation or unverified capability as incomplete work.
+- [ ] 5.3 Complete the feature/provider/mode capability matrix with matched and mixed-session evidence; verify every exception has a hard restriction, proof, fallback and regression and that absent implementation/captures remain an unmet release gate.

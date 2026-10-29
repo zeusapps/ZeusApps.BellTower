@@ -10,7 +10,7 @@ Reminders reuse the reason-specific alert tone and serialized queue. Voice reads
 
 State keeps a separate bounded `reminderReceipts` map keyed by provider-qualified session and opaque attention episode. It records the first observation time, next deadline, last eligible reminder, ordinal and opaque stable receipt ID. The receipt is atomically saved before audio enters the queue. Restart moves an already elapsed deadline into the future; missed reminders are not emitted in a catch-up burst. Disabling then enabling reminders establishes new future deadlines for active episodes.
 
-## Escalation record for the webhook consumer
+## Escalation candidate record
 
 `StateStore.Escalations(currentSessions, now)` is the candidate query. The caller supplies its current provider projection; the method also reads current persisted ownership and configuration. It returns previously earned candidates only while reminders remain enabled and the episode is currently actionable and verified-live. Reminder eligibility is earned after the configured deadline and idle threshold; a new idle-threshold interval is not required for each candidate query. Codex provisional permission waits require current runtime confirmation. Muting and audio failure do not affect candidates. Temporary loss of verification or confirmation suspends exposure but preserves the durable receipt and its stable identity; resolution, acknowledgment, ending or episode replacement removes it. Diagnostics does not have the live provider projection and reports candidates as unevaluated. The record has protocol version 1:
 
@@ -27,7 +27,7 @@ State keeps a separate bounded `reminderReceipts` map keyed by provider-qualifie
 }
 ```
 
-The record contains no prompt, command, transcript, endpoint or credential. It is published at the configured reminder ordinal even when audio is muted or playback fails. This feature performs no network requests. A future webhook consumer should attach the current permitted identity projection and use `receiptId` as its stable per-episode idempotency reference.
+The record contains no prompt, command or transcript. It is made available at the configured reminder ordinal even when audio is muted or playback fails. Reminder and escalation candidate tracking perform no network requests.
 
 ## Input observation
 
@@ -35,4 +35,4 @@ On Windows, the probe uses `GetLastInputInfo` and the current process session's 
 
 ## Verification boundary
 
-Deterministic tests use injected time and idle values, synthetic Claude/Codex waits, mixed sessions, silent audio sinks and disposable state directories. They do not generate input, open a microphone, play physical sound, or send webhooks. Doctor reports the shared settings and current idle-observation status; candidate count is unevaluated because doctor has no current provider projection. Native user acceptance remains part of the integrated release gate.
+Deterministic tests use injected time and idle values, synthetic Claude/Codex waits, mixed sessions, silent audio sinks and disposable state directories. They do not generate input, open a microphone, play physical sound or make network requests. Doctor reports the shared settings and current idle-observation status; candidate count is unevaluated because doctor has no current provider projection. Native user acceptance remains part of the integrated release gate.
