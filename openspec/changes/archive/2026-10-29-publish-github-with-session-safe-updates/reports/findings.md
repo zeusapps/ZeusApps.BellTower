@@ -6,6 +6,7 @@
 - Session identity: codex-archive-release-20261029
 - Since (UTC): 2026-10-29T14:54:56Z
 - Previous owner: none; original publication predates this ledger
+- Session status: finished; archival review and scoped commit complete
 
 ## Archive scope and eligibility
 
@@ -35,6 +36,7 @@ Both independent reviews returned no findings. Zero blocking findings; all reser
 - 2026-10-29: Developer completed the two documentation-reference corrections and a concrete-checkout-path hygiene correction. Orchestrator reconciled the related release-gate paragraph and redacted the archived tasks planning path. Verified 139 other-change files unchanged and all original task checkbox lines preserved.
 - 2026-10-29: Accepted [QA archive review 001](qa-001.md) on identical before/after target identity. Ten main specs and the target archive pass strict validation; references, full delta coverage, historical acceptance mapping and committable hygiene pass. Aggregate historical archive validation has two unrelated incomplete archives; this target is valid and no existing unchecked task was waived.
 - 2026-10-29: Accepted [analysis archive review 001](analysis-001.md) with the same before/after identity as QA. No findings; newer policy/scenario preservation, reference links, all original task lines and archival eligibility independently confirmed. No additional runtime regression run is applicable to this archive-only target.
+- 2026-10-29: Final hygiene scan passed across all 16 committable files, including both reports and this ledger. Scoped staging contained only approved paths; staged whitespace passed and the working-tree comparison confirmed the staged content matched reviewed bytes. Committed the archive/spec/reference target as 5b70fbaa013d2e15680c3af747ec8f05ec75f1d3. This post-commit entry changes only the orchestrator ledger; reviewed implementation content is unchanged.
 
 ## Completion assessment
 
@@ -43,5 +45,5 @@ Both independent reviews returned no findings. Zero blocking findings; all reser
 - Findings: zero; no fix round or scope waiver required.
 - Nonblocking follow-ups: existing live identity/provider trials and next-release acceptance remain in their own open changes.
 - Evidence gaps / provider restrictions: no new provider restriction asserted; historical fixtures do not replace future live field acceptance.
-- Commit: not yet committed; no push authorized.
+- Commit: 5b70fbaa013d2e15680c3af747ec8f05ec75f1d3 on archive-completed-release-change. No push, merge, release publication or installation performed.
 - OpenSpec task reconciliation: original 27/27 checkboxes preserved; no other change's tasks completed by this archive.
