@@ -317,5 +317,5 @@
 - Archived to `openspec/changes/archive/2026-10-29-add-idle-attention-reminders`. All 48 original files preserved exactly at move; only the expected orchestrator ledger update followed, plus new review artifacts. Original reports/evidence remain byte-identical.
 - [QA-008](qa-008.md) and [Analysis-009](analysis-009.md) pass preservation, spec equality, archive links, scope, hygiene and exact before/after new-spec identity. The four-requirement spec SHA-256 is `90f05998277dd7128353cfeed08bfa2b632929d122a8c9a0bcc0b396e753736c`.
 - Feature/runtime acceptance carries forward unchanged: 13/13 tasks, 1,089/1,089 tests, current independent analysis and EOF-only final reviews. No new product change or runtime claim is introduced by archive.
-- Archive commit: pending local commit; implementation remains `c371319ada7f9c3be224866bced8858168d22f6d`.
+- Archive commit: `f35a3b143335e87d15f676547493699b4642ad6a`; local main merge is authorized and will fast-forward this committed history. Implementation remains `c371319ada7f9c3be224866bced8858168d22f6d`.
 - Dev installation is a separate authorized operation recorded in ignored private install manifests and WorkLog. No provider settings migration, source publication or remote push is part of this archive.
