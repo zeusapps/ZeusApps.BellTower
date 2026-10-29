@@ -3,7 +3,7 @@
 ## MODIFIED Requirements
 
 ### Requirement: Lifecycle reconciliation and restart
-Bell Tower SHALL reconcile persisted observations with the liveness of registered attachments at startup and during operation. A lack of recent activity alone SHALL NOT prove that a session ended. Confirmed ended attachments SHALL leave the running overview and attention strip. After a compatible application update, Bell Tower SHALL restore live sessions from the same data directory, consume events queued while the tray was stopped, and reconnect to verified existing authenticated runtime endpoints without creating replacement agent sessions. Reconciliation SHALL preserve session identity, attachment ownership, palette, attention episodes, wait timestamps, acknowledgment and viewed state, and the existing silent-restoration/grace rules. Incompatible state or runtime contracts SHALL prevent activation rather than corrupting records or marking live sessions ended.
+Bell Tower SHALL reconcile persisted observations with the liveness of registered attachments at startup and during operation. A lack of recent activity alone SHALL NOT prove that a session ended. Confirmed ended attachments SHALL leave the running overview and attention strip. Incomplete managed provider attachments SHALL become unavailable after a configurable evidence grace, and only fresh verified evidence SHALL restore their live status. Unowned modes for either provider SHALL receive the same evidence-based capability classification and honest unavailable status. An alive idle process SHALL never expire solely because it emits no hooks. After a compatible application update, Bell Tower SHALL restore live sessions from the same data directory, consume events queued while the tray was stopped, and reconnect to verified existing authenticated runtime endpoints without creating replacement agent sessions. Reconciliation SHALL preserve session identity, attachment ownership, palette, attention episodes, wait timestamps, acknowledgment and viewed state, and the existing silent-restoration/grace rules. Incompatible state or runtime contracts SHALL prevent activation rather than corrupting records or marking live sessions ended.
 
 #### Scenario: A waiting session is quiet
 - **WHEN** a registered process remains alive without new events while waiting for input
@@ -16,6 +16,14 @@ Bell Tower SHALL reconcile persisted observations with the liveness of registere
 #### Scenario: Bell Tower restarts
 - **WHEN** persisted state refers to live and ended attachments
 - **THEN** Bell Tower restores live sessions and excludes confirmed ended attachments
+
+#### Scenario: Restart with stale unknown attachment
+- **WHEN** a persisted incomplete managed provider attachment is already beyond its grace
+- **THEN** restart retains unavailable health instead of displaying working
+
+#### Scenario: Quiet verified agent
+- **WHEN** a verified agent remains alive longer than the evidence grace without emitting hooks
+- **THEN** its session and unresolved wait remain live
 
 #### Scenario: Events arrive during a version change
 - **WHEN** hooks publish activity or attention events while the tray is stopped for a compatible update

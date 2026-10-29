@@ -85,7 +85,7 @@ An explicitly initiated update SHALL verify the official release source, package
 - **THEN** the operation reports busy or already superseded without downgrading selection or overwriting another update's outcome
 
 ### Requirement: Session-preserving update completion
-A compatible update SHALL require no closure or restart of Claude, Codex, VS Code, Windows Terminal, or active dedicated runtime managers. It SHALL coordinate a bounded tray shutdown/restart, retain hook event ingestion through the stable entry point during the monitoring gap, and restore monitoring using the same data directory. Installation selection and successful monitoring restoration SHALL be reported separately. If no tray was running before a CLI update, successful activation SHALL NOT start one implicitly.
+A compatible update SHALL require no closure or restart of Claude, Codex, VS Code, Windows Terminal, or active dedicated runtime managers. It SHALL coordinate a bounded tray shutdown/restart, retain durable hook event ingestion during the monitoring gap, and restore monitoring using the same data directory. Installation selection and successful monitoring restoration SHALL be reported separately. If no tray was running before a CLI update, successful activation SHALL NOT start one implicitly.
 
 #### Scenario: Active sessions during installation
 - **WHEN** a compatible update is explicitly installed with running Claude and managed Codex sessions

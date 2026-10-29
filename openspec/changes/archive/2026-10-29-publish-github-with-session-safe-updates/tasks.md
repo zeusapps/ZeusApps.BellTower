@@ -53,4 +53,4 @@
 
 ## Planning record
 
-The user requested the WorkLog handoff and this proposal. The handoff is delivered at `D:/Code/ZeusApps.WorkLog/docs/handoffs/2026-10-22-session-preserving-updates.md`; WorkLog implementation remains separate. Automatic discovery with explicit installation follows the discussed WorkLog behavior. GitHub destination/visibility and the next unpublished version are operational checks before publication. No implementation, production migration, repository creation, push, tag, or release was performed while authoring these artifacts.
+The user requested the WorkLog handoff and this proposal. The handoff is delivered at `../ZeusApps.WorkLog/docs/handoffs/2026-10-22-session-preserving-updates.md`; WorkLog implementation remains separate. Automatic discovery with explicit installation follows the discussed WorkLog behavior. GitHub destination/visibility and the next unpublished version are operational checks before publication. No implementation, production migration, repository creation, push, tag, or release was performed while authoring these artifacts.

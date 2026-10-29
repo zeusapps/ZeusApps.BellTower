@@ -1,6 +1,6 @@
 # Distribution validation
 
-Change: publish-github-with-session-safe-updates. Intended first versioned release: 0.1.8. Validation date: 2026-10-22.
+Change: [publish-github-with-session-safe-updates](../openspec/changes/archive/2026-10-29-publish-github-with-session-safe-updates/proposal.md), archived 2026-10-29 after all 27 tasks completed and its three delta specs were synchronized. Intended first versioned release: 0.1.8. Validation date: 2026-10-22.
 
 ## Local implementation evidence
 
@@ -29,4 +29,4 @@ d23702de5d05c1eed5a4575d0d11b0d45267ec3aa01360b0d582ad19c6a36b67
 
 Every payload file matched its manifest hash. The extracted root launcher reported 0.1.8; the read-only distribution probe reported supported layout/bootstrap/state contracts. An explicit update --check against isolated data successfully read the public GitHub feed and reported running/selected 0.1.8 with no newer compatible release. Offline update --status reported no prior outcome as expected for the new installation. The public latest-release endpoint returned stable v0.1.8 with exactly the ZIP, checksum, and release-metadata assets. Evidence is retained under artifacts/published-verification-0c9869dd77964f14a7a8b2a2f651d499.
 
-The user's active legacy installation was not upgraded or replaced. Its one-time migration remains a separate explicit operational action documented in releases.md. Existing session-title/provider live-acceptance gaps remain separate.
+The user's active legacy installation was not upgraded or replaced. Its one-time migration remains a separate explicit operational action documented in releases.md. Existing session-title/provider live-acceptance gaps remain separate; the fixture and publication evidence here does not claim those native acceptance trials passed.

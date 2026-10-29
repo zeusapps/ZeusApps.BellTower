@@ -18,7 +18,7 @@ The user requires **the retained items in both field reports, the original VS Co
 
 The baseline is the single published GitHub release v0.1.8. The source at planning time is commit 74e1f41 (documentation after the v0.1.8 tag), with no implementation changes made during this planning work. The next version is not reserved here; 0.1.9 is provisional until the release step verifies it is unused. Do not publish or move the v0.1.8 tag/assets.
 
-This workspace is D:/Code/ZeusApps.BellTower. The field machine is a different Windows machine. Its C:/Code/D360 paths below are illustrative field facts, not paths to create or inspect on this machine.
+This handoff targets the Bell Tower repository. The field machine is a different Windows machine. Its C:/Code/D360 paths below are illustrative field facts, not paths to create or inspect on this machine.
 
 The original plan created ten changes with proposal.md, design.md, specs/<capability>/spec.md and tasks.md. Nine remain in this execution sequence after the scope cancellation; completed changes may now be archived. Do not interpret OpenSpec's planning-complete status as implemented or accepted.
 
@@ -88,14 +88,14 @@ The order is an implementation order. Package and ship one final release after t
 
 ## Existing active changes and spec composition
 
-Two older changes were already present:
+The remaining older session-title change is still active:
 
 - follow-openspec-session-titles: 15/17 implementation tasks recorded complete. Most Codex native-name/runtime/footer work shipped; tasks 1.1 (authenticated hook schemas) and 5.3 (full Claude/host trial) remain unverified. Its prior automatic-selection policy considers read-only status/instructions change selection; that policy is superseded for both clients by the confirmed shared rule below.
-- publish-github-with-session-safe-updates: 27/27 tasks complete and release 0.1.8 published. It introduced application-distribution, versioned payloads, safe update/rollback and current update policy. Its durable specs may still await synchronization.
+- [publish-github-with-session-safe-updates](../../openspec/changes/archive/2026-10-29-publish-github-with-session-safe-updates/proposal.md): archived 2026-10-29 after all 27 tasks completed, release 0.1.8 was independently verified, and its three delta specs were synchronized into application-distribution, session-tracking, and standalone-setup. The archived implementation and fixtures do not close the separate live field-acceptance gaps tracked by validate-next-release-field-acceptance.
 
 Do not reimplement their shipped work or silently mark old evidence gaps passed. Before composing/syncing affected new specs, reconcile the older deltas with the shipped source and recorded limitations. Sync older completed behavior first, then newer deltas in this handoff order. Preserve safe native transports/data while replacing divergent naming policies with the shared policy for both clients. Never archive an older identity delta after a new one if doing so would restore the superseded rule. Archiving is bookkeeping after deliberate reconciliation and appropriate authorization, not an automatic way to turn unchecked acceptance into success.
 
-This planning session creates new artifacts and handoff documents only; it does not edit, sync or archive those older changes.
+The publishing change's specifications are already part of the main specs. Reconcile later session-title, native-adoption, and signed-update deltas against those requirements and the shipped source before syncing them; retain the outstanding provider/live acceptance criteria in the release gate. Archival of the publishing change does not complete that gate.
 
 ## Field diagnosis and acceptance target
 

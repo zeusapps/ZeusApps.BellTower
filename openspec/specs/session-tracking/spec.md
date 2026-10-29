@@ -55,7 +55,7 @@ Bell Tower SHALL clear the applicable wait on a new user prompt or evidence that
 - **THEN** the current session does not acquire a completion wait from that event
 
 ### Requirement: Lifecycle reconciliation and restart
-Bell Tower SHALL reconcile persisted observations with the liveness of registered attachments at startup and during operation. A lack of recent activity alone SHALL NOT prove that a session ended. Confirmed ended attachments SHALL leave the running overview and attention strip. Incomplete managed provider attachments SHALL become unavailable after a configurable evidence grace, and only fresh verified evidence SHALL restore their live status. Unowned modes for either provider SHALL receive the same evidence-based capability classification and honest unavailable status. An alive idle process SHALL never expire solely because it emits no hooks.
+Bell Tower SHALL reconcile persisted observations with the liveness of registered attachments at startup and during operation. A lack of recent activity alone SHALL NOT prove that a session ended. Confirmed ended attachments SHALL leave the running overview and attention strip. Incomplete managed provider attachments SHALL become unavailable after a configurable evidence grace, and only fresh verified evidence SHALL restore their live status. Unowned modes for either provider SHALL receive the same evidence-based capability classification and honest unavailable status. An alive idle process SHALL never expire solely because it emits no hooks. After a compatible application update, Bell Tower SHALL restore live sessions from the same data directory, consume events queued while the tray was stopped, and reconnect to verified existing authenticated runtime endpoints without creating replacement agent sessions. Reconciliation SHALL preserve session identity, attachment ownership, palette, attention episodes, wait timestamps, acknowledgment and viewed state, and the existing silent-restoration/grace rules. Incompatible state or runtime contracts SHALL prevent activation rather than corrupting records or marking live sessions ended.
 
 #### Scenario: A waiting session is quiet
 - **WHEN** a registered process remains alive without new events while waiting for input
@@ -76,6 +76,18 @@ Bell Tower SHALL reconcile persisted observations with the liveness of registere
 #### Scenario: Quiet verified agent
 - **WHEN** a verified agent remains alive longer than the evidence grace without emitting hooks
 - **THEN** its session and unresolved wait remain live
+
+#### Scenario: Events arrive during a version change
+- **WHEN** hooks publish activity or attention events while the tray is stopped for a compatible update
+- **THEN** the restarted tray consumes those events idempotently, reconciles the live attachments, and preserves the resulting attention state without playing catch-up sound for already-due waits
+
+#### Scenario: Existing authenticated Codex runtime survives
+- **WHEN** the new tray finds a live managed Codex session and its compatible verified runtime record
+- **THEN** it reconnects using the existing endpoint and credential, preserves manual/native naming ownership, and resumes supported permission/name verification without restarting the runtime or agent
+
+#### Scenario: Mixed versions cannot share state safely
+- **WHEN** the candidate version cannot safely read and coexist with records written by still-running helpers
+- **THEN** activation is deferred with compatibility guidance and the current monitoring installation remains selected
 
 ### Requirement: Stage-independent command correlation
 For supported shell and patch command hooks, Bell Tower SHALL correlate command content across approval, operation-start and result observations despite approval-only descriptions or execution options. For arbitrary tools, descriptions that are actual arguments SHALL remain part of correlation. Ambiguous parallel operations SHALL NOT be resolved without matching evidence.
