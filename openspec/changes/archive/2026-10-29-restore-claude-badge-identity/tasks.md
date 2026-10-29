@@ -1,5 +1,9 @@
 # Tasks
 
+## Archive disposition (2026-10-29)
+
+The user approved archive with task 5.1 still unverified. It remains unchecked below and is carried forward as release acceptance task 6.3 in `validate-next-release-field-acceptance`. ANALYSIS-300 remains an unfinished fork parity gap under release acceptance task 6.4; it is not a proven provider restriction. Archive does not establish live acceptance or release readiness. Native title writing remains a separate research change, `sync-native-session-titles`.
+
 ## 1. Baseline reconciliation and provider fixtures
 
 - [x] 1.1 Verify reliable-ingress and lifecycle/title predecessors are implemented; read the existing follow-openspec-session-titles artifacts and record shipped Codex behavior plus its unchecked acceptance gaps.

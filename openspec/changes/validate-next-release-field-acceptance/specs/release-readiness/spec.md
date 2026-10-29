@@ -35,6 +35,11 @@ Automated acceptance SHALL use isolated data/settings/transcripts, disposable co
 - **WHEN** all automated checks pass but a required field acceptance remains unobserved
 - **THEN** the release evidence remains incomplete until that acceptance is obtained or the user explicitly revises the release requirement
 
+#### Scenario: Identity changes archived before live acceptance
+- **WHEN** the shipped session-title and badge-identity changes are archived with user-approved transfer of their unfinished checks
+- **THEN** provider hook captures, the two-session desktop trial and the five-conversation identity/worktree trial remain required and unverified in the release gate until evidence is obtained
+- **AND** the documented fork-time identity parity gap remains unfinished rather than becoming a proven restriction through archive or transfer
+
 
 ### Requirement: Provider parity for release readiness in release-readiness
 This feature SHALL be available for both Claude Code and Codex by default through shared product policy, configuration meaning and controls, with provider adapters for supported mechanisms. Any exception SHALL identify the exact feature, provider version and mode, verified hard restriction, evidence and honest fallback. Missing implementation or verification SHALL NOT count as a restriction.

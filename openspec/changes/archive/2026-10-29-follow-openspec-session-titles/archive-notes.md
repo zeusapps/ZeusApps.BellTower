@@ -1,0 +1,7 @@
+# Archive disposition: follow-openspec-session-titles
+
+The user approved this archive on 2026-10-29 together with `restore-claude-badge-identity`. All planning artifacts were complete; 15 of 17 historical tasks were checked. Tasks 1.1 and 5.3 remain unchecked and unverified, transferred to [release acceptance tasks 6.1 and 6.2](../../validate-next-release-field-acceptance/tasks.md). Archive does not establish live acceptance, release readiness or a provider restriction.
+
+The session-identity delta was synchronized first, then the newer badge identity delta. The final contract retains the dedicated authenticated Codex runtime, exact-conversation native names, user-rename pause/resume, reversible presentation setup, safe process ownership and attention preservation. Newer shared work-evidence and role-free naming rules supersede the older role-prefixed scenario; automatic checkout evidence is limited to worktrees of the launch repository unless explicitly attached. No delta was excluded.
+
+Strict main-spec validation passed for all 10 specs; 105 requirement/scenario and unrelated-block comparisons passed on the composed target before archive. Historical implementation checks remain evidence only for their recorded target/version/mode. Current independent archive reviews are reserved as [QA 001](reports/qa-001.md) and [analysis 001](reports/analysis-001.md); their findings and final disposition belong in [the ledger](reports/findings.md).

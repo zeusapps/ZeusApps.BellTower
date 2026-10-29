@@ -2,9 +2,10 @@
 
 ## Current orchestrator
 
-- Client: Claude Code (Opus 5.5, `claude-opus-5-5`), main session
-- Since: 2026-10-23 (UTC)
-- Previous owner: Codex main session; ended at its usage limit. User confirmed the hand-off on 2026-10-23 ("reached the limits … please review the changes and continue the change").
+- Client: Codex, main session
+- Session identity: codex-identity-archive-20261029
+- Since: 2026-10-29 (UTC)
+- Previous owner: Claude Code (Opus 5.5, `claude-opus-5-5`), main session since 2026-10-23; its implementation ended with commit b74a12b. The user authorized this archive and evidence transfer on 2026-10-29. Earlier hand-off: Codex ended at its usage limit and the user confirmed transfer to Claude on 2026-10-23 ("reached the limits … please review the changes and continue the change").
 
 Orchestrator-owned ledger. Baseline: `b3e007e4c38a7893886e908998abbd5dfd5844a3`; assignments from Developer 002 onward use `d307c34` (later commits touch only agent-workflow files, not product paths). User authorized apply on 2026-10-23. Planning home and implementation root resolved by OpenSpec: `D:/Code/ZeusApps.BellTower`; change root: `openspec/changes/restore-claude-badge-identity`.
 
@@ -12,6 +13,8 @@ Orchestrator-owned ledger. Baseline: `b3e007e4c38a7893886e908998abbd5dfd5844a3`;
 
 | Assignment | Role / owner | Task IDs / target | Report / evidence paths | Reserved new finding IDs | State |
 | --- | --- | --- | --- | --- | --- |
+| Archive QA 008 | qa / Codex / gpt-6-luna (role default) | 25-path archive target; archive, sync and acceptance transfer only | [qa-008.md](qa-008.md) | QA-450 through QA-469 | returned; no findings |
+| Archive Analysis 008 | code-analyzer / Codex / gpt-6.1-sol (role default) | Same stable archive target; preserves older native runtime safeguards and newer shared rules | [analysis-008.md](analysis-008.md) | ANALYSIS-400 through ANALYSIS-419 | returned; no findings |
 | Implementation 001 | developer (Codex) | 1.1–6.3, baseline above; one implementation writer | `../evidence/implementation.md`, scoped source/tests/docs | None; return concerns to orchestrator | interrupted (partial draft, no handoff or evidence file) |
 | Claude contract probe 001 | qa (Codex) | Fixed public SDK 0.3.309 and installed Claude 2.1.306; isolated prior native fixture, independent of ongoing source edits | `qa-contract-001.md`, `../evidence/qa-contract-001-*` | QA-100–QA-149 (retired; never reuse) | interrupted (no report written) |
 | Implementation 002 | developer (Claude Code, `claude-sonnet-5-5`) | Continue 001: tasks 1.1–1.3, 2.1–2.5 plus intake defects I-1…I-7; baseline `d307c34` | `../evidence/implementation-002.md`, scoped source/tests/fixtures | None | handed off 2026-10-24; identity `head=d307c34 baseline=d307c34 files=56 diff=f9b8048a79f1 untracked=29/307299c1f9bc` confirmed stable by orchestrator; I-1…I-7 awaiting independent verification |
@@ -142,6 +145,16 @@ QA 001 and Analysis 001 completed on target `diff=4ae6a7eacb50 untracked=56/5503
 - 2026-10-24: QA 007 returned (`reports/qa-007.md`, reviewer-written; 692/692; no new findings). Analysis 007 returned (no findings); client refused its report write again; saved verbatim at `reports/analysis-007.md` under the fallback header. Identity unchanged. Verified ANALYSIS-301, QA-350; ANALYSIS-300 documented and tracked as unverified parity. Orchestrator removed the empty ignored `artifacts/impl-010-tmp`. Tasks reconciled: all checked except 5.1.
 
 ## Completion assessment
+
+### Archive assessment (2026-10-29)
+
+The user approved archive with historical task 5.1 unchecked and transferred to release acceptance task 6.3. The two title-change live checks transfer to tasks 6.1-6.2 there. ANALYSIS-300 remains unfinished under task 6.4; all earlier optional follow-ups and historical reports are preserved. The newer role-free identity/checkout and legacy-import contracts were synchronized after the older native runtime/presentation contract, preserving unrelated spec content. Ten main specs and the revised release acceptance delta pass strict validation; 105 composed-content comparisons pass. This is archive bookkeeping, not completion of live acceptance or release readiness.
+
+Stable review target: baseline f5bdcaae1c07472b2937df5884c4d5b758a49e13, `head=f5bdcaa baseline=f5bdcaa files=25 diff=c592ac21fc92 untracked=9/80722ec10dd0`. Full scope and archive-preservation assessment are in the [batch ledger](../../2026-10-29-follow-openspec-session-titles/reports/findings.md). QA 008 and analysis 008 are assigned on that stable target; their historical implementation predecessors below are not current archive approval. Archive commit pending.
+
+Both current archive reviews returned with no findings and matching before/after identities; accepted by the orchestrator. QA's hygiene check passed over the prospective scoped commit. No new blocking archive findings exist; historical optional follow-ups, the three live evidence gaps and ANALYSIS-300 remain visible and unverified. The archive operation is ready for commit; the implementation's remaining live acceptance is not declared complete.
+
+### Historical implementation assessment
 
 - Final reviewed identity: `head=d307c34 baseline=d307c34 files=96 diff=839dfb04dd51 untracked=51/a4c58ba52ace` (QA 007 / Analysis 007).
 - Checks on that identity: Release build 0 warnings; 692/692 tests; format verify clean; node 8/8 (Implementation 009 round).

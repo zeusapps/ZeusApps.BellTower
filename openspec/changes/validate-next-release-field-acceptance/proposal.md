@@ -13,6 +13,10 @@ Component tests passed for 0.1.8 while the installed hook chain, resumed Claude 
 - Maintain an explicit field-report coverage ledger and distinguish fixture evidence, desktop probes, live user acceptance and unavailable external prerequisites.
 - Reconcile older active change artifacts/specs in execution order and prepare one immutable versioned release only after the integrated gate passes.
 
+## Transferred acceptance (2026-10-29)
+
+The user approved archiving `follow-openspec-session-titles` and `restore-claude-badge-identity` with three live checks still unverified: provider tool-hook captures, the two-session desktop identity trial and the five-conversation identity/worktree trial. Tasks 6.1-6.3 retain these required checks, their archived source IDs and provider/mixed-session criteria. Task 6.4 retains the documented ANALYSIS-300 fork parity gap and related unobserved capability evidence. This transfer changes evidence ownership only; it does not pass or waive release acceptance or authorize production session changes.
+
 ## Capabilities
 
 ### New Capabilities

@@ -1,5 +1,9 @@
 # Tasks
 
+## Archive disposition (2026-10-29)
+
+The user approved archive with tasks 1.1 and 5.3 still unverified. They remain unchecked below and are carried forward as release acceptance tasks 6.1 and 6.2 in `validate-next-release-field-acceptance`. This is a transfer of required evidence, not a pass or cancellation. The newer badge identity contract controls the composed specs, including role-free names and speech.
+
 ## Historical task interpretation (2026-10-23)
 
 The checked tasks below record the original shipped implementation. `restore-claude-badge-identity` supersedes the original read-only status/instructions selection behavior and naming precedence for both providers; do not reintroduce it when reconciling or archiving this older change. Its overlapping delta requirements now use the approved current contract. Tasks 1.1 and 5.3 remain unchecked; newer fixtures or planning reconciliation do not retroactively satisfy those live acceptance gaps.
