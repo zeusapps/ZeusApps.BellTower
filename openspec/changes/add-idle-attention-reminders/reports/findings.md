@@ -6,6 +6,7 @@
 - Session identity: codex-idle-reminders-20261028
 - Since (UTC): 2026-10-28T18:29:10Z
 - Previous owner: none
+- Status: implementation complete; no active implementation ownership remains.
 
 ## Assignments and reservations
 
@@ -302,5 +303,5 @@
 - Exported successor contract: [attention-reminders documentation](../../../../docs/attention-reminders.md#escalation-record-for-the-webhook-consumer), protocol1, `StateStore.Escalations(currentSessions, now)`. Earned candidates retain opaque identity; current provider evidence is required; mute/audio outcome do not gate; no remote sends implemented here.
 - Native/live boundary: native Windows/RDP, installed tray, authenticated provider sessions and physical audio/input were not exercised. These remain distinct integrated release acceptance work; no restriction or live-pass claim is made. Required change fixtures are complete; no user data/settings/session or installed build changed.
 - Staging clarification: EOF correction was staged before QA-007/Analysis-008. Stale unstaged wording in QA-007 is superseded by its passed cached-whitespace check, exact target-007 and Analysis-008 staging observation; history is preserved.
-- Commit: pending local scoped implementation commit. No push, installation, archive or main-branch merge authorized by this task.
+- Commit: implementation and artifacts committed as `c371319ada7f9c3be224866bced8858168d22f6d` on `add-idle-attention-reminders`. Local completion-ledger follow-up records this SHA. No push, installation, archive or main-branch merge performed.
 - OpenSpec task reconciliation: 13/13 verified. Unrelated pre-existing untracked plans and handoffs remain excluded.
