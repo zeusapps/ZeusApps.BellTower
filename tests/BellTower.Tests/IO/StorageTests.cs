@@ -133,6 +133,56 @@ public sealed class StorageTests
     }
 
     [Fact]
+    public void ReminderDefaultsAndSettingsReloadPreserveUnknownConfiguration()
+    {
+        using var w = new TestWorkspace();
+        var config = new ConfigStore(w.Paths);
+        var defaults = config.Read().Reminders;
+        Assert.True(defaults.Enabled);
+        Assert.Equal(5, defaults.InitialDelayMinutes);
+        Assert.Equal(5, defaults.IdleThresholdMinutes);
+        Assert.Equal(10, defaults.RepeatIntervalMinutes);
+        Assert.Equal(3, defaults.MaxPerEpisode);
+        Assert.Equal(1, defaults.EscalationAfterReminder);
+
+        File.WriteAllText(w.Paths.Config, "{\"futureSetting\":{\"value\":42},\"reminders\":{\"enabled\":false,\"initialDelayMinutes\":7,\"futureReminder\":{\"keep\":true}}}");
+        Assert.False(config.Read().Reminders.Enabled);
+        config.Update(value => value.Reminders.IdleThresholdMinutes = 8);
+        var reloaded = config.Read();
+        Assert.False(reloaded.Reminders.Enabled);
+        Assert.Equal(7, reloaded.Reminders.InitialDelayMinutes);
+        Assert.Equal(8, reloaded.Reminders.IdleThresholdMinutes);
+        Assert.Equal(42, reloaded.AdditionalData!["futureSetting"].GetProperty("value").GetInt32());
+        Assert.True(reloaded.Reminders.AdditionalData!["futureReminder"].GetProperty("keep").GetBoolean());
+    }
+
+    [Theory]
+    [InlineData("initialDelayMinutes", 0)]
+    [InlineData("idleThresholdMinutes", 1441)]
+    [InlineData("repeatIntervalMinutes", -1)]
+    [InlineData("maxPerEpisode", 11)]
+    [InlineData("escalationAfterReminder", 4)]
+    public void InvalidReminderConfigurationIsRejectedAndKeepsLastGood(string property, int value)
+    {
+        using var w = new TestWorkspace();
+        var config = new ConfigStore(w.Paths);
+        Assert.Equal(5, config.Read().Reminders.InitialDelayMinutes);
+        File.WriteAllText(w.Paths.Config, "{\"reminders\":{\"" + property + "\":" + value + "}}");
+        var retained = config.Read().Reminders;
+        Assert.Equal(5, retained.InitialDelayMinutes);
+        Assert.Equal(5, retained.IdleThresholdMinutes);
+        Assert.Equal(10, retained.RepeatIntervalMinutes);
+        Assert.Equal(3, retained.MaxPerEpisode);
+        Assert.Equal(1, retained.EscalationAfterReminder);
+
+        config.Update(current => current.Reminders.RepeatIntervalMinutes = 11);
+        var beforeInvalidUpdate = File.ReadAllText(w.Paths.Config);
+        Assert.Throws<ArgumentOutOfRangeException>(() => config.Update(current => current.Reminders.MaxPerEpisode = 0));
+        Assert.Equal(beforeInvalidUpdate, File.ReadAllText(w.Paths.Config));
+        Assert.Equal(11, config.Read().Reminders.RepeatIntervalMinutes);
+    }
+
+    [Fact]
     public void LogsAreBoundedAndDoNotContainPayloads()
     {
         using var w = new TestWorkspace();

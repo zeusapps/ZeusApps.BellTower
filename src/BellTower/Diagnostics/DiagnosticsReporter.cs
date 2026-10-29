@@ -6,6 +6,7 @@ namespace BellTower.Diagnostics;
 public sealed class DiagnosticsReporter(DataPaths paths, IMicrophoneActivitySource? microphoneSource = null)
 {
     private readonly IMicrophoneActivitySource microphone = microphoneSource ?? new WindowsMicrophoneActivitySource();
+    private readonly IUserIdleSource userIdle = new WindowsUserIdleSource();
     public object Report(string? transcript = null, string transcriptProvider = "claude")
     {
         var microphoneSnapshot = microphone.GetSnapshot();
@@ -61,6 +62,14 @@ public sealed class DiagnosticsReporter(DataPaths paths, IMicrophoneActivitySour
                 ObservedAt = microphoneSnapshot.ObservedAt,
                 Reason = microphoneSnapshot.Reason,
                 Scope = "Current interactive Windows user's active capture endpoints, shared-mode audio sessions only. Exclusive-mode capture may be missed; RDP and query failures report unknown."
+            },
+            AttentionReminders = new
+            {
+                Settings = new ConfigStore(paths).Read().Reminders,
+                Idle = userIdle.GetSnapshot(),
+                EscalationCandidates = (int?)null,
+                EscalationCandidateStatus = "Not evaluated: doctor has no current provider projection; only a fresh tray-owned eligibility check can expose candidates.",
+                Scope = "Current connected Windows interactive session; unavailable or disconnected state disables reminders. GetLastInputInfo reports a 32-bit millisecond uptime tick; elapsed values above half the uint32 range (about 24.8 days) are treated as ambiguous, and future, stale or out-of-range observations are unknown."
             },
             ConfirmationCoverage = new ConfirmationCoverageReporter(paths).Report(),
             CapabilityMatrix = new { Claude = CapabilityMatrix.ClaudeVersion, Codex = CapabilityMatrix.CodexVersion, Rows = CapabilityMatrix.Rows },

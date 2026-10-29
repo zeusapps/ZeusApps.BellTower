@@ -9,4 +9,7 @@ public sealed class AppState
     public Dictionary<string, SessionState> Sessions { get; set; } = [];
     public HashSet<string> AppliedEvents { get; set; } = [];
     public Dictionary<string, string> CaptureReceipts { get; set; } = [];
+    public Dictionary<string, ReminderReceipt> ReminderReceipts { get; set; } = [];
+    public string? ReminderRunId { get; set; }
+    public bool? ReminderSettingsEnabled { get; set; }
 }

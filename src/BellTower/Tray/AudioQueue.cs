@@ -35,7 +35,7 @@ public sealed class AudioQueue : IDisposable
     }
 
     public static string? SelectPhrase(IReadOnlyList<AudioItem> items, bool voice) => !voice ? null :
-        items.Count > 2 ? $"{items.Count} sessions waiting" : string.Join(". ", items.Select(item => item.Phrase));
+        items.Count > 2 ? $"{items.Count} sessions {(items.All(item => item.Kind == AudioNotificationKind.Reminder) ? "still waiting" : "waiting")}" : string.Join(". ", items.Select(item => item.Phrase));
     private void Run()
     {
         while (!stopped)
@@ -84,7 +84,7 @@ public sealed class AudioQueue : IDisposable
         try
         {
             bool Cancelled() => stopped || config().Muted || !items.Any(item => item.Test || valid(item));
-            bool SpeechCancelled() => !SpeechAllowed(config());
+            bool SpeechCancelled() => !SpeechAllowed(config()) || items.Any(item => !item.Test && !valid(item));
             // Re-evaluate after dequeue and immediately before entering the sink. Suppressed phrases
             // are discarded with this queue batch and are never retained for later playback.
             sink.Play(SpeechAllowed(config()) ? phrase : null, items.Max(item => item.Reason), Cancelled, SpeechCancelled);

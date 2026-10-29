@@ -11,4 +11,5 @@ public sealed class AppConfig
     public string? ToneFile { get; set; }
     public string? ToneName { get; set; }
     public int AttachmentEvidenceGraceMinutes { get; set; } = 10;
+    public ReminderSettings Reminders { get; set; } = new();
 }

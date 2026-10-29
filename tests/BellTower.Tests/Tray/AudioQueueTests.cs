@@ -111,6 +111,16 @@ public sealed class AudioQueueTests
     }
 
     [Fact]
+    public void ReminderAudioUsesSameReasonQueueAndNamesReminderAggregate()
+    {
+        var items = Enumerable.Range(0, 3).Select(index => new AudioItem(index.ToString(), "episode", "Still waiting",
+            Reason: AttentionReason.Question, Kind: AudioNotificationKind.Reminder)).ToArray();
+        Assert.Equal("3 sessions still waiting", AudioQueue.SelectPhrase(items, true));
+        Assert.Equal(AttentionReason.Question, items.Max(item => item.Reason));
+        Assert.Null(AudioQueue.SelectPhrase(items, false));
+    }
+
+    [Fact]
     public void ResolvedQueuedWaitIsExcludedBeforePlayback()
     {
         var sink = new Sink();
@@ -125,6 +135,66 @@ public sealed class AudioQueueTests
         sink.Release.Set();
         Assert.True(sink.Next.Wait(TimeSpan.FromSeconds(2)));
         Assert.DoesNotContain("stale", sink.Phrases);
+    }
+
+    [Fact]
+    public void ResolvedReminderDuringAggregateToneCancelsAggregateSpeech()
+    {
+        var current = new ConcurrentDictionary<string, bool>();
+        current["reminder"] = true;
+        current["alert-one"] = true;
+        current["alert-two"] = true;
+        var sink = new Sink();
+        var calls = 0;
+        sink.Release.Set();
+        sink.DuringTone = () =>
+        {
+            if (Interlocked.Increment(ref calls) == 2)
+            {
+                current.TryRemove("reminder", out _);
+            }
+        };
+        using var queue = new AudioQueue(sink, item => item.Test || current.ContainsKey(item.Key), () => new() { MicrophoneAwareVoice = false });
+        queue.Enqueue(new("occupy", "a", "first", true));
+        Assert.True(sink.Started.Wait(TimeSpan.FromSeconds(2)));
+        queue.Enqueue(new("reminder", "r", "Still waiting", Reason: AttentionReason.Question, Kind: AudioNotificationKind.Reminder));
+        queue.Enqueue(new("alert-one", "a", "first alert", Reason: AttentionReason.Permission));
+        queue.Enqueue(new("alert-two", "b", "second alert", Reason: AttentionReason.Error));
+        sink.Release.Set();
+
+        Assert.True(sink.Next.Wait(TimeSpan.FromSeconds(2)));
+        Assert.Equal("3 sessions waiting", sink.Phrases.ElementAt(1));
+        Assert.Contains(true, sink.SpeechCancelled);
+        Assert.DoesNotContain("Still waiting", sink.Phrases);
+    }
+
+    [Fact]
+    public void RecentInputDuringMixedAggregateToneCancelsReminderAndAggregateSpeechButKeepsOrdinaryTone()
+    {
+        var now = DateTimeOffset.UtcNow;
+        var idle = new MutableIdleSource(new(TimeSpan.FromMinutes(20), now, "idle fixture"));
+        var sink = new Sink
+        {
+            DuringTone = () => idle.Snapshot = new(TimeSpan.Zero, DateTimeOffset.UtcNow, "recent input")
+        };
+        sink.Release.Set();
+        bool Valid(AudioItem item) => item.Kind != AudioNotificationKind.Reminder ||
+            idle.GetSnapshot().IsFresh(DateTimeOffset.UtcNow, TimeSpan.FromMilliseconds(500)) && idle.Snapshot.IdleFor >= TimeSpan.FromMinutes(5);
+        using var queue = new AudioQueue(sink, Valid, () => new() { MicrophoneAwareVoice = false });
+        queue.Enqueue(new("reminder", "r", "Still waiting", Reason: AttentionReason.Question, Kind: AudioNotificationKind.Reminder));
+        queue.Enqueue(new("alert-one", "a", "ordinary one", Reason: AttentionReason.Permission));
+        queue.Enqueue(new("alert-two", "b", "ordinary two", Reason: AttentionReason.Error));
+
+        Assert.True(sink.Started.Wait(TimeSpan.FromSeconds(2)));
+        Assert.True(sink.SpeechCancelled.Single());
+        Assert.False(sink.ToneCancelled.Single());
+        Assert.Equal("3 sessions waiting", sink.Phrases.Single()); // passed to the silent sink, but cancellation forbids speaking this stale count
+    }
+
+    private sealed class MutableIdleSource(UserIdleSnapshot snapshot) : IUserIdleSource
+    {
+        public UserIdleSnapshot Snapshot = snapshot;
+        public UserIdleSnapshot GetSnapshot() => Snapshot;
     }
 
     [Fact]

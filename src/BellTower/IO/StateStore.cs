@@ -10,15 +10,65 @@ public sealed class StateStore
     private readonly DataPaths paths;
     private readonly StateSnapshotStore snapshots;
     private readonly AttachmentStore attachments;
+    private readonly ConfigStore configuration;
 
     public StateStore(DataPaths paths)
     {
         this.paths = paths;
         snapshots = new StateSnapshotStore(paths);
         attachments = new AttachmentStore(paths);
+        configuration = new ConfigStore(paths);
     }
 
     public AppState Read() => snapshots.Read();
+
+    public IReadOnlyList<ScheduledReminder> AdvanceReminders(
+        IReadOnlyCollection<SessionState> actionable,
+        DateTimeOffset now,
+        TimeSpan? idle,
+        ReminderSettings settings,
+        string runId)
+    {
+        using var gate = new DataLock(paths, "state");
+        var state = snapshots.Read();
+        var current = actionable.Where(session => IsCurrentActionable(state, session, now)).ToArray();
+        var retained = state.Sessions.Values.Where(session => !session.Ended && session.Episode is not null && session.AcknowledgedEpisode != session.Episode)
+            .Select(session => ReminderPolicy.Key(session)).ToHashSet(StringComparer.Ordinal);
+        var advance = ReminderPolicy.Advance(state, current, now, idle, settings, runId, retained);
+        if (advance.Changed)
+        {
+            snapshots.Save(state);
+        }
+
+        return advance.Scheduled;
+    }
+
+    public IReadOnlyList<EscalationEligibility> Escalations(
+        IReadOnlyCollection<SessionState> currentSessions,
+        DateTimeOffset now)
+    {
+        var settings = configuration.Read().Reminders;
+        if (!settings.Enabled)
+        {
+            return [];
+        }
+
+        using var gate = new DataLock(paths, "state");
+        var state = snapshots.Read();
+        var current = currentSessions.Where(session => IsCurrentActionable(state, session, now))
+            .Select(session => ReminderPolicy.Key(session)).ToHashSet(StringComparer.Ordinal);
+        return state.ReminderReceipts.Where(pair => pair.Value.Escalation is not null && current.Contains(pair.Key))
+            .Select(pair => pair.Value.Escalation!)
+            .OrderBy(receipt => receipt.EligibleAt)
+            .ToArray();
+    }
+
+    private static bool IsCurrentActionable(AppState state, SessionState session, DateTimeOffset now) =>
+        session.AttachmentHealth == "verified-live" && session.RequiresAttention(now) && session.Episode is not null && session.Reason is not null &&
+        state.Sessions.TryGetValue(session.Key, out var persisted) && !persisted.Ended && persisted.AttachmentHealth == "verified-live" &&
+        persisted.AttachmentId == session.AttachmentId && persisted.Episode == session.Episode && persisted.AcknowledgedEpisode != persisted.Episode &&
+        persisted.Waits.Any(wait => (wait.Episode == persisted.Episode || wait.Episode is null && wait.Since == persisted.EpisodeStarted) && wait.Reason == session.Reason &&
+            (wait.Reason != AttentionReason.Permission || wait.Confirmation == HumanConfirmation.Confirmed || session.NativePermissionPending == true));
 
     public AppState Drain()
     {

@@ -35,6 +35,12 @@ public sealed class TrayApplication : ApplicationContext
     private readonly AlertPolicy policy = new(DateTimeOffset.UtcNow);
     private readonly AudioQueue audio;
     private readonly IMicrophoneActivitySource microphone = new WindowsMicrophoneActivitySource();
+    private readonly IUserIdleSource userIdle;
+    private readonly string reminderRunId = Guid.NewGuid().ToString("N");
+    private UserIdleSnapshot idleSnapshot = UserIdleSnapshot.Unknown("No input inactivity observation yet.", DateTimeOffset.UtcNow);
+    // Isolated for deterministic reminder playback checks; production keeps UTC wall-clock behavior.
+    internal Func<DateTimeOffset> ReminderValidityUtcNow { get; set; } = static () => DateTimeOffset.UtcNow;
+    private readonly object idleGate = new();
     private AppState state = new();
     private AppConfig config = new();
     private DateTimeOffset nextOverview;
@@ -45,9 +51,10 @@ public sealed class TrayApplication : ApplicationContext
     private readonly HttpClient updateHttp = ReleaseClient.CreateClient();
     private readonly UpdateDiscovery updates;
     private bool ready;
-    public TrayApplication(DataPaths paths, bool silent)
+    public TrayApplication(DataPaths paths, bool silent, IUserIdleSource? userIdle = null)
     {
         this.paths = paths;
+        this.userIdle = userIdle ?? new WindowsUserIdleSource();
         store = new(paths);
         attachments = new(paths);
         identities = new(paths);
@@ -96,7 +103,22 @@ public sealed class TrayApplication : ApplicationContext
         voice.Click += (_, _) => configuration.Update(c => c.Voice = voice.Checked);
         var microphoneAwareVoice = new ToolStripMenuItem("Suppress voice while microphone is active") { CheckOnClick = true };
         microphoneAwareVoice.Click += (_, _) => configuration.Update(c => c.MicrophoneAwareVoice = microphoneAwareVoice.Checked);
-        menu.Items.AddRange([mute, voice, microphoneAwareVoice]);
+        var reminderMenu = new ToolStripMenuItem("Attention reminders");
+        var remindersEnabled = new ToolStripMenuItem("Enabled") { CheckOnClick = true };
+        remindersEnabled.Click += (_, _) =>
+        {
+            configuration.Update(c => c.Reminders.Enabled = remindersEnabled.Checked);
+            config = configuration.Read();
+        };
+        var reminderSettings = new ToolStripMenuItem("Settings…");
+        reminderSettings.Click += (_, _) =>
+        {
+            using var settings = new ReminderSettingsForm(configuration);
+            settings.ShowDialog(overview);
+            config = configuration.Read();
+        };
+        reminderMenu.DropDownItems.AddRange([remindersEnabled, reminderSettings]);
+        menu.Items.AddRange([mute, voice, microphoneAwareVoice, reminderMenu]);
         var tones = new ToolStripMenuItem("Notification tone");
         tones.DropDownItems.Add("Default event tones", null, (_, _) => new ToneLibrary(paths).Reset());
         tones.DropDownItems.Add("Classic chime", null, (_, _) => new ToneLibrary(paths).UseClassicChime());
@@ -129,6 +151,7 @@ public sealed class TrayApplication : ApplicationContext
             mute.Checked = config.Muted;
             voice.Checked = config.Voice;
             microphoneAwareVoice.Checked = config.MicrophoneAwareVoice;
+            remindersEnabled.Checked = config.Reminders.Enabled;
             microphoneAwareVoice.ToolTipText = microphone.GetSnapshot().Reason;
             tones.Text = "Notification tone: " + (config.ToneName ?? "Event tones");
         };
@@ -149,7 +172,14 @@ public sealed class TrayApplication : ApplicationContext
             overview.Show();
             overview.Activate();
         };
-        strip.Acknowledge += key => store.Acknowledge(key);
+        strip.Acknowledge += key =>
+        {
+            store.Acknowledge(key);
+            if (state.Sessions.TryGetValue(key, out var acknowledged))
+            {
+                acknowledged.AcknowledgedEpisode = acknowledged.Episode;
+            }
+        };
         strip.Navigate += key => Navigate(key, hideTimer: true);
         overview.Navigate += key => Navigate(key, hideTimer: false);
         overview.SaveIdentity += (key, name, change) => new SessionCatalog(paths).Rename(key, name, change);
@@ -208,6 +238,10 @@ public sealed class TrayApplication : ApplicationContext
                 ready = true;
             }
             var now = DateTimeOffset.UtcNow;
+            lock (idleGate)
+            {
+                idleSnapshot = userIdle.GetSnapshot();
+            }
             var live = state.Sessions.Values.Where(s => !s.Ended).ToArray();
             permissions.Update(live);
             permissions.Apply(live, now);
@@ -217,6 +251,14 @@ public sealed class TrayApplication : ApplicationContext
             {
                 var identity = identities.Get(s.Key, s.Directory);
                 audio.Enqueue(new(s.Key, s.Episode!, AlertPolicy.Phrase(s, identity), Reason: s.Reason!.Value));
+            }
+
+            foreach (var reminder in store.AdvanceReminders(live, now, idleSnapshot.IdleFor, config.Reminders, reminderRunId))
+            {
+                var session = live.First(value => value.Key == reminder.Key && value.Episode == reminder.Episode);
+                var identity = identities.Get(session.Key, session.Directory);
+                audio.Enqueue(new(session.Key, reminder.Episode, "Still waiting: " + AlertPolicy.Phrase(session, identity),
+                    Reason: reminder.Reason, Kind: AudioNotificationKind.Reminder, ReminderOrdinal: reminder.Ordinal));
             }
 
             if (now >= nextOverview && !refreshing)
@@ -300,9 +342,42 @@ public sealed class TrayApplication : ApplicationContext
         }
     }
 
-    private bool IsCurrentAlert(AudioItem item) => state.Sessions.TryGetValue(item.Key, out var session) &&
-        session.Episode == item.Episode && session.RequiresAttention(DateTimeOffset.UtcNow) &&
-        session.NotificationDue <= DateTimeOffset.UtcNow;
+    private bool IsCurrentAlert(AudioItem item)
+    {
+        var now = item.Kind == AudioNotificationKind.Alert ? DateTimeOffset.UtcNow : ReminderValidityUtcNow();
+        if (!state.Sessions.TryGetValue(item.Key, out var session))
+        {
+            return false;
+        }
+
+        if (item.Kind == AudioNotificationKind.Alert)
+        {
+            return session.Episode == item.Episode && session.RequiresAttention(now) && session.NotificationDue <= now;
+        }
+
+        var idle = CurrentIdle();
+        // The bounded fresh probe may complete after the initial session check timestamp.
+        now = ReminderValidityUtcNow();
+        if (!config.Reminders.Enabled || item.ReminderOrdinal > config.Reminders.MaxPerEpisode || !idle.IsFresh(now, TimeSpan.FromMilliseconds(500)) || idle.IdleFor is not { } idleFor ||
+            idleFor < TimeSpan.FromMinutes(config.Reminders.IdleThresholdMinutes) || session.AttachmentHealth != "verified-live" ||
+            session.Episode != item.Episode || session.Reason != item.Reason || !session.RequiresAttention(now))
+        {
+            return false;
+        }
+
+        return session.AcknowledgedEpisode != item.Episode;
+    }
+
+    private UserIdleSnapshot CurrentIdle()
+    {
+        lock (idleGate)
+        {
+            // A positive sample must come from a bounded probe started for this playback check;
+            // neither the tray cache nor an older background poll can authorize queued work.
+            idleSnapshot = userIdle.GetFreshSnapshot();
+            return idleSnapshot;
+        }
+    }
 
     private async void Navigate(string key, bool hideTimer)
     {

@@ -42,6 +42,7 @@ Code organization and formatting follow the [development conventions](docs/devel
 - Chips show `name · reason · HH:mm:ss` in one row. Time is elapsed waiting for that reason, including the completion grace.
 - Bundled default tones distinguish permission, question, completion and error. Choose a custom WAV or the classic chime from the tray, or restore event tones with `bell-tower tone --reset`.
 - Startup restores existing waits silently. Voice can be disabled independently of chimes; Mute suppresses all alert audio.
+- Unresolved live attention repeats while the current Windows interactive session is idle: first after five minutes, then every ten minutes, with a five-minute inactivity threshold and three-reminder cap. The tray menu's **Attention reminders > Settings…** configures the shared policy for Claude and Codex. Reminders reuse the same reason tone, respect Mute/Voice/microphone rules, and are not replayed after restart. See [attention reminders](docs/attention-reminders.md).
 
 Audio tests use silent substitutes. Test sound only plays when explicitly invoked in the running application.
 

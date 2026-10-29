@@ -36,7 +36,10 @@ public sealed class StateSnapshotStore(DataPaths paths)
     }
 
     private static bool IsValid(AppState? state) => state is not null && state.SchemaVersion == 1 && state.AttachmentHealthVersion is 0 or 1 &&
-        state.Sessions is not null && state.AppliedEvents is not null && state.CaptureReceipts is not null &&
+        state.Sessions is not null && state.AppliedEvents is not null && state.CaptureReceipts is not null && state.ReminderReceipts is not null &&
+        state.ReminderReceipts.Count <= 10000 && state.ReminderReceipts.All(pair => pair.Key is not null && pair.Value is not null && pair.Value.Key is not null &&
+            pair.Value.Episode is not null && pair.Value.Ordinal is >= 0 and <= 10 && pair.Value.ReceiptId is { Length: <= 64 } &&
+            (pair.Value.Escalation is null || pair.Value.Escalation.ReceiptId is { Length: <= 64 } && pair.Value.Escalation.ProtocolVersion == 1)) &&
         state.CaptureReceipts.All(receipt => receipt.Value is not null && receipt.Value.Length <= 128) && state.Sessions.Values.All(session =>
             session is not null && session.Waits is not null && session.Background is not null &&
             session.CausalEvents is not null && session.CausalEvents.Count <= CausalSessionReducer.Window &&

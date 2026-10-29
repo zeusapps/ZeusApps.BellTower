@@ -1,0 +1,38 @@
+HEAD: 47dfca9fd46b309017d4d785a1f91fd249d42041
+Baseline: 47dfca9fd46b309017d4d785a1f91fd249d42041
+Paths: docs/attention-reminders.md docs/compatibility.md README.md src/BellTower tests/BellTower.Tests
+Manifest (A added, M modified, D deleted, ? untracked):
+  A docs/attention-reminders.md
+  A src/BellTower/Core/EscalationEligibility.cs
+  A src/BellTower/Core/ReminderAdvance.cs
+  A src/BellTower/Core/ReminderPolicy.cs
+  A src/BellTower/Core/ReminderReceipt.cs
+  A src/BellTower/Core/ReminderSettings.cs
+  A src/BellTower/Core/ScheduledReminder.cs
+  A src/BellTower/Tray/AudioNotificationKind.cs
+  A src/BellTower/Tray/IUserIdleSource.cs
+  A src/BellTower/Tray/ReminderSettingsForm.cs
+  A src/BellTower/Tray/UserIdleSnapshot.cs
+  A src/BellTower/Tray/WindowsUserIdleSource.cs
+  A tests/BellTower.Tests/Core/ReminderPolicyTests.cs
+  A tests/BellTower.Tests/Tray/ReminderFixtureDriver.cs
+  A tests/BellTower.Tests/Tray/ReminderFixtureDriverTests.cs
+  A tests/BellTower.Tests/Tray/ReminderPlaybackTests.cs
+  A tests/BellTower.Tests/Tray/ReminderSettingsFormTests.cs
+  A tests/BellTower.Tests/Tray/WindowsUserIdleSourceTests.cs
+  M README.md
+  M docs/compatibility.md
+  M src/BellTower/Core/AppConfig.cs
+  M src/BellTower/Core/AppState.cs
+  M src/BellTower/Diagnostics/DiagnosticsReporter.cs
+  M src/BellTower/IO/ConfigStore.cs
+  M src/BellTower/IO/StateSnapshotStore.cs
+  M src/BellTower/IO/StateStore.cs
+  M src/BellTower/Tray/AudioItem.cs
+  M src/BellTower/Tray/AudioQueue.cs
+  M src/BellTower/Tray/TrayApplication.cs
+  M tests/BellTower.Tests/IO/StorageTests.cs
+  M tests/BellTower.Tests/Tray/AudioQueueTests.cs
+Tracked diff SHA-256: e3107d12ce62177f48562a2bcb029da3235515dcbb1dfb5dddbdd8cf2b9a2c10
+Untracked file SHA-256:
+Summary: head=47dfca9 baseline=47dfca9 files=31 diff=e3107d12ce62 untracked=0/e3b0c44298fc
