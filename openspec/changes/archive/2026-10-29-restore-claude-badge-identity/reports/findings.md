@@ -150,7 +150,7 @@ QA 001 and Analysis 001 completed on target `diff=4ae6a7eacb50 untracked=56/5503
 
 The user approved archive with historical task 5.1 unchecked and transferred to release acceptance task 6.3. The two title-change live checks transfer to tasks 6.1-6.2 there. ANALYSIS-300 remains unfinished under task 6.4; all earlier optional follow-ups and historical reports are preserved. The newer role-free identity/checkout and legacy-import contracts were synchronized after the older native runtime/presentation contract, preserving unrelated spec content. Ten main specs and the revised release acceptance delta pass strict validation; 105 composed-content comparisons pass. This is archive bookkeeping, not completion of live acceptance or release readiness.
 
-Stable review target: baseline f5bdcaae1c07472b2937df5884c4d5b758a49e13, `head=f5bdcaa baseline=f5bdcaa files=25 diff=c592ac21fc92 untracked=9/80722ec10dd0`. Full scope and archive-preservation assessment are in the [batch ledger](../../2026-10-29-follow-openspec-session-titles/reports/findings.md). QA 008 and analysis 008 are assigned on that stable target; their historical implementation predecessors below are not current archive approval. Archive commit pending.
+Stable review target: baseline f5bdcaae1c07472b2937df5884c4d5b758a49e13, `head=f5bdcaa baseline=f5bdcaa files=25 diff=c592ac21fc92 untracked=9/80722ec10dd0`. Full scope and archive-preservation assessment are in the [batch ledger](../../2026-10-29-follow-openspec-session-titles/reports/findings.md). QA 008 and analysis 008 are assigned on that stable target; their historical implementation predecessors below are not current archive approval. Archive commit is recorded in the final record below.
 
 Both current archive reviews returned with no findings and matching before/after identities; accepted by the orchestrator. QA's hygiene check passed over the prospective scoped commit. No new blocking archive findings exist; historical optional follow-ups, the three live evidence gaps and ANALYSIS-300 remain visible and unverified. The archive operation is ready for commit; the implementation's remaining live acceptance is not declared complete.
 
@@ -163,3 +163,10 @@ Both current archive reviews returned with no findings and matching before/after
 - Tracked unfinished parity (not restrictions): ANALYSIS-300 fork-time window; Claude native-title writing (`/resume` title) deferred to `sync-native-session-titles`.
 - Unverified (no evidence either way): live `codex fork` capture; interactive Claude fork shapes; live hook cwd after a worktree `cd`; tray/terminal rendering; `scripts/package.ps1` end to end (NativeAOT link needs Windows SDK libraries missing on this machine).
 - Commit: `b74a12b` on `add-claude-repository-subagents` (local, not pushed); scoped to src, tests, product docs, this change, `follow-openspec-session-titles` reconciliation and `sync-native-session-titles`. Other changes and `docs/handoffs/` left untracked. Ledger update after the commit is uncommitted.
+
+## Archive commit record (2026-10-29)
+
+- Scoped archive/sync/acceptance-transfer commit: 2eaa9c76c783585ea949f9878d866ba6099f0a9a.
+- Both current reviews passed; no archive findings. Final staged whitespace and scoped-file checks passed.
+- Archive operation finished in this session; three live checks and ANALYSIS-300 remain required in release acceptance tasks 6.1-6.4.
+- No push, installation or publication; unrelated drafts preserved.

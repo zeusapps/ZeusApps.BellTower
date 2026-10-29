@@ -39,8 +39,15 @@ Both independent archive reviews passed with no findings on the stable target be
 
 ## Completion assessment
 
-- Archive operation: both approved archives moved and specs synchronized; current QA and analysis accepted; ready for scoped commit.
+- Archive operation: both approved archives moved and specs synchronized; current QA and analysis accepted; scoped archive commit completed.
 - Verification: 10/10 main specs and revised release acceptance change pass strict validation; 105 composition/preservation comparisons pass; all 100 baseline tracked files retained, 97 unchanged and three intentional task/ledger edits. Original untracked draft/report files remain unchanged.
-- Commit: pending; completion SHA will be recorded after the scoped commit.
+- Commit: 2eaa9c76c783585ea949f9878d866ba6099f0a9a on archive-completed-release-change; archive operation complete, live acceptance still open.
 - Live acceptance: original tasks 1.1 and 5.3 remain unverified and transfer to release acceptance by user decision.
 - Product implementation and installation: unchanged by this operation.
+
+## Archive commit record (2026-10-29)
+
+- Scoped archive/sync/acceptance-transfer commit: 2eaa9c76c783585ea949f9878d866ba6099f0a9a.
+- Both current reviews passed; no archive findings. Final staged whitespace and scoped-file checks passed.
+- Archive operation finished in this session; three live checks and ANALYSIS-300 remain required in release acceptance tasks 6.1-6.4.
+- No push, installation or publication; unrelated drafts preserved.
