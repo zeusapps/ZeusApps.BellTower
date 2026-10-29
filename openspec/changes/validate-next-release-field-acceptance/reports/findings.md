@@ -41,5 +41,5 @@ Both current independent light reviews passed with no findings on the unchanged 
 - Findings: zero; both reviews accepted.
 - Nonblocking follow-ups: none assigned.
 - Evidence gaps / provider restrictions: runtime/live acceptance is outside this prose-only correction and remains required by the retained field acceptance plan.
-- Commit: preparing a scoped documentation/planning commit; preserve unrelated untracked drafts and do not publish.
+- Commit: scope cancellation committed as `6651efc64c14037e8eacebb917e78dd9a90e8eb7` on `remove-remote-notification-plans`; unrelated untracked drafts preserved. No push, merge, installation or publication.
 - OpenSpec task reconciliation: all field acceptance tasks remain unchecked; this cancellation does not satisfy implementation tasks.
