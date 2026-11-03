@@ -1,0 +1,35 @@
+# Native adoption probe follow-up 003
+
+Date: 2026-10-29. Scope: implement and smoke-test a private Windows ConPTY host, then attempt a normal native Codex hook-trust flow. All artifacts, fixture Git metadata, settings, provider home, hook captures, and database projections are under ignored `artifacts/`. No production daemon, user session, user provider configuration, real credential, model endpoint, model request, user terminal, or real Bell Tower checkout trust was used.
+
+## ConPTY helper and smoke result
+
+I reviewed Microsoft's [CreatePseudoConsole API](https://learn.microsoft.com/en-us/windows/console/createpseudoconsole) and [Pseudoconsole session guide](https://learn.microsoft.com/en-us/windows/console/creating-a-pseudoconsole-session), plus Microsoft's [MiniTerm sample](https://github.com/microsoft/terminal/tree/main/samples/ConPTY/MiniTerm). Context7 did not return matching Windows Console API documentation; the official Microsoft Learn pages and Microsoft-owned `microsoft/terminal` sample were used as the primary references. The helper follows the documented synchronous-pipe, `CreatePseudoConsole`, `STARTUPINFOEX` attribute-list, and extended `CreateProcess` flow.
+
+The ignored `artifacts/native-adoption-003/ConptyProbe.csproj` and `Program.cs` provide an isolated ConPTY child, bidirectional VT pipe handling, a bounded wait, and an identity record for the exact created process (PID, creation time, executable path). A native attribute-list buffer-size error (Win32 122) in the first attempt was corrected by preserving the size value across both `InitializeProcThreadAttributeList` calls.
+
+The harmless `cmd.exe` smoke test rendered the private pseudo terminal, accepted `echo BT_CONPTY_SMOKE_OK` followed by `exit`, and returned `exitCode=0`, `timedOut=false`, `exitedNaturally=true`, `privateJobClosed=true`, and `identityWritten=true`. It did not launch a provider or use a user terminal. `dotnet build artifacts/native-adoption-003/ConptyProbe.csproj` succeeded with no warnings or errors.
+
+## Current Codex TUI attempt
+
+The ignored nested Git fixture `artifacts/n3w` was initialized for this probe. The TUI used a short isolated provider home `artifacts/n3c`, an isolated temp directory, a dummy API key, a loopback-only unreachable model endpoint, a fresh per-run hook capture path and nonce, and `--sandbox read-only`. The current version-matched executable reported Codex CLI 0.165.0. No prompt was submitted.
+
+Codex displayed its normal folder-trust prompt for `artifacts/n3w`; trust was accepted through the UI only in the isolated provider home, as explicitly authorized by the orchestrator. It then displayed “Hooks need review” and the review list showed one SessionStart hook. I opened that list but did not advance to the hook-command detail or trust it. Codex next displayed a Windows sandbox setup modal offering administrator setup or “Use non-admin sandbox (higher risk if prompt injected).” I accepted neither option and did not attempt a sandbox installation or setting change. The screen did not present an explicit skip/decline choice; Esc was labeled “back.”
+
+The exact auto-review rejection for selecting the non-admin sandbox option was: “Option 2 explicitly selects a higher-risk non-admin sandbox mode, which is a security-control change not covered by the authorization for a read-only private probe; no need to weaken this control to continue safely.” The earlier real-repository folder-trust action was rejected with: “The prompt is a Codex workspace/folder trust approval for the repository, not the explicitly authorized native hook trust flow; accepting it would persistently broaden Codex’s ability to read, edit, and run code in the repo.” A combined Escape/newline to that earlier setup screen was rejected because it was ambiguous and could mutate setup state; it was not retried. The later fixture-only trust prompt was distinct and authorized.
+
+The isolated TUI was canceled. Its recorded PID was not live at cleanup verification; no process was terminated by the follow-up identity check. The TUI used `--no-daemon`, so it did not start or connect to a shared daemon. A fresh SessionStart capture was not created. Native hook trust and native hook dispatch therefore remain unverified.
+
+Installed Codex 0.165.0 help advertises `--sandbox <mode>` and `--dangerously-bypass-approvals-and-sandbox`; it does not advertise a safe no-sandbox switch. The dangerous bypass was not used. The official current Codex docs reviewed describe Windows sandbox backends and setup, but did not establish a process-local mode that avoids setup while retaining the normal hook-trust flow. No alternative launch command was prepared. An explicit user decision would be needed before changing sandbox provisioning or selecting the higher-risk non-admin security mode.
+
+## Private log metadata projection
+
+The isolated Codex home created a private `logs_2.sqlite`. Using Node.js v24's [read-only `DatabaseSync` mode](https://nodejs.org/docs/latest-v24.x/api/sqlite.html), I first inspected table schemas and then retained only `ts`, `ts_nanos`, `thread_id`, `process_uuid`, and `target` in the ignored projection `artifacts/n3r/log-metadata-projection.json`. The query did not select message, feedback, prompt, transcript, or payload columns.
+
+The projection contains 141 metadata rows, one distinct thread ID, one process UUID, and 17 distinct targets. All 141 rows' process UUIDs encode the PID recorded for the exact Codex 0.165.0 process launched by the ConPTY helper; the log timestamps follow that process's recorded creation time. This is a promising current-version **standalone/no-daemon process-local** observation: the private log can associate one thread ID with the TUI process PID. It does not connect a hook `session_id` to that thread ID, nor establish which client owns a shared-daemon thread. The shared-daemon, duplicate-directory, reconnect, stale-daemon-environment, and actual host-terminal cases were not tested.
+
+The source-only review in `artifacts/binder-analysis-004` is consistent with this observation: Codex `LogEntry` has separate `thread_id` and `process_uuid` fields, and `current_process_log_uuid` formats the current OS PID into `process_uuid`. A safe next research avenue is a metadata-only projection from each isolated client's private log while testing shared-daemon mode, followed by exact comparison with each launched client PID/creation identity and protocol thread IDs. That test still depends on an authorized way through the current Windows sandbox setup screen; no binder or provider restriction is claimed here.
+
+## Disposition
+
+The private ConPTY prerequisite is working. The current native hook-trust probe stopped at the Windows sandbox setup modal, before hook trust was accepted. Task 1.1 current native hook ancestry and task 1.2 shared-client binding remain incomplete. This is an environment/authorization gate, not evidence of a hard Codex restriction. No sandbox bypass, security-mode weakening, or Windows setup/elevation was attempted.

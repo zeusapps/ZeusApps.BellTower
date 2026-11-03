@@ -1,0 +1,82 @@
+{
+  "date": "2026-10-25",
+  "scope": "Read-only repository/documentation investigation and disposable native-process probes; no implementation or personal configuration changes.",
+  "versions": {
+    "claude": "2.1.310",
+    "codex": "0.164.0"
+  },
+  "checks": [
+    {
+      "capability": "Claude SessionStart without Bell Tower wrapper",
+      "result": "passed",
+      "evidenceKind": "native CLI --print with isolated settings, dummy credentials, unreachable loopback endpoint",
+      "hookExitCode": 0,
+      "verifiedAgentPid": 28764,
+      "limitation": "Headless CLI probe; actual VS Code/Windows Terminal presentation and clean SessionEnd were not tested. Process was terminated by probe after bounded model connection retries.",
+      "originalLocalCaptureName": "0639285457566098421-0fff4afab17b480e85af8c17ea73bbba.json"
+    },
+    {
+      "capability": "Codex SessionStart without Bell Tower wrapper",
+      "result": "passed",
+      "evidenceKind": "native TUI using isolated shared daemon, normal /hooks trust flow, dummy credentials, unreachable loopback endpoint",
+      "limitation": "First quoted test command failed; unquoted paths in private hook command succeeded. No production setup regression conclusion is drawn.",
+      "originalLocalCaptureName": "0639285455692391317-9bfffaa5b4804db18d6b717db337099f.json"
+    },
+    {
+      "capability": "Attach observer to existing shared Codex backend",
+      "result": "passed",
+      "transport": "Windows AF_UNIX socket plus WebSocket",
+      "evidence": "codex-shared-proof.json",
+      "limitation": "Private probe backend only. Uses experimental app-server surface; no production backend was connected or modified."
+    },
+    {
+      "capability": "Read Codex runtime status without resuming",
+      "result": "passed",
+      "evidence": "codex-parallel-proof.json"
+    },
+    {
+      "capability": "Set native name in shared Codex conversation",
+      "result": "passed",
+      "evidence": "codex-shared-proof.json",
+      "tuiTitleChangeObserved": true
+    },
+    {
+      "capability": "Separate concurrent Codex conversations",
+      "result": "passed",
+      "evidence": "codex-parallel-proof.json",
+      "limitation": "Two conversations addressed by exact thread IDs. Exact correspondence to host tabs was not proven; an additional loaded thread was also observed."
+    },
+    {
+      "capability": "Conversation lifetime differs from terminal lifetime",
+      "result": "passed",
+      "evidence": "codex-after-terminal-exit.json",
+      "observation": "Both TUI clients exited with a disconnected/work-continues message. Threads remained loaded; one other thread remained active."
+    },
+    {
+      "capability": "Exact terminal binding from hooks alone",
+      "result": "not established",
+      "evidenceKind": "documented hook input, generated API schema, observed thread metadata and existing capture policy",
+      "observation": "No terminal/client PID or handle in inspected hook/thread metadata. Shared-daemon inherited environment is not per-client environment.",
+      "limitation": "Does not prove all host-adapter techniques impossible; host-assisted binding needs its own trials."
+    },
+    {
+      "capability": "Colors, focus, restoration and approval prompts in real host windows",
+      "result": "not performed",
+      "reason": "Requires separate full desktop acceptance. Probe pseudo-consoles and headless CLI cannot establish host behavior."
+    }
+  ],
+  "cleanup": {
+    "nativeTuisExited": true,
+    "claudeProbeProcessesStopped": true,
+    "longPathFailedDaemonExited": true,
+    "shortPathDaemonPid": 40576,
+    "shortPathDaemonStoppedAfterCreationTimeAndExecutablePathVerification": true
+  },
+  "limitations": [
+    "No authenticated model service was used.",
+    "No actual human approval prompt or successful model turn was tested.",
+    "No complete VS Code/Windows Terminal host matrix was performed.",
+    "Claude native conversation-name synchronization remains unfinished in the repository; this investigation did not establish a new write mechanism."
+  ],
+  "evidenceNote": "Retained native probe observations. The initial shell-wrapper recommendation is superseded by the hook-triggered design in this change. Raw transient capture paths are provenance only; use hook-captures.json for retained sanitized observations."
+}

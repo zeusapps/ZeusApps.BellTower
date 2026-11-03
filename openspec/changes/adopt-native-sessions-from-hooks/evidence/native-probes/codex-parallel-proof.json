@@ -1,0 +1,37 @@
+[
+  {
+    "originator": "codex-tui",
+    "status": {
+      "type": "idle"
+    },
+    "session": "01a1740f-efb0-7ec0-91ce-08c4ed4081d8",
+    "name": "Bell Tower native launch probe A",
+    "id": "01a1740f-efb0-7ec0-91ce-08c4ed4081d8",
+    "source": "vscode",
+    "parent": null
+  },
+  {
+    "originator": "codex-tui",
+    "status": {
+      "type": "active",
+      "activeFlags": []
+    },
+    "session": "01a17411-8218-7682-8ed5-5e46d1cf7629",
+    "name": "Bell Tower native launch probe B",
+    "id": "01a17411-8218-7682-8ed5-5e46d1cf7629",
+    "source": "vscode",
+    "parent": null
+  },
+  {
+    "originator": "codex-tui",
+    "status": {
+      "type": "active",
+      "activeFlags": []
+    },
+    "session": "01a17413-1243-7ba3-94cb-9c8817c61374",
+    "name": null,
+    "id": "01a17413-1243-7ba3-94cb-9c8817c61374",
+    "source": "vscode",
+    "parent": null
+  }
+]

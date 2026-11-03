@@ -1,0 +1,262 @@
+# Findings: adopt-native-sessions-from-hooks
+
+Orchestrator-owned ledger for implementation and independent review.
+
+## Current orchestrator
+
+- Client / version: Claude Code (Opus 5.5, `claude-opus-5-5`)
+- Session identity: claude-native-adoption-20261103
+- Since (UTC): 2026-11-03T09:44:13Z
+- Previous owner: Codex CLI 0.165.0 session `codex-native-adoption-20261029`, finished at the user's request on 2026-10-29 (see [the handoff](handoff-2026-10-29.md))
+- State: active. Orchestrator execution context verified non-elevated (administrator role check false) on 2026-11-03.
+
+## Assignments and reservations
+
+| Assignment | Role / owner | Client / model | Model override rationale | Task IDs / target | Report / evidence paths | Reserved new finding IDs | State |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| DEV-001 | developer | Codex / gpt-6-luna | none: role default | 1.1-1.2; evidence for 1.3; baseline a69392e | evidence/native-adoption-001.md and evidence/native-adoption-002.md | none | returned; partial |
+| DEV-002 | developer | Codex / gpt-6-luna | none: role default | 5.1; independent native hook/bridge setup, baseline a69392e | evidence/implementation-002.md; Setup and setup CLI/tests | none | returned; partial acceptance |
+| QA-001 | qa | Codex / gpt-6-luna | none: role default | DEV-001 schema evidence and DEV-002 setup handoff; eight-file target below | reports/qa-001.md | QA-001 through QA-099 | returned |
+| ANALYSIS-001 | code-analyzer | Codex / gpt-6.1-sol | none: role default | DEV-001 schema evidence and DEV-002 setup handoff; eight-file target below | reports/analysis-001.md | ANALYSIS-001 through ANALYSIS-099 | returned |
+| DEV-003 | developer / native_setup | Codex / gpt-6-luna | none: role default | QA-001, QA-002; ANALYSIS-001, ANALYSIS-002; fix cycle 1; narrow setup documentation in task 5.3 | evidence/implementation-003.md; existing setup source/test scope; docs/installation.md | none | returned; original fixes verified |
+| QA-002 | qa | Codex / gpt-6-luna | none: role default | Recheck QA-001, QA-002 plus regression on DEV-003 thirteen-file target below | reports/qa-002.md | QA-100 through QA-199; no suggestions in recheck | returned |
+| ANALYSIS-002 | code-analyzer | Codex / gpt-6.1-sol | none: role default | Recheck ANALYSIS-001, ANALYSIS-002 plus regression on DEV-003 thirteen-file target below | reports/analysis-002.md | ANALYSIS-100 through ANALYSIS-199; no suggestions in recheck | returned |
+| DEV-004 | developer / native_binding_gate | Codex / gpt-6-luna | none: role default | 1.1-1.2 private ConPTY prerequisite and native trust probes | evidence/native-adoption-003.md; ignored artifacts/native-adoption-003 | none | returned; partial |
+| DEV-005 | developer / native_setup | Codex / gpt-6-luna | none: role default | ANALYSIS-100 and duplicate QA-100; fix cycle 2 (last permitted) | evidence/implementation-005.md; scoped tab-title retention source/tests | none | returned; verified |
+| QA-003 | qa | Codex / gpt-6-luna | none: role default | Recheck QA-100, ANALYSIS-100 plus regression | reports/qa-003.md | QA-200 through QA-299; no suggestions in recheck | returned; passed |
+| ANALYSIS-003 | code-analyzer | Codex / gpt-6.1-sol | none: role default | Recheck ANALYSIS-100 plus regression | reports/analysis-003.md | ANALYSIS-200 through ANALYSIS-299; no suggestions in recheck | returned; passed |
+| ANALYSIS-004 | code-analyzer | Codex / gpt-6.1-sol | none: role default | 1.2 next bounded binder architecture investigation on unchanged capture/runtime/bridge paths | reports/analysis-004.md | ANALYSIS-300 through ANALYSIS-399 | returned; source-only |
+| DEV-006 | developer / native_binding_gate | Codex / gpt-6-luna | none: role default | 1.2 shared-client metadata observation before trust/setup; no security changes | evidence/native-adoption-004.md; ignored short private probe artifacts | none | returned; embedded-mode correction |
+| QA-004 | qa | Codex / gpt-6-luna | none: role default | 1.1 matched current Claude native hook/process verification on unchanged ingress/capture | reports/qa-004.md; evidence/claude-native-001.md; ignored artifacts/claude-native-001 | QA-300 through QA-399 | returned; headless Claude case passed |
+| DEV-007 | developer / native_binding_gate | Codex / gpt-6-luna | none: role default | 1.1-1.2 normal single-hook detail trust in already trusted fixture; unchanged read-only mode | evidence/native-adoption-005.md; ignored private probe artifacts | none | returned; partial |
+| DEV-008 | developer / native_binding_gate | Codex / gpt-6-luna | none: role default | 1.2 private same-user non-elevated launcher prerequisite; reduce child privilege only | evidence/native-adoption-006.md; ignored private helper artifacts | none | returned; child creation blocked |
+| QA-005 | qa | Codex / gpt-6-luna | none: role default | 1.1 current Codex headless SessionStart with already normally trusted private hook | reports/qa-005.md; evidence/codex-headless-001.md; ignored private outputs | QA-400 through QA-499 | returned; partial |
+| DEV-009 | developer / native_binding_gate | Codex / gpt-6-luna | none: role default | 1.2 documented Windows shell same-user unelevated-launch smoke, no provider initially | evidence/native-adoption-007.md; ignored private launcher artifacts | none | returned; desktop dispatch denied |
+| QA-006 | qa | Codex / gpt-6-luna | none: role default | QA-005 factual metadata correction; missing exact-handler preflight and QA-400 context only | reports/qa-006.md; evidence/codex-headless-002.md; ignored private fixture outputs | QA-500 through QA-599 | returned; diagnostic only |
+| DEV-010 | developer / native_binding_gate | Codex / gpt-6-luna | none: role default | correct only owned fixture hook enablement; metadata-only handler diagnosis and valid preflight before native retry | evidence/native-adoption-008.md; ignored fixture outputs | none | returned; fixture preflight passed |
+| QA-007 | qa | Codex / gpt-6-luna | none: role default | 1.1 bounded Codex headless native retry after proven handler preflight and single-hook enablement | reports/qa-007.md; evidence/codex-headless-003.md; ignored private outputs | QA-600 through QA-699 | returned; native capture unverified |
+| ANALYSIS-005 | code-analyzer | Codex / gpt-6.1-sol | none: role default | 1.1-1.2 exact installed-tag SessionStart/trust/enablement/startup timing and safe probe prerequisites | reports/analysis-005.md | ANALYSIS-400 through ANALYSIS-499 | returned; source-only |
+| DEV-011 | developer / native_binding_gate | Codex / gpt-6-luna | none: role default | prepare reviewable normal-user shared-mode probe; plan/guard checks only in current elevated context | evidence/native-adoption-009.md; ignored artifacts/native-user-probe/run.ps1 and supporting data | none | held; unvalidated draft |
+| DEV-012 | developer / native_binding_gate | Claude Code / role default | none: role default | 1.1 bounded non-elevated Codex 0.165.0 headless SessionStart probe with stage evidence; ingress/capture source unchanged (`head=a69392e files=0 diff=e3b0c44298fc untracked=0/e3b0c44298fc`) | evidence/codex-headless-004.md; ignored artifacts/codex-headless-004 | none | returned; native headless capture reported, awaiting QA |
+| QA-008 | qa | Claude Code / role default | none: role default | 1.1 independent verification of DEV-012 non-elevated Codex headless SessionStart capture; same unchanged ingress/capture target | reports/qa-008.md | QA-700 through QA-799 | returned; capture verified, QA-700 evidence correction |
+| DEV-013 | developer / native_binding_gate | Claude Code / role default | none: role default | QA-700 evidence correction (fix cycle 1 for this probe); QA-701 note | evidence/codex-headless-004.md only | none | returned; verified |
+| QA-009 | qa | Claude Code / role default | none: role default | light recheck QA-700, QA-701 note plus regression on evidence-only target `untracked=1/207ddfc9f4b1` | reports/qa-009.md | QA-800 through QA-899; no suggestions in recheck | returned; passed |
+| DEV-014 | developer / native_binding_gate | Claude Code / role default | none: role default | 1.2 non-elevated two-client shared-Codex binding probe; plugin warm-up isolation prerequisite; ingress/capture source unchanged | evidence/native-adoption-009.md; ignored artifacts/native-adoption-009 | none | returned; partial, binder gap; network deviation awaiting user decision |
+| DEV-015 | developer / native_binding_gate | Claude Code / role default | none: role default | 1.2 network-isolated shared-Codex rerun: supported analytics/remote-control/update-check disablement in private config, socket-level monitoring, thread switch/new thread and reconnect | evidence/native-adoption-010.md; ignored artifacts/native-adoption-010 | none | returned; partial, binder gap confirmed |
+| QA-010 | qa | Claude Code / role default | none: role default | 1.2 independent verification of DEV-014 and DEV-015 shared-Codex evidence and network isolation | reports/qa-010.md | QA-900 through QA-999 | returned; core gap reproduced, QA-900/QA-902 evidence corrections |
+| DEV-016 | developer / native_binding_gate | Claude Code / role default | none: role default | QA-900, QA-902 evidence wording corrections (fix cycle 1) | evidence/native-adoption-009.md and native-adoption-010.md only | none | returned; verified |
+| QA-011 | qa | Claude Code / role default | none: role default | light recheck QA-900, QA-902 plus regression at evidence identity `untracked=2/7dd25346bfd6` | reports/qa-011.md | QA-1000 through QA-1099; no suggestions in recheck | returned; passed |
+| ANALYSIS-006 | code-analyzer | Claude Code / role default | none: role default | 1.2-1.3 source-only shared-Codex binder avenues: per-connection thread association, sole-client exclusion via backend-to-client connections, supported shared-daemon opt-out; host bridge correlation | reports/analysis-006.md (saved by orchestrator; native write refused) | ANALYSIS-500 through ANALYSIS-599 | returned; source-only |
+| DEV-017 | developer / native_binding_gate | Claude Code / role default | none: role default | 1.2-1.3 non-elevated A3 MCP-endpoint binder probe in the isolated 010 harness (no model turns beyond fixture, no Codex quota); ingress/capture source unchanged | evidence/native-adoption-011.md; ignored artifacts/native-adoption-011 | none | returned; A3 partially viable (9/10 steps correct, step 5 fail-closed; stale live-owner gap reproduced), verified by QA-012/QA-013 |
+| QA-012 | qa | Claude Code / role default | none: role default | 1.2-1.3 independent verification of DEV-017 A3 binder evidence at `head=a69392e files=1 diff=e3b0c44298fc untracked=1/0a333cccccce` against raw artifacts/native-adoption-011 | reports/qa-012.md | QA-1100 through QA-1199 | returned; main conclusions verified, QA-1100/QA-1101 evidence corrections |
+| DEV-018 | developer / native_binding_gate | Claude Code / role default | none: role default | QA-1100 to QA-1106 evidence wording and qualification corrections (fix cycle 1) | evidence/native-adoption-011.md only | none | returned; verified |
+| QA-013 | qa | Claude Code / role default | none: role default | light recheck QA-1100 to QA-1106 plus regression at evidence identity `untracked=1/4f14a722ad6f` | reports/qa-013.md | QA-1200 through QA-1299; no suggestions in recheck | returned; passed |
+
+## Review target
+
+- Baseline: a69392e9ae6734b7f229d9266ebe4a3144ef49a4
+- Initial scope: `src tests vscode scripts docs openspec/changes/adopt-native-sessions-from-hooks/evidence`.
+- Initial identity: `Summary: head=a69392e baseline=a69392e files=7 diff=e3b0c44298fc untracked=7/3277db949850`.
+- Initial untracked files are the seven pre-existing investigation evidence files; product paths are clean against baseline.
+- Planning artifacts, task checkboxes and reviewer tracking are excluded from the implementation identity.
+
+### First independent review target
+
+- Scope: `src/BellTower/Cli/SetupCommand.cs`, `src/BellTower/Setup/IntegrationOwnership.cs`, `src/BellTower/Setup/IntegrationSetup.cs`, `src/BellTower/Setup/DesktopSetup.cs`, `tests/BellTower.Tests/Setup/NativeHostSetupTests.cs`, `tests/BellTower.Tests/Cli/NativeSetupCliTests.cs`, `evidence/implementation-002.md`, `evidence/native-adoption-001.md` (evidence paths relative to this change).
+- Identity: `Summary: head=a69392e baseline=a69392e files=8 diff=0a836f57c768 untracked=4/c366fb8460b0`.
+- Tracked diff SHA-256: `0a836f57c76806cd372410860c01424c0cd34fd5f488716616eb3cb822551392`.
+- Untracked hashes: implementation-002 `8006e8bc263cf34a8df88647113f6c70ae6b0905f2ddca3e1a7569ef4729c68a`; native-adoption-001 `9ab6d3dbaed1fcee5799928ad9bed449fa17421ef670b5c6d0b2b099207cabcb`; NativeSetupCliTests `6b28f51683703d148db7259a2d2d91ea0218e00fd978ba8d17d9402f216244b5`; NativeHostSetupTests `8935a6a79e8c363df440532a1455cf848c3a7465cd28258e882ada6875a63369`.
+- Ongoing native-process probes may write only the separately assigned script/new evidence and ignored artifacts; they are outside this stable setup/schema review target.
+
+### Corrected setup recheck target
+
+- Scope: `docs/installation.md`; `src/BellTower/Cli/SetupCommand.cs`; setup files `DesktopSetup.cs`, `IntegrationOwnership.cs`, `IntegrationSetup.cs`, `JsonSettingsFile.cs`, `OwnedSettings.cs`, `TerminalProfilesEditor.cs`, `VsCodeBridgeSettings.cs`; tests `Cli/NativeSetupCliTests.cs`, `Setup/NativeHostSetupTests.cs`; this change's `evidence/implementation-002.md` and `evidence/implementation-003.md`.
+- Baseline remains `a69392e9ae6734b7f229d9266ebe4a3144ef49a4`.
+- Identity: `Summary: head=a69392e baseline=a69392e files=13 diff=54893ef6671a untracked=6/57b674b020cb`.
+- Tracked diff SHA-256: `54893ef6671a508932171f9629ab3a745b7249989ea055be7e4f0b64c976f7d9`.
+- Untracked hashes: implementation-002 `8006e8bc263cf34a8df88647113f6c70ae6b0905f2ddca3e1a7569ef4729c68a`; implementation-003 `2fe355e8c629aa1da5ee9079de65b92ff4c0ab33e90be97d2f84efcc7ed545c8`; OwnedSettings `cb60593b535118dffc1c2920f314d0f25851f8ec4ecc441ff8fa7e6293fd9487`; VsCodeBridgeSettings `299e9d1888f43be1a68acc88ed1f320628c9a9344b449bf09524d693647fa4c1`; NativeSetupCliTests `6b28f51683703d148db7259a2d2d91ea0218e00fd978ba8d17d9402f216244b5`; NativeHostSetupTests `465935163c36f698b7f9c60a21e4ca390a7764fba8d58d916a69f60706765c16`.
+
+### Final setup recheck target
+
+Fix cycle 2 adds `tests/BellTower.Tests/Setup/DesktopSetupTests.cs`, `tests/BellTower.Tests/Setup/ProjectProfileTests.cs`, and `evidence/implementation-005.md` to the prior thirteen-file target. All sixteen files are frozen for QA-003 and ANALYSIS-003.
+
+```text
+HEAD: a69392e9ae6734b7f229d9266ebe4a3144ef49a4
+Baseline: a69392e9ae6734b7f229d9266ebe4a3144ef49a4
+Paths: docs/installation.md openspec/changes/adopt-native-sessions-from-hooks/evidence/implementation-002.md openspec/changes/adopt-native-sessions-from-hooks/evidence/implementation-003.md openspec/changes/adopt-native-sessions-from-hooks/evidence/implementation-005.md src/BellTower/Cli/SetupCommand.cs src/BellTower/Setup/DesktopSetup.cs src/BellTower/Setup/IntegrationOwnership.cs src/BellTower/Setup/IntegrationSetup.cs src/BellTower/Setup/JsonSettingsFile.cs src/BellTower/Setup/OwnedSettings.cs src/BellTower/Setup/TerminalProfilesEditor.cs src/BellTower/Setup/VsCodeBridgeSettings.cs tests/BellTower.Tests/Cli/NativeSetupCliTests.cs tests/BellTower.Tests/Setup/DesktopSetupTests.cs tests/BellTower.Tests/Setup/NativeHostSetupTests.cs tests/BellTower.Tests/Setup/ProjectProfileTests.cs
+Manifest (A added, M modified, D deleted, ? untracked):
+  ? openspec/changes/adopt-native-sessions-from-hooks/evidence/implementation-002.md
+  ? openspec/changes/adopt-native-sessions-from-hooks/evidence/implementation-003.md
+  ? openspec/changes/adopt-native-sessions-from-hooks/evidence/implementation-005.md
+  ? src/BellTower/Setup/OwnedSettings.cs
+  ? src/BellTower/Setup/VsCodeBridgeSettings.cs
+  ? tests/BellTower.Tests/Cli/NativeSetupCliTests.cs
+  ? tests/BellTower.Tests/Setup/NativeHostSetupTests.cs
+  M docs/installation.md
+  M src/BellTower/Cli/SetupCommand.cs
+  M src/BellTower/Setup/DesktopSetup.cs
+  M src/BellTower/Setup/IntegrationOwnership.cs
+  M src/BellTower/Setup/IntegrationSetup.cs
+  M src/BellTower/Setup/JsonSettingsFile.cs
+  M src/BellTower/Setup/TerminalProfilesEditor.cs
+  M tests/BellTower.Tests/Setup/DesktopSetupTests.cs
+  M tests/BellTower.Tests/Setup/ProjectProfileTests.cs
+Tracked diff SHA-256: 1becc3a551efd333e8e037d07595b8e1ff0fdba806a44a5adfe3ce22f65835b2
+Untracked file SHA-256:
+  8006e8bc263cf34a8df88647113f6c70ae6b0905f2ddca3e1a7569ef4729c68a  openspec/changes/adopt-native-sessions-from-hooks/evidence/implementation-002.md
+  2fe355e8c629aa1da5ee9079de65b92ff4c0ab33e90be97d2f84efcc7ed545c8  openspec/changes/adopt-native-sessions-from-hooks/evidence/implementation-003.md
+  39e5bd6f7ea0aa498dc71b98fb97e32a8cb58afc6e9e929e2d058bc127054194  openspec/changes/adopt-native-sessions-from-hooks/evidence/implementation-005.md
+  cb60593b535118dffc1c2920f314d0f25851f8ec4ecc441ff8fa7e6293fd9487  src/BellTower/Setup/OwnedSettings.cs
+  299e9d1888f43be1a68acc88ed1f320628c9a9344b449bf09524d693647fa4c1  src/BellTower/Setup/VsCodeBridgeSettings.cs
+  6b28f51683703d148db7259a2d2d91ea0218e00fd978ba8d17d9402f216244b5  tests/BellTower.Tests/Cli/NativeSetupCliTests.cs
+  465935163c36f698b7f9c60a21e4ca390a7764fba8d58d916a69f60706765c16  tests/BellTower.Tests/Setup/NativeHostSetupTests.cs
+Summary: head=a69392e baseline=a69392e files=16 diff=1becc3a551ef untracked=7/061edc8d545b
+```
+
+## Summary
+
+| ID | Source report(s) | Task / requirement | Severity | Blocking decision | Status | Owner | Latest verification |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| QA-001 | [QA 001](qa-001.md), [QA 002](qa-002.md), [Analysis 002](analysis-002.md) | 5.1; usable native bridge configuration | warning | original blocker resolved | verified | orchestrator | corrected thirteen-file target; QA and analyzer passed original defect |
+| QA-002 | [QA 001](qa-001.md), [QA 002](qa-002.md), [Analysis 002](analysis-002.md) | 5.1; provider-specific ownership/removal | warning | original blocker resolved | verified | orchestrator | corrected thirteen-file target; QA and analyzer passed original defect |
+| ANALYSIS-001 | [Analysis 001](analysis-001.md) | 5.1; bridge settings and last-consumer restoration | warning | yes through QA-001 | duplicate | canonical QA-001 | initial eight-file target; failed |
+| ANALYSIS-002 | [Analysis 001](analysis-001.md) | 5.1; per-provider and generic removal | warning | yes through QA-002 | duplicate | canonical QA-002 | initial eight-file target; failed |
+| ANALYSIS-100 | [Analysis 002](analysis-002.md), [QA 002](qa-002.md), [QA 003](qa-003.md), [Analysis 003](analysis-003.md) | 5.1; preserve remaining managed tab presentation | warning | blocker resolved | verified | orchestrator | final sixteen-file target; both independent rechecks passed |
+| QA-100 | [QA 002](qa-002.md) | 5.1; preserve remaining managed tab presentation | warning | yes through ANALYSIS-100 | duplicate | canonical ANALYSIS-100 | corrected thirteen-file target; failed |
+| QA-400 | [QA 005](qa-005.md) | committable-content hygiene | critical | no; scanner matched ordinary CLI option text, not a credential | dismissed | orchestrator | same known benign substring was contextualized in QA-002, QA-003 and QA-004; source line unchanged |
+| QA-700 | [QA 008](qa-008.md) | 1.1; probe isolation claim | warning | blocker resolved | verified | orchestrator | QA-009 verified corrected evidence at `untracked=1/207ddfc9f4b1` |
+| QA-701 | [QA 008](qa-008.md) | 1.1; stage trace | suggestion | no | deferred | orchestrator | hook ordering inferred from capture timestamp; no hook-dispatch trace line |
+| QA-900 | [QA 010](qa-010.md) | 1.2; network disclosure provenance | warning | blocker resolved | verified | orchestrator | QA-011 verified at evidence identity `untracked=2/7dd25346bfd6` |
+| QA-901 | [QA 010](qa-010.md) | 1.2; claim scope | suggestion | no | deferred | orchestrator | scope 112/0 claim to shared-mode TUI clients |
+| QA-902 | [QA 010](qa-010.md) | 1.2; attachment claim coverage | warning | blocker resolved | verified | orchestrator | QA-011 verified at evidence identity `untracked=2/7dd25346bfd6` |
+| QA-1100 | [QA 012](qa-012.md), [QA 013](qa-013.md) | 1.2-1.3; non-elevation claims without retained record | warning | blocker resolved | verified | orchestrator | QA-013 verified at evidence identity `untracked=1/4f14a722ad6f` |
+| QA-1101 | [QA 012](qa-012.md), [QA 013](qa-013.md) | 1.2-1.3; extra post-restart read without retained output | warning | blocker resolved | verified | orchestrator | QA-013 verified at evidence identity `untracked=1/4f14a722ad6f` |
+| QA-1102 | [QA 012](qa-012.md), [QA 013](qa-013.md) | 1.2-1.3; reconnect port claim covers A and D only | suggestion | no | verified | orchestrator | QA-013 verified at evidence identity `untracked=1/4f14a722ad6f` |
+| QA-1103 | [QA 012](qa-012.md), [QA 013](qa-013.md) | 1.2-1.3; /new unsubscribe count | suggestion | no | verified | orchestrator | QA-013 verified at evidence identity `untracked=1/4f14a722ad6f` |
+| QA-1104 | [QA 012](qa-012.md), [QA 013](qa-013.md) | 1.2-1.3; createdAt instability understated | suggestion | no | verified | orchestrator | QA-013 verified at evidence identity `untracked=1/4f14a722ad6f` |
+| QA-1105 | [QA 012](qa-012.md), [QA 013](qa-013.md) | 1.2-1.3; monitor row count | suggestion | no | verified | orchestrator | QA-013 verified at evidence identity `untracked=1/4f14a722ad6f` |
+| QA-1106 | [QA 012](qa-012.md), [QA 013](qa-013.md) | 1.2-1.3; unstated observation limits | suggestion | no | verified | orchestrator | QA-013 verified at evidence identity `untracked=1/4f14a722ad6f` |
+| QA-903 | [QA 010](qa-010.md) | 1.2; cold-race timing sentence | suggestion | no | deferred | orchestrator | sentence does not reproduce from raw data |
+| QA-904 | [QA 010](qa-010.md) | 1.2; host-acceptance labeling | suggestion | no | deferred | orchestrator | add pseudo-console limitation line |
+| ANALYSIS-500 | [Analysis 006](analysis-006.md) | 2.2, 4.2; inherited dedicated flag can bind shared hooks to the launcher terminal | warning | yes for task 2.2 acceptance; implemented within task 2.2, not a separate fix round now | deferred | task 2.2 developer assignment | source observation; scenario not reproduced |
+
+## Finding details and history
+
+The earlier planning review's missing lifecycle guarantees were restored at the user's request; strict OpenSpec validation passed before apply began.
+
+### QA-001: Bridge settings must follow every remaining consumer
+
+- Sources and evidence: [QA 001](qa-001.md#qa-001-bridge-only-setup-does-not-configure-the-vs-code-executable-or-data-directory), [Analysis 001](analysis-001.md#analysis-001-bridge-only-setup-omits-the-bridges-required-connection-settings).
+- Required behavior: task 5.1; native-only bridge setup must configure its selected executable/data directory without creating terminal profiles/imports. Removing desktop setup must retain settings still needed by native setup.
+- Triage: warning, blocking agreed acceptance; bounded shared-settings correction in existing setup scope.
+- Action / assignment: DEV-003 extracts/reuses owned bridge-setting policy, preserves manual edits and last-consumer restoration, adds regression fixtures for both providers and installation/removal orders.
+- Duplicate of: none; ANALYSIS-001 is the duplicate with additional coexistence coverage.
+- Deferral: none.
+- User decision: not needed; agreed acceptance supplies expected behavior.
+- Verification: QA-002 and ANALYSIS-002 independently passed the original defect at `head=a69392e files=13 diff=54893ef6671a untracked=6/57b674b020cb`; canonical QA-001 verified. New regression ANALYSIS-100 is tracked separately.
+
+### QA-002: Track native bridge consumers per provider
+
+- Sources and evidence: [QA 001](qa-001.md#qa-002-removing-one-provider-clears-shared-native-bridge-ownership-for-both), [Analysis 001](analysis-001.md#analysis-002-a-single-native-bridge-flag-cannot-preserve-the-other-provider-on-removal).
+- Required behavior: task 5.1; selected-provider removal retains the other provider's bridge. Generic removal reconciles the selected native consumers consistently; final cleanup retains ownership if actions fail.
+- Triage: warning, blocking agreed acceptance; bounded ownership correction in existing setup scope.
+- Action / assignment: DEV-003 replaces global native-only ownership decisions with per-provider consumers, preserves existing/legacy ownership and tests native-only partial/generic removal and failed-action retry.
+- Duplicate of: none; ANALYSIS-002 is the duplicate with generic-removal coverage.
+- Deferral: none.
+- User decision: not needed; agreed acceptance supplies expected behavior.
+- Verification: QA-002 and ANALYSIS-002 independently passed the original defect at the corrected thirteen-file identity; canonical QA-002 verified. New regression ANALYSIS-100 is tracked separately.
+
+### ANALYSIS-001 and ANALYSIS-002: Duplicate findings retained
+
+Both independent analyzer findings are retained as duplicates of QA-001 and QA-002, respectively. Their coexistence, generic-removal, manual-edit and retry concerns are explicitly included in DEV-003 and the analyzer's independent recheck; duplicate classification does not waive those checks.
+
+| Date (UTC) | From | To | Actor | Evidence / decision |
+| --- | --- | --- | --- | --- |
+| 2026-10-29T16:42:58Z | reported | assigned | orchestrator | QA-001 and QA-002 assigned to DEV-003; fix cycle 1. |
+| 2026-10-29T16:42:58Z | reported | duplicate | orchestrator | ANALYSIS-001 -> QA-001; ANALYSIS-002 -> QA-002. Both retain independent analyzer rechecks. |
+
+The user subsequently retained full terminal-support scope and requested continued binder research. No shared-Codex terminal requirement was waived; the decision is recorded in design decision 3.
+
+### ANALYSIS-100: Retain tab presentation until the final desktop consumer
+
+- Sources and evidence: [Analysis 002](analysis-002.md#analysis-100-partial-desktop-removal-now-restores-the-other-providers-tab-presentation); [QA 002](qa-002.md) independently confirmed the same regression. Final rechecks: [QA 003](qa-003.md), [Analysis 003](analysis-003.md).
+- Required behavior: task 5.1 preserves existing managed configuration during partial provider/project removal. Native-only setup still must not acquire tab presentation ownership.
+- Triage: warning, blocks agreed acceptance; bounded regression introduced by the shared-settings extraction.
+- Action / assignment: DEV-005 restores last-desktop-consumer retention with paired provider, project-only and final-removal fixtures. This is fix cycle 2; any unresolved blocking result after its independent rechecks requires escalation rather than a third fix cycle.
+- Duplicate of: none; QA-100 retains the independent QA evidence as a duplicate.
+- Deferral: none.
+- User decision: not needed for this acceptance-preserving fix.
+- Verification: QA-003 passed 59 Release fixtures and ANALYSIS-003 passed its source recheck on `head=a69392e baseline=a69392e files=16 diff=1becc3a551ef untracked=7/061edc8d545b`. Both reports record matching before/after identities and no new findings.
+
+### Next binder investigation target
+
+- Scope: `src/BellTower/Hosts`, `src/BellTower/Providers`, `src/BellTower/Sessions/CodexRuntimeHost.cs`, `src/BellTower/IO/CodexRuntimeStore.cs`, `vscode`, and `evidence/native-adoption-001.md`.
+- Baseline: `a69392e9ae6734b7f229d9266ebe4a3144ef49a4`.
+- Identity: `Summary: head=a69392e baseline=a69392e files=1 diff=e3b0c44298fc untracked=1/ab6df6247f26`; tracked diff empty; native-adoption-001 SHA-256 `9ab6d3dbaed1fcee5799928ad9bed449fa17421ef670b5c6d0b2b099207cabcb`.
+- Setup corrections, planning/tracking and new private native probes are outside this unchanged source-review target.
+
+### QA-400: Benign CLI-text hygiene match
+
+- Sources: [QA 005](qa-005.md), with the same unchanged line already contextualized by the earlier QA hygiene scans.
+- Triage: dismissed false positive. The scanner's broad credential prefix matches an ordinary documented CLI option in `evidence/native-adoption-002.md:7`; no credential or personal value is present. Do not remove useful evidence or alter earlier reports to silence this match.
+- Verification: QA-006 will retain the factual clarification alongside the missing handler-shell preflight. This is not a product-code fix round.
+- QA-005's reviewer-model header conflates the native provider's configured model with the reviewer. Its role assignment used the QA default `gpt-6-luna`; a new report will correct the metadata without rewriting QA-005. No successful native model response or hook dispatch was established by QA-005.
+
+### QA-700: Codex probe made a remote plugin-metadata request
+
+- Source: [QA 008](qa-008.md). Orchestrator independently confirmed in the ignored DEV-012 trace one `codex_core_plugins` featured-plugin cache warm request to a remote ChatGPT backend endpoint that returned 401 Unauthorized. No auth file existed in the private home and only a dummy key was present; no account, quota or real credential was involved.
+- Required behavior: DEV-012's assignment required no network beyond loopback, and `evidence/codex-headless-004.md` claims loopback-only isolation.
+- Triage: warning, blocks acceptance of the evidence wording. Clear evidence-only fix: state the remote unauthenticated request, its 401 result and that no socket-level capture exists; withdraw the loopback-only claim. The capture/ancestry result itself is independently verified by QA-008 and is unaffected.
+- Follow-up for future isolated Codex probes: disable or isolate remote plugin metadata warm-up through a supported configuration before the next native run; treat this as a fixture prerequisite, not a provider restriction.
+- Assignment: DEV-013, fix cycle 1.
+- Verification: [QA 009](qa-009.md) independently confirmed the corrected wording against the raw trace; no new findings.
+
+### QA-701: Stage trace lacks a hook-dispatch line
+
+- Source: [QA 008](qa-008.md). Suggestion; deferred. Reconsider when a future probe adds hook-runtime tracing targets. DEV-013 adds a one-line note that ordering is inferred from the capture timestamp.
+
+## Completion assessment
+
+- Current QA / analysis reports: [QA 003](qa-003.md) and [Analysis 003](analysis-003.md) match the final sixteen-file setup target. QA passed 59 Release fixtures; analyzer source recheck reported no new findings.
+- Required acceptance: full native adoption remains incomplete. Setup implementation has fixture/source approval, while native hook trust, actual bridge installation and live host acceptance remain unperformed.
+- Findings: QA-001, QA-002 and ANALYSIS-100 are verified on their independently reviewed targets, with original-finding coverage retained in the final setup regression suite. Analyzer/QA duplicates remain linked; no remaining setup blocker was reported.
+- Nonblocking follow-ups: none allocated.
+- Evidence gaps / provider restrictions: shared-Codex terminal binding remains unverified, not proven restricted. User retained full terminal-support scope. Read-only metadata emitted before the native setup/trust gate is the next research avenue; no security-control change is authorized.
+- Commit: not committed; branch `archive-completed-release-change`.
+- OpenSpec task reconciliation: 0/23 complete. The setup portion of task 5.1 has current source/fixture approval and task 5.3 has installation guidance; their full native/host acceptance and remaining documentation stay open.
+
+### Current native evidence boundaries
+
+- [QA 004](qa-004.md) and [Claude native 001](../evidence/claude-native-001.md): current Claude Code 2.1.312 headless SessionStart and exact launched PID/creation/image identity verified. This is no terminal-binding claim.
+- [Native adoption 005](../evidence/native-adoption-005.md): selected Codex hook trust persisted through normal native UI with unchanged read-only mode; fresh no-input startup emitted process-local thread metadata but no SessionStart capture.
+- The tool shells and their inherited ConPTY children reported elevated tokens. Tagged Codex 0.165.0 startup explicitly switches elevated local Windows launches to embedded mode. Earlier default-launch attempts therefore do not prove shared-daemon behavior, irrespective of omitted `--no-daemon` flags. This is a specific test-mode correction, not a general provider restriction.
+- DEV-008 may prepare a same-user, non-elevated private child process using its linked token, subject to explicit tool review and a harmless smoke test. It must not change provider sandbox policy, Windows setup, accounts, personal configuration or existing processes; denied security-mode actions remain forbidden.
+- Follow-up prerequisites: the linked-token and same-user desktop automation paths could not create a standard-user child in this tool context; no provider was launched through them. An ordinary non-elevated external execution context is still needed for a true shared-mode trial.
+- Root inspected the owned test configuration and found the normally trusted single capture hook had `enabled = false`. Prior no-capture observations do not establish native hook behavior. A root own-process CIM check failed in the default tool sandbox and succeeded in the approved outside-sandbox context; the custom diagnostic handler's CIM dependency must be validated in the actual launch context before another native probe.
+
+## Activity
+
+- 2026-10-29T16:30:47Z: User requested proceeding after the approved planning correction. Started apply with the existing spec-driven plan. DEV-001 is limited to the first evidence gate; later product changes depend on its results.
+- 2026-10-29T16:33:00Z: Reserved DEV-002 for independent hook/bridge setup. Its source/test ownership is disjoint from DEV-001 probe/evidence paths. It may not make runtime, binding or presentation claims.
+- 2026-10-29T21:15:55Z: User confirmed this terminal was elevated and requested wrapping for the day. All specialists stopped; DEV-011 left only unvalidated ignored runner drafts and reported no private children. Full state and next probe prerequisites are saved in [handoff-2026-10-29.md](handoff-2026-10-29.md). No implementation task was marked complete or archived.
+- 2026-11-03T09:44:13Z: Claude Code session took over the finished ledger at the user's request and confirmed a non-elevated orchestrator context. Assigned DEV-012 for the bounded non-elevated Codex headless SessionStart probe (task 1.1). Probes use only dummy credentials and closed or local loopback endpoints; no real model service or Codex account quota.
+- 2026-11-03: DEV-012 returned: one non-elevated Codex 0.165.0 `exec` run (child elevation 0, embedded) delivered SessionStart about 2 s after launch, before the first model request; capture ancestry contained the exact launched process. Custom handler only, not product ingress. Assigned QA-008 for independent verification.
+- 2026-11-03: QA-008 verified the DEV-012 native headless capture (fresh non-synthetic SessionStart, exact launched codex.exe PID/creation/image, child elevation 0) and reported QA-700 (unreported remote plugin-metadata request, 401) and QA-701 (suggestion). Assigned DEV-013 for the evidence correction. Independent second run not performed; one-run reproducibility accepted for headless direct-process evidence only.
+- 2026-11-03: DEV-013 corrected evidence/codex-headless-004.md for QA-700 and added the QA-701 note. Assigned QA-009 light recheck. Analyzer review not assigned: the target is a change-local evidence record with no implementation, configuration or user documentation change.
+- 2026-11-03: QA-009 verified QA-700 at evidence identity `untracked=1/207ddfc9f4b1`; QA-701 remains a deferred suggestion with the inference note added. Codex 0.165.0 non-elevated headless direct-process SessionStart dispatch is accepted as evidence for that case only; task 1.1 stays open (interactive, npm entry point, product-ingress Codex envelope).
+- 2026-11-03: User selected the shared-Codex binding investigation (task 1.2). Assigned DEV-014: isolate remote plugin warm-up through supported configuration, prove a distinct private shared backend, then run two same-directory native TUI clients and inspect only allowed metadata. DEV-011 drafts are superseded for this assignment unless revalidated.
+- 2026-11-03: DEV-014 returned partial. Supported `[features] plugins = false` removed the featured-plugin request in a traced headless run. First non-elevated shared-mode run established a distinct private managed backend (real home untouched, both clients elevation 0). Hook ancestry names the shared backend, not the client; root hook session_id equals protocol thread ID; thread-scoped log rows carry only the backend process UUID; protocol thread metadata has no client identity; backend inherits the first client's environment; a killed client's thread stays loaded and active. No binder proven. Safety deviation: the private backend held one established non-loopback HTTPS connection (cause undetermined; analytics or remote-control candidates); developer stopped and cleaned up by identity. Private ConPTY helper defects (inherited std handles, missing breakaway) corrected in a private copy. Rerun with network isolation, thread switch/reconnect and QA review await the user's decision; task 1.3 binding decision is pending with the user.
+- 2026-11-03: User authorized the network-isolated shared-Codex rerun. Assigned DEV-015 (private config only; abort on any non-loopback socket).
+- 2026-11-03: DEV-015 returned. Supported private settings disabled update checks, analytics, feedback, OTEL export, daemon remote control and auto-update; the TUI announcement-tip prefetch has no supported disable in 0.165.0 and was refused through a fail-closed loopback proxy environment. One direct unauthenticated static-file HTTPS request from the first client launch preceded that mitigation (no credential). Main run monitored clean. Across seven non-elevated clients and cases new thread, resume of a loaded thread (no SessionStart), kill-and-resume from a new client, and near-simultaneous warm/cold launches: zero client-originated thread-scoped log rows, no client field in protocol thread metadata, empty thread attachments, and hook ancestry/environment always name the backend launcher. Binder gap confirmed for log, protocol and ancestry evidence; host-registered hook-time signal remains the only open avenue. Assigned QA-010. Task 1.3 decision pending with the user.
+- 2026-11-03: QA-010 independently reproduced the shared-Codex binder gap from raw data (0 of 112 client rows with thread_id; ancestry always backend launcher; session_id equals thread ID). Gated QA-900 (network events developer-reported, no retained raw record) and QA-902 (attachment claim covers 2 of 6 threads) to DEV-016 as evidence wording corrections; QA-901/903/904 suggestions deferred, reconsider if the evidence is reused for acceptance text.
+- 2026-11-03: DEV-016 reworded QA-900 disclosures as developer-reported with no retained raw record and narrowed QA-902 attachment claims (including the related summary sentence) to 2 of 6 queried threads. Assigned QA-011 light recheck.
+- 2026-11-03: QA-011 verified QA-900 and QA-902. Shared-Codex binding evidence (native-adoption-009/010) accepted: no conversation-to-client binder from hook ancestry, inherited environment, log process UUIDs, protocol thread metadata or queried attachments for non-elevated shared Codex 0.165.0 pseudo-console trials; evidence gap, not a provider restriction. Task 1.3 binding decision awaits the user.
+- 2026-11-03: User selected source-only binder research (option 1) for task 1.3. Assigned ANALYSIS-006; no provider launches.
+- 2026-11-03: ANALYSIS-006 returned inline because the client refused the analyzer's native report write; orchestrator saved it verbatim at reports/analysis-006.md with a fallback header. Results: direct connection/subscriber exposure not viable; sole-client exclusion not viable; titles veto-only; `features.daemon_auto_start = false` is a supported partial opt-in that cannot force standalone while a daemon runs. New candidate: per-thread `codex_tui` MCP endpoint from supported `mcpServerStatus/list` (threadId + serverName) mapped to the OS listener owner, viable-needs-probe, with a known stale case after rejoining a subscribed thread then switching away. ANALYSIS-500 (inherited dedicated flag can attribute shared hooks to the launcher terminal) deferred into task 2.2, whose acceptance already requires it. Probe authorization and the residual-gap decision await the user.
+- 2026-11-03: User authorized the bounded A3 native probe (ANALYSIS-006 recommendation). Assigned DEV-017 in the isolated 010 harness; no product source changes.
+- 2026-11-03: DEV-017 returned: A3 binds correctly for new threads, clean cold resume, fork and reconnect; dead owner fails closed via listener check; rejoin-then-owner-switch leaves a silent stale binding to a live TUI (failure mode 1 reproduced). Assigned QA-012 independent verification.
+- 2026-11-03: QA-012 verified DEV-017 per-step ports, listener owners, backend peers, no-side-effect reads, three hook captures, loopback-only network, cleanup and hygiene from raw data. Gated QA-1100/QA-1101 (claims without retained record); suggestions QA-1102 to QA-1106 are factual corrections folded into the same edit. Assigned DEV-018 (fix cycle 1).
+- 2026-11-03: DEV-018 applied QA-1100 to QA-1106 wording corrections (evidence identity `untracked=1/4f14a722ad6f`). Assigned QA-013 light recheck.
+- 2026-11-03: QA-013 verified QA-1100 to QA-1106. A3 binder evidence (native-adoption-011) accepted for Codex 0.165.0 non-elevated shared mode: correct for start, /new, fork, unsubscribed cold resume and backend restart; dead owner fails closed via listener check; resume of a subscribed thread keeps the original owner, and owner switch after a rejoin leaves a silent stale binding to a live TUI. Policy for the stale case and the delegated-thread/third-TUI sub-cases await the user decision for task 1.3.
+- 2026-11-03: User decisions for task 1.3: adopt the A3 MCP-endpoint binder for shared Codex with the latest-only rule (a thread is actionable only while it is its owner TUI's most recent binding; older threads on the same TUI are unverified, tracking continues; dead or unverifiable owners fail closed). Do not offer `features.daemon_auto_start=false` in setup or docs. Design/tasks update and implementation not yet started.
+- 2026-11-03: Folded the task 1.3 decision into design decision 3 and its risks, the terminal-navigation delta (two shared-Codex scenarios), tasks 2.2 and 4.2, and the proposal. Marked tasks 1.2 and 1.3 complete on QA-verified evidence (QA-011, QA-013) and the recorded user decision. Strict OpenSpec validation passed.

@@ -1,0 +1,24 @@
+[
+  {
+    "status": {
+      "type": "idle"
+    },
+    "id": "01a1740f-efb0-7ec0-91ce-08c4ed4081d8",
+    "name": "Bell Tower native launch probe A"
+  },
+  {
+    "status": {
+      "type": "idle"
+    },
+    "id": "01a17411-8218-7682-8ed5-5e46d1cf7629",
+    "name": "Bell Tower native launch probe B"
+  },
+  {
+    "status": {
+      "type": "active",
+      "activeFlags": []
+    },
+    "id": "01a17413-1243-7ba3-94cb-9c8817c61374",
+    "name": null
+  }
+]

@@ -1,0 +1,43 @@
+[
+  {
+    "eventKind": "Register",
+    "sessionId": "01a17411-8218-7682-8ed5-5e46d1cf7629",
+    "evidenceKind": "actual native SessionStart",
+    "provider": "codex",
+    "dedicatedClassification": false,
+    "ancestorNames": [
+      "pwsh.exe",
+      "codex.exe",
+      "codex.exe",
+      "pwsh.exe",
+      "codex.exe",
+      "node.exe",
+      "bell-tower.exe"
+    ],
+    "note": "Provider and host classification is the existing ingress policy; a cleared Codex host is not proof that all possible binding mechanisms are unavailable.",
+    "capturedAgent": null,
+    "originalLocalCaptureName": "0639285455692391317-9bfffaa5b4804db18d6b717db337099f.json"
+  },
+  {
+    "eventKind": "Register",
+    "sessionId": "5f6493d5-70e9-4c45-88d2-5386d5127730",
+    "evidenceKind": "actual native SessionStart",
+    "provider": "claude",
+    "dedicatedClassification": true,
+    "ancestorNames": [
+      "bash.exe",
+      "bash.exe",
+      "claude.exe",
+      "pwsh.exe",
+      "codex.exe",
+      "node.exe",
+      "bell-tower.exe"
+    ],
+    "note": "Provider and host classification is the existing ingress policy; a cleared Codex host is not proof that all possible binding mechanisms are unavailable.",
+    "capturedAgent": {
+      "pid": 28764,
+      "startedUtcTicks": 639285457560812288
+    },
+    "originalLocalCaptureName": "0639285457566098421-0fff4afab17b480e85af8c17ea73bbba.json"
+  }
+]

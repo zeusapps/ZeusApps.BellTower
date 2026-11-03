@@ -1,0 +1,9 @@
+{
+  "provider": "claude",
+  "endedWithinBudget": false,
+  "stdoutLength": 4121,
+  "version": "2.1.310",
+  "stderrLength": 0,
+  "exitCode": -1,
+  "pid": 28764
+}

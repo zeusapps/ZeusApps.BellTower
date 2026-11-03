@@ -1,0 +1,48 @@
+{
+  "threadKeys": [
+    "agentNickname",
+    "agentRole",
+    "canAcceptDirectInput",
+    "cliVersion",
+    "createdAt",
+    "cwd",
+    "daybreakEnabled",
+    "environments",
+    "ephemeral",
+    "extra",
+    "forkedFromId",
+    "gitInfo",
+    "historyMode",
+    "id",
+    "model",
+    "modelProvider",
+    "name",
+    "originator",
+    "parentThreadId",
+    "path",
+    "preview",
+    "projectId",
+    "reasoningEffort",
+    "recencyAt",
+    "section",
+    "sectionEnteredAt",
+    "sessionId",
+    "source",
+    "status",
+    "threadSource",
+    "turns",
+    "updatedAt"
+  ],
+  "clientVersion": "0.164.0",
+  "status": {
+    "type": "idle"
+  },
+  "threadId": "01a1740f-efb0-7ec0-91ce-08c4ed4081d8",
+  "environmentCount": 1,
+  "extraKeys": [
+    null
+  ],
+  "readWithoutResume": true,
+  "nameWriteAcknowledged": true,
+  "transport": "shared daemon UDS"
+}
