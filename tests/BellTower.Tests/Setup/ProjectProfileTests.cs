@@ -8,6 +8,38 @@ namespace BellTower.Tests.Setup;
 public sealed class ProjectProfileTests
 {
     [Fact]
+    public void ProjectRemovalRetainsSharedTabTitleUntilAllDesktopProfilesLeave()
+    {
+        using var workspace = new TestWorkspace();
+        var fixture = Prepare(workspace);
+        var settings = new JsonSettingsFile(fixture.Code);
+        settings.Set("terminal.integrated.tabs.title", JsonValue.Create("Personal title"));
+        var initial = new List<FileChange>();
+        settings.AddTo(initial);
+        new SetupPlan(initial).Apply(workspace.Paths);
+
+        var first = Path.Combine(workspace.Root, "First project");
+        var second = Path.Combine(workspace.Root, "Second project");
+        Directory.CreateDirectory(first);
+        Directory.CreateDirectory(second);
+        var setup = new IntegrationSetup(workspace.Paths, "C:/BellTower/bell-tower.exe", fixture.Home);
+        setup.Plan("both", desktop: true, project: first).Apply(workspace.Paths);
+        setup.Plan("both", desktop: true, project: second).Apply(workspace.Paths);
+        Assert.Equal("${sequence}", JsonNode.Parse(File.ReadAllText(fixture.Code))!["terminal.integrated.tabs.title"]!.GetValue<string>());
+
+        setup.Plan("both", remove: true, project: first).Apply(workspace.Paths);
+        var afterFirstProject = JsonNode.Parse(File.ReadAllText(fixture.Code))!;
+        Assert.Equal("${sequence}", afterFirstProject["terminal.integrated.tabs.title"]!.GetValue<string>());
+        Assert.NotNull(afterFirstProject["terminal.integrated.profiles.windows"]!["Claude (Second project)"]);
+
+        setup.Plan("both", remove: true, project: second).Apply(workspace.Paths);
+        Assert.Equal("${sequence}", JsonNode.Parse(File.ReadAllText(fixture.Code))!["terminal.integrated.tabs.title"]!.GetValue<string>());
+
+        setup.Plan("both", remove: true).Apply(workspace.Paths);
+        Assert.Equal("Personal title", JsonNode.Parse(File.ReadAllText(fixture.Code))!["terminal.integrated.tabs.title"]!.GetValue<string>());
+    }
+
+    [Fact]
     public void ProjectProfilesUseTheProjectDirectoryAndSurviveAdditionalRegistrations()
     {
         using var workspace = new TestWorkspace();

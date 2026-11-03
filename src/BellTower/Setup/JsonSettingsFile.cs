@@ -13,11 +13,11 @@ public sealed class JsonSettingsFile
     private string text;
     public JsonObject Root { get; }
 
-    public JsonSettingsFile(string path)
+    public JsonSettingsFile(string path, string? plannedText = null)
     {
         this.path = path;
         before = File.Exists(path) ? File.ReadAllText(path) : null;
-        text = before ?? "{}";
+        text = plannedText ?? before ?? "{}";
         Root = JsonNode.Parse(text, documentOptions: Options)?.AsObject() ?? throw new InvalidDataException("Invalid terminal settings.");
     }
 

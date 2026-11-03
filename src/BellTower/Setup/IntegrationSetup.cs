@@ -7,8 +7,12 @@ public sealed class IntegrationSetup(DataPaths paths, string executable, string?
     private string ManifestPath => Path.Combine(paths.Root, "integration.json");
 
     public SetupPlan Plan(string clients, bool remove = false, bool statusLine = false, bool desktop = false, string? project = null,
-        bool migrateEditedHooks = false)
+        bool migrateEditedHooks = false, bool hostBridge = false)
     {
+        if (hostBridge && (desktop || statusLine || project is not null))
+        {
+            throw new ArgumentException("--host-bridge cannot be combined with desktop profiles, a status line, or project profiles.");
+        }
         if (project is not null)
         {
             project = Path.TrimEndingDirectorySeparator(Path.GetFullPath(project));
@@ -37,6 +41,7 @@ public sealed class IntegrationSetup(DataPaths paths, string executable, string?
             CodexFooters = new(previous.CodexFooters),
             Handlers = new(previous.Handlers),
             SelectedCodexHookShell = previous.SelectedCodexHookShell,
+            NativeBridgeProviders = new(previous.NativeBridgeProviders, StringComparer.OrdinalIgnoreCase),
             AdditionalData = previous.AdditionalData
         };
         var ingress = remove || removeProject ? null : IngressProvision.Plan(executable, paths, selected);
@@ -93,9 +98,33 @@ public sealed class IntegrationSetup(DataPaths paths, string executable, string?
 
         // A fresh copy keeps dry-run planning from mutating the loaded ownership record.
         ownership = ownership with { Desktop = Json.Decode<DesktopOwnership>(Json.Encode(previous.Desktop)) };
-        if (desktop || remove && ownership.Desktop.Providers.Overlaps(selected))
+        if (desktop || remove && !hostBridge && ownership.Desktop.Providers.Overlaps(selected))
         {
             new DesktopSetup(paths, executable, userHome).Plan(selected, remove && !removeProject, ownership.Desktop, changes, actions, notes, project, removeProject);
+        }
+
+        if (remove && !removeProject)
+        {
+            ownership.NativeBridgeProviders.ExceptWith(selected);
+        }
+        else if (hostBridge)
+        {
+            ownership.NativeBridgeProviders.UnionWith(selected);
+        }
+
+        var desktopBridgeRequested = ownership.Desktop.Providers.Count != 0 ||
+            ownership.Desktop.Projects.Values.Any(providers => providers.Count != 0);
+        var nativeBridgeRequested = ownership.NativeBridgeProviders.Count != 0;
+        var desktopProjectBridgeAffected = previous.Desktop.Projects.Values.Any(providers => providers.Overlaps(selected));
+        var bridgeManagementRequested = hostBridge || desktop || remove &&
+            (previous.Desktop.Providers.Overlaps(selected) || previous.NativeBridgeProviders.Overlaps(selected) || desktopProjectBridgeAffected);
+        if (bridgeManagementRequested)
+        {
+            var settingsPath = VsCodeBridgeSettings.SettingsPath(userHome);
+            VsCodeBridgeSettings.Plan(settingsPath, executable, paths.Root, ownership.Desktop.Settings,
+                desktopBridgeRequested || nativeBridgeRequested, changes, notes);
+            VsCodeBridgeSetup.Plan(executable, userHome, ownership.Desktop,
+                !(desktopBridgeRequested || nativeBridgeRequested), actions, notes);
         }
 
         var manifestBefore = File.Exists(ManifestPath) ? File.ReadAllText(ManifestPath) : null;

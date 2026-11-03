@@ -57,11 +57,10 @@ public sealed class DesktopSetup(DataPaths paths, string executable, string? use
         var local = userHome is null ? Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) : Path.Combine(home, "AppData", "Local");
         var documents = userHome is null ? Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) : Path.Combine(home, "Documents");
         var profiles = new TerminalProfilesEditor(ownership, notes);
-        var codeSettings = Path.Combine(roaming, "Code", "User", "settings.json");
+        var codeSettings = VsCodeBridgeSettings.SettingsPath(userHome);
         if (File.Exists(codeSettings))
         {
-            profiles.VsCode(codeSettings, selected, remove, executable, paths.Root, changes);
-            VsCodeBridgeSetup.Plan(executable, userHome, ownership, remove && ownership.Providers.Count == 0, actions, notes);
+            profiles.VsCode(codeSettings, selected, remove, changes);
         }
         foreach (var terminal in new[] { "Microsoft.WindowsTerminal_8wekyb3d8bbwe", "Microsoft.WindowsTerminalPreview_8wekyb3d8bbwe" })
         {

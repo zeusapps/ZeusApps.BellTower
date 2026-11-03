@@ -5,7 +5,7 @@ namespace BellTower.Setup;
 
 public sealed class TerminalProfilesEditor(DesktopOwnership ownership, List<string> notes)
 {
-    public void VsCode(string path, IReadOnlyList<string> providers, bool remove, string executable, string dataDirectory, List<FileChange> changes)
+    public void VsCode(string path, IReadOnlyList<string> providers, bool remove, List<FileChange> changes)
     {
         var file = new JsonSettingsFile(path);
         var profiles = file.Root["terminal.integrated.profiles.windows"]?.AsObject().DeepClone().AsObject() ?? new JsonObject();
@@ -67,12 +67,11 @@ public sealed class TerminalProfilesEditor(DesktopOwnership ownership, List<stri
             }
         }
         file.Set("terminal.integrated.profiles.windows", profiles.Count == 0 ? null : profiles);
-        if (!remove || ownership.Providers.Count == 0)
-        {
-            Setting(file, path, "bellTower.executablePath", remove ? null : JsonValue.Create(executable), remove);
-            Setting(file, path, "bellTower.dataDirectory", remove ? null : JsonValue.Create(dataDirectory), remove);
-            Setting(file, path, "terminal.integrated.tabs.title", remove ? null : JsonValue.Create("${sequence}"), remove);
-        }
+        var hasRemainingDesktopProfiles = ownership.Providers.Count > 0 ||
+            ownership.Projects.Values.Any(projectProviders => projectProviders.Count > 0) ||
+            ownership.Profiles.Any(profile => profile.File == path && profile.Host == "vscode");
+        var removeTabTitle = remove && !hasRemainingDesktopProfiles;
+        Setting(file, path, "terminal.integrated.tabs.title", removeTabTitle ? null : JsonValue.Create("${sequence}"), removeTabTitle);
         file.AddTo(changes);
     }
 
@@ -225,39 +224,8 @@ public sealed class TerminalProfilesEditor(DesktopOwnership ownership, List<stri
         ownership.Profiles.Add(new(path, host, role.Provider, key, previous is null ? before?.ToJsonString() : previous.Before, after.ToJsonString()));
     }
 
-    private void Setting(JsonSettingsFile file, string path, string name, JsonNode? value, bool remove)
-    {
-        if (!ownership.Settings.TryGetValue(path, out var settings))
-        {
-            settings = [];
-            ownership.Settings[path] = settings;
-        }
-        var previous = settings.GetValueOrDefault(name);
-        if (remove && previous is null)
-        {
-            return;
-        }
-        if (remove && JsonSettingsFile.Same(file.Root[name], previous!.Before))
-        {
-            settings.Remove(name);
-            return;
-        }
-        if (previous is not null && !JsonSettingsFile.Same(file.Root[name], previous.After))
-        {
-            notes.Add("Kept user-edited setting: " + name);
-            return;
-        }
-        if (remove)
-        {
-            file.Set(name, previous!.Before is null ? null : JsonNode.Parse(previous.Before));
-            settings.Remove(name);
-        }
-        else
-        {
-            settings[name] = new(previous is null ? file.Root[name]?.ToJsonString() : previous.Before, value!.ToJsonString());
-            file.Set(name, value);
-        }
-    }
+    private void Setting(JsonSettingsFile file, string path, string name, JsonNode? value, bool remove) =>
+        OwnedSettings.Set(file, path, name, value, remove, ownership.Settings, notes);
 
     private static bool CallsFunction(JsonNode? arguments, string function) => arguments is JsonArray array &&
         array.LastOrDefault()?.GetValue<string>() == function;

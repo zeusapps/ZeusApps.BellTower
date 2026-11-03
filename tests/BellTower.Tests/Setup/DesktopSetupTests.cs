@@ -8,6 +8,51 @@ namespace BellTower.Tests.Setup;
 
 public sealed class DesktopSetupTests
 {
+    [Theory]
+    [InlineData("claude", "codex")]
+    [InlineData("codex", "claude")]
+    public void PartialProviderRemovalRetainsTabTitleUntilTheLastDesktopProviderLeaves(string first, string second)
+    {
+        using var workspace = new TestWorkspace();
+        var fixture = Prepare(workspace);
+        var code = new JsonSettingsFile(fixture.Code);
+        code.Set("terminal.integrated.tabs.title", JsonValue.Create("${sequence} — personal"));
+        var initialSettings = new List<FileChange>();
+        code.AddTo(initialSettings);
+        new SetupPlan(initialSettings).Apply(workspace.Paths);
+
+        var setup = new IntegrationSetup(workspace.Paths, "C:/Programs/Bell Tower/bell-tower.exe", fixture.Home);
+        setup.Plan("both", desktop: true).Apply(workspace.Paths);
+        Assert.Equal("${sequence}", Read(fixture.Code)["terminal.integrated.tabs.title"]!.GetValue<string>());
+
+        setup.Plan(first, remove: true).Apply(workspace.Paths);
+        Assert.Equal("${sequence}", Read(fixture.Code)["terminal.integrated.tabs.title"]!.GetValue<string>());
+
+        setup.Plan(second, remove: true).Apply(workspace.Paths);
+        Assert.Equal("${sequence} — personal", Read(fixture.Code)["terminal.integrated.tabs.title"]!.GetValue<string>());
+    }
+
+    [Fact]
+    public void PartialProviderRemovalPreservesLaterUserTabTitleEdit()
+    {
+        using var workspace = new TestWorkspace();
+        var fixture = Prepare(workspace);
+        var setup = new IntegrationSetup(workspace.Paths, "C:/Programs/Bell Tower/bell-tower.exe", fixture.Home);
+        setup.Plan("both", desktop: true).Apply(workspace.Paths);
+
+        var code = new JsonSettingsFile(fixture.Code);
+        code.Set("terminal.integrated.tabs.title", JsonValue.Create("My tab title"));
+        var edit = new List<FileChange>();
+        code.AddTo(edit);
+        new SetupPlan(edit).Apply(workspace.Paths);
+
+        setup.Plan("claude", remove: true).Apply(workspace.Paths);
+        Assert.Equal("My tab title", Read(fixture.Code)["terminal.integrated.tabs.title"]!.GetValue<string>());
+
+        setup.Plan("codex", remove: true).Apply(workspace.Paths);
+        Assert.Equal("My tab title", Read(fixture.Code)["terminal.integrated.tabs.title"]!.GetValue<string>());
+    }
+
     [Fact]
     public void RemovalPreservesUserEditedProfilesAndTheirHelpers()
     {
@@ -26,6 +71,7 @@ public sealed class DesktopSetupTests
         Assert.Contains(removal.Notes, note => note.Contains("Kept user-edited terminal profile"));
         removal.Apply(workspace.Paths);
         Assert.Equal("my-custom-icon", Read(fixture.Code)["terminal.integrated.profiles.windows"]!["Codex"]!["icon"]!.GetValue<string>());
+        Assert.Equal("${sequence}", Read(fixture.Code)["terminal.integrated.tabs.title"]!.GetValue<string>());
         Assert.True(File.Exists(Path.Combine(workspace.Paths.Root, "shell", "BellTower.psm1")));
     }
 
