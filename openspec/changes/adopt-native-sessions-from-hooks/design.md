@@ -43,6 +43,16 @@ Persist independently evaluated evidence for conversation activity/attention, di
 
 For directly attached processes, existing exit and idle rules remain valid. For a detached shared conversation, terminal exit removes host actions without ending independently verified work. `thread/loaded/list` is discovery evidence only: the native trial retained idle threads and an additional active thread after both TUIs exited. Neither a loaded thread nor backend liveness alone proves an open terminal or active work for a particular conversation.
 
+Terminal disconnect and continuing work are separate signals, decided by one shared rule with a thin provider adapter on the terminal side ([analysis 011](reports/analysis-011.md) ANALYSIS-1001):
+
+- Terminal side. For Claude and embedded Codex, the terminal is disconnected when the verified agent process (PID plus creation time) is gone. For shared Codex, it is disconnected when the decision 3 owner client is gone (PID plus creation time), when that client's `codex_tui` listener or its backend connection is gone, or when the latest-only rule demotes the binding. Codex `runtimeStatus` is not used: probe 011 showed it still reporting `connected` after the client was killed.
+- Work side. Continuing work comes from exact-conversation runtime status (`thread/read` for Codex) and hook events, never from backend liveness, `thread/loaded/list`, `runtimeStatus` or the presence of a helper process.
+- A shared conversation that was never bound (no origin, an IDE or app client) has no terminal-side signal. It stays terminal-unverified, not disconnected, and attention and tracking continue. A latest-only demotion or a terminal disconnect is never reported as conversation completion.
+
+A Bell Tower MCP server was evaluated as a liveness and identity source and rejected ([analysis 011](reports/analysis-011.md) ANALYSIS-1000). In shared Codex mode the server is a per-thread child of the backend: it outlives the terminal until the thread unloads (1800 s by default, or indefinitely while another client is subscribed) and carries no client identity, so it only repeats "thread loaded". For Claude and embedded Codex its lifetime equals the agent process Bell Tower already verifies, and Claude's session ID in its environment goes stale after `/clear`. It would add provider settings edits and per-thread processes without new evidence.
+
+Persisting these lifecycle semantics is gated on the task 2.4 compatibility assessment. An older tray reads the 2.1 evidence through the wire encoding that fails closed, but a disconnect without completion is a new meaning: if an older consumer would read it as an ended session, or treat a still-open shared conversation as live, the new semantics require a consumer-level gate in the existing distribution compatibility mechanism (`AttachmentHealthCompatibility` and `CaptureCompatibility`) before they are written.
+
 Use the same freshness and uncertainty rules for either provider's independently available evidence. Keep actionable attention based on confirmed supported waits; missing terminal targeting must not fabricate or erase a wait. Missing runtime support retains the current conservative unavailable classification for the affected operation.
 
 Alternative: marking every shared backend thread as a live terminal would violate stale-target safety. Marking every terminal disconnect as conversation completion would lose continuing work.
@@ -104,7 +114,7 @@ Alternative: gating terminal actions on verified versions is safer for unknown b
 ## Risks / Trade-offs
 
 - A shared-Codex client endpoint can go stale when another client joins a still-subscribed thread -> apply the latest-only rule, recheck the listener, backend connection and creation identity at the action boundary, and report unverified on any doubt; native acceptance covers the remaining sub-cases.
-- New lifecycle semantics could let an older tray misclassify shared conversations -> assess the distribution/state compatibility contract and gate incompatible consumers using the existing mechanism before persisting new semantics.
+- New lifecycle semantics could let an older tray misclassify shared conversations -> complete the task 2.4 assessment before task 2.3 persists them, and gate incompatible consumers through the existing distribution compatibility mechanism (decision 2).
 - Shared backend environment can carry old launch metadata, including a Bell Tower flag inherited by a nested client ([analysis 006](reports/analysis-006.md) ANALYSIS-500) -> classify direct-client evidence separately and require process evidence rather than an inherited flag as proof of ownership.
 - A bridge or runtime may disappear between observation and action -> recheck creation identities, generation and freshness at the action boundary and retain safe partial/unavailable results.
 - Native-name writes could erase a user title -> reuse pause/ownership/override policy; the disposable successful write is not consent to rename real sessions.
