@@ -33,17 +33,29 @@ public sealed class AttachmentStore(DataPaths paths)
     }
 
     public void Save(Attachment attachment) => AtomicFile.Write(FilePath(attachment.Id), Json.Encode(attachment));
-    public Attachment Adopt(Attachment captured, DateTimeOffset observedAt, bool resume = false)
+    public Attachment Adopt(Attachment captured, DateTimeOffset observedAt, bool resume = false, string? sessionId = null)
     {
         using var presentation = new DataLock(paths, "presentation");
         using var gate = new DataLock(paths, "attachments");
         var previous = Get(captured.Id);
+        var original = captured.Id;
+        var preparedShell = captured.Evidence is { Provisional: true } ? new LaunchPresentationStore(paths).Shell(captured.Id) : null;
+        captured = NativeAdoption.Reconcile(captured, previous, sessionId, process => ProcessProbe.Inspect(process) == ProcessLiveness.Live, preparedShell);
+        if (captured.Id != original)
+        {
+            previous = Get(captured.Id);
+        }
         if (previous is null)
         {
             var launchShell = new LaunchPresentationStore(paths).Shell(captured.Id);
             var first = launchShell is not null
                 ? captured with { Host = captured.Host with { Shell = launchShell } } : captured;
-            Save(first with { Health = "unverified", UnverifiedSince = first.RegisteredAt });
+            Save(first with
+            {
+                Health = "unverified",
+                UnverifiedSince = first.RegisteredAt,
+                Evidence = AttachmentEvidence.Observe(AttachmentEvidence.Of(first), observedAt).Stamped(first.Process)
+            });
             return Get(first.Id)!;
         }
         if (previous.Provider != captured.Provider || observedAt < previous.RegisteredAt ||
@@ -88,8 +100,9 @@ public sealed class AttachmentStore(DataPaths paths)
             EndedAt = replacement ? null : previous.EndedAt,
             RegisteredAt = replacement ? observedAt : previous.RegisteredAt,
             UnverifiedSince = replacement ? observedAt : previous.UnverifiedSince,
-            Health = replacement ? "unverified" : previous.Health
+            Health = replacement ? "unverified" : previous.Health,
         };
+        updated = updated with { Evidence = AttachmentEvidence.Merge(previous, captured, replacement, observedAt).Stamped(updated.Process) };
         Save(updated);
         return updated;
     }

@@ -10,6 +10,7 @@
     <Compile Include="../BellTower/Core/BackgroundTask.cs" Link="Core/BackgroundTask.cs" />
     <Compile Include="../BellTower/Core/Attachment.cs" Link="Core/Attachment.cs" />
     <Compile Include="../BellTower/Core/HostTarget.cs" Link="Core/HostTarget.cs" />
+    <Compile Include="../BellTower/Core/AttachmentEvidence.cs" Link="Core/AttachmentEvidence.cs" />
     <Compile Include="../BellTower/Core/ProcessIdentity.cs" Link="Core/ProcessIdentity.cs" />
     <Compile Include="../BellTower/IO/ContentHash.cs" Link="IO/ContentHash.cs" />
     <Compile Include="../BellTower/Providers/HookInput.cs" Link="Providers/HookInput.cs" />

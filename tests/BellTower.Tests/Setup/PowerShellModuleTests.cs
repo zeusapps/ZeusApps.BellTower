@@ -47,10 +47,13 @@ public sealed class PowerShellModuleTests
         string[] nativeArguments = ["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File", fake, snapshot, release, "two words", "--flag"];
         if (provider == "codex")
         {
-            fakeExecutable = Path.Combine(workspace.Root, "fake-agent.cmd");
-            File.WriteAllText(fakeExecutable, $"@echo off\r\npowershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File \"{fake}\" \"{snapshot}\" \"{release}\" %*\r\nexit /b %errorlevel%\r\n");
-            // Exercise the explicit standalone path with this non-server fake agent.
-            nativeArguments = ["--no-daemon", "two words", "--flag"];
+            var fakeCmd = Path.Combine(workspace.Root, "fake-agent.cmd");
+            File.WriteAllText(fakeCmd, $"@echo off\r\npowershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File \"{fake}\" \"{snapshot}\" \"{release}\" %*\r\nexit /b %errorlevel%\r\n");
+            // Adoption needs process evidence, so this non-server fake agent is a process image named codex.exe.
+            // It is a standalone (embedded) client: its command line has no app-server subcommand.
+            fakeExecutable = Path.Combine(workspace.Root, "codex.exe");
+            File.Copy(Path.Combine(Environment.SystemDirectory, "cmd.exe"), fakeExecutable);
+            nativeArguments = ["/c", fakeCmd, "--no-daemon", "two words", "--flag"];
         }
         var script = Path.Combine(workspace.Root, "launch.ps1");
         var function = (provider == "claude" ? "Start-ClaudeCode" : "Start-Codex") + (legacyRole ? "PM" : "");

@@ -29,20 +29,11 @@ public static class Program
             }
             var at = DateTimeOffset.UtcNow;
             using var input = CaptureProtocol.ReadInput(Console.OpenStandardInput());
-            var attachment = AttachmentCapture.Capture(provider, HookInput.Text(input.RootElement, "cwd") ?? Environment.CurrentDirectory);
-            var dedicated = provider != "codex" || Environment.GetEnvironmentVariable("BELLTOWER_DEDICATED") == "1";
-            if (!dedicated)
-            {
-                var session = HookInput.Text(input.RootElement, "session_id") ?? throw new InvalidDataException("session");
-                attachment = attachment with
-                {
-                    Id = "codex-session-" + ContentHash.Compute(session)[..24],
-                    Process = null,
-                    Host = new("unknown"),
-                    ManagedTitle = false,
-                    ManagedBackground = false
-                };
-            }
+            // Process evidence decides adoption; an inherited BELLTOWER_* flag is never ownership evidence.
+            var outcome = AttachmentCapture.Resolve(provider, HookInput.Text(input.RootElement, "cwd") ?? Environment.CurrentDirectory,
+                HookInput.Text(input.RootElement, "session_id"));
+            var attachment = outcome.Attachment;
+            var dedicated = outcome.Dedicated;
             var ancestors = ProcessProbe.Ancestors(Environment.ProcessId)
                 .Select(p => (Process: ProcessProbe.Identify(p.Pid), p.Name))
                 .Where(p => p.Process is not null)

@@ -6,6 +6,7 @@ public sealed record Attachment(string Id, string Provider, ProcessIdentity? Pro
     public string Health { get; init; } = "unverified";
     public DateTimeOffset? UnverifiedSince { get; init; }
     public string Ownership { get; init; } = "unverified";
+    public AttachmentEvidence? Evidence { get; init; }
     [System.Text.Json.Serialization.JsonExtensionData]
     public Dictionary<string, System.Text.Json.JsonElement>? AdditionalData { get; set; }
 }

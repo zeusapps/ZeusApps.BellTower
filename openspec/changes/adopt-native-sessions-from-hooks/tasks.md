@@ -8,7 +8,7 @@
 
 ## 2. Add shared adoption and independent lifecycle evidence
 
-- [ ] 2.1 Extend shared session/attachment evidence and persistence to distinguish conversation health, runtime access, terminal binding and lifecycle ownership; verify backward reads, extension-data retention, PID creation checks and no palette/attention reset with matched provider tests.
+- [x] 2.1 Extend shared session/attachment evidence and persistence to distinguish conversation health, runtime access, terminal binding and lifecycle ownership; verify backward reads, extension-data retention, PID creation checks and no palette/attention reset with matched provider tests.
 - [ ] 2.2 Update native capture and legacy ingestion to apply the same verified mode classification and adoption policy without requiring wrapper flags; verify real or retained hook inputs establish native conversations, later events recover a missed startup, and inherited backend flags, including a Bell Tower flag inherited by a nested client (ANALYSIS-500), cannot transfer another terminal's ownership.
 - [ ] 2.3 Update reconciliation/reduction for terminal disconnect versus independently verified continuing conversation work; verify direct-agent crash, quiet live process, stale runtime evidence, retained idle backend threads, delayed events, Bell Tower restart and reattachment with provider-paired and mixed-session tests.
 - [ ] 2.4 Assess persisted semantic compatibility and extend the existing distribution/consumer gate where required; verify rollback rejects a consumer that would misinterpret the new evidence while compatible updates preserve existing managed/native sessions and data.

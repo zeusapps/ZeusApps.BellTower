@@ -5,30 +5,22 @@ using BellTower.IO;
 
 namespace BellTower.Providers;
 
-public sealed class HookIngestor(DataPaths paths)
+public sealed class HookIngestor(DataPaths paths, Func<string, string, string?, NativeAdoption.Outcome>? resolve = null)
 {
     public void Ingest(string provider, TextReader reader)
     {
         using var document = JsonDocument.Parse(HookInput.ReadBounded(reader));
         var input = document.RootElement;
         var sessionId = HookInput.Text(input, "session_id") ?? throw new InvalidDataException("Session ID missing.");
-        var dedicated = provider != "codex" || Environment.GetEnvironmentVariable("BELLTOWER_DEDICATED") == "1";
-        var captured = AttachmentCapture.Capture(provider, HookInput.Text(input, "cwd") ?? Environment.CurrentDirectory);
-        if (!dedicated)
-        {
-            captured = captured with
-            {
-                Id = "codex-session-" + ContentHash.Compute(sessionId)[..24],
-                Process = null,
-                Host = new("unknown"),
-                ManagedTitle = false,
-                ManagedBackground = false
-            };
-        }
+        var outcome = (resolve ?? AttachmentCapture.Resolve)(provider, HookInput.Text(input, "cwd") ?? Environment.CurrentDirectory, sessionId);
+        var promoted = NativeAdoption.Promote(outcome.Attachment);
+        var captured = promoted?.Attachment ?? outcome.Attachment;
+        var dedicated = outcome.Dedicated || promoted is not null;
 
         var attachments = new AttachmentStore(paths);
-        var attachment = attachments.Adopt(captured with { Ownership = dedicated ? captured.Ownership : "shared-runtime" }, DateTimeOffset.UtcNow,
-            HookInput.Text(input, "source") == "resume");
+        var attachment = attachments.Adopt(captured, DateTimeOffset.UtcNow, HookInput.Text(input, "source") == "resume", sessionId);
+        // A client re-identified from inherited launch metadata (or failed closed to the shared runtime) keeps none of the launch's identity.
+        dedicated &= attachment.Id == captured.Id;
         var observation = HookAdapter.Parse(provider, input, attachment);
         if (observation is null)
         {

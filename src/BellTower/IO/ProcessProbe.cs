@@ -38,6 +38,52 @@ public static class ProcessProbe
         }
     }
 
+    /// <summary>
+    /// Reads one process's command line through a single bounded query, or null when it is not readable.
+    /// Callers keep only a classification, never the text.
+    /// </summary>
+    public static string? CommandLine(int pid)
+    {
+        const int ProcessCommandLine = 60;
+        var handle = OpenProcess(0x1000, false, pid);
+        if (handle == IntPtr.Zero)
+        {
+            return null;
+        }
+        try
+        {
+            var size = 2048;
+            for (var attempt = 0; attempt < 2; attempt++)
+            {
+                var buffer = Marshal.AllocHGlobal(size);
+                try
+                {
+                    var status = NtQueryInformationProcess(handle, ProcessCommandLine, buffer, (uint)size, out var needed);
+                    if (status == 0)
+                    {
+                        var length = (ushort)Marshal.ReadInt16(buffer);
+                        var text = Marshal.ReadIntPtr(buffer, IntPtr.Size);
+                        return text == IntPtr.Zero ? null : Marshal.PtrToStringUni(text, length / 2);
+                    }
+                    if (needed <= size || needed > 65536)
+                    {
+                        return null;
+                    }
+                    size = (int)needed;
+                }
+                finally
+                {
+                    Marshal.FreeHGlobal(buffer);
+                }
+            }
+            return null;
+        }
+        finally
+        {
+            CloseHandle(handle);
+        }
+    }
+
     public static bool IsAlive(ProcessIdentity identity)
     {
         try
@@ -126,4 +172,8 @@ public static class ProcessProbe
     private static extern bool Process32Next(IntPtr handle, ref ProcessEntry entry);
     [DllImport("kernel32.dll")]
     private static extern bool CloseHandle(IntPtr handle);
+    [DllImport("kernel32.dll")]
+    private static extern IntPtr OpenProcess(uint access, bool inherit, int pid);
+    [DllImport("ntdll.dll")]
+    private static extern int NtQueryInformationProcess(IntPtr process, int information, IntPtr buffer, uint length, out uint needed);
 }

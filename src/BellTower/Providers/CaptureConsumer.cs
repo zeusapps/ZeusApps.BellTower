@@ -58,12 +58,25 @@ public sealed class CaptureConsumer(DataPaths paths)
                 var legacyProducer = envelope.Observation.AdapterRevision is null;
                 var observation = SessionReducer.Normalize(envelope.Observation with { ProcessedAt = DateTimeOffset.UtcNow });
                 var attachments = new AttachmentStore(paths);
-                var attachment = attachments.Adopt(envelope.Attachment with { Ownership = envelope.Dedicated ? envelope.Attachment.Ownership : "shared-runtime" },
-                    observation.At, observation.Kind == EventKind.Register && observation.RegistrationSource == "resume");
+                // A provisional capture arrives in the fail-closed shared shape; only this consumer may promote its candidate,
+                // and Adopt keeps it only when Reconcile verifies the launch.
+                var promoted = NativeAdoption.Promote(envelope.Attachment);
+                var wire = promoted?.Attachment ?? envelope.Attachment;
+                var direct = envelope.Dedicated || promoted is not null;
+                var attachment = attachments.Adopt(wire with { Ownership = direct ? wire.Ownership : "shared-runtime" },
+                    observation.At, observation.Kind == EventKind.Register && observation.RegistrationSource == "resume", observation.SessionId);
+                // A client re-identified from inherited launch metadata (or failed closed to the shared runtime) keeps none
+                // of the launch's palette, name or change.
+                var inherited = attachment.Id != wire.Id;
+                if (attachment.Id != observation.AttachmentId)
+                {
+                    // An inherited managed identifier that belongs to another live generation is replaced by this client's own.
+                    observation = observation with { AttachmentId = attachment.Id };
+                }
                 var launches = new LaunchPresentationStore(paths);
-                var palette = envelope.Dedicated ? launches.Consume(attachment.Id, attachment.Host.Shell, envelope.IngressAt, requireLive: false) : null;
+                var palette = direct && !inherited ? launches.Consume(attachment.Id, attachment.Host.Shell, envelope.IngressAt, requireLive: false) : null;
                 new IdentityStore(paths).Get(observation.Key, observation.Directory,
-                    IdentityText.Optional(envelope.Name), IdentityText.Optional(envelope.Change), palette);
+                    inherited ? null : IdentityText.Optional(promoted?.Name ?? envelope.Name), inherited ? null : IdentityText.Optional(promoted?.Change ?? envelope.Change), palette);
                 var transcript = envelope.TranscriptPath is { } candidate && Path.IsPathFullyQualified(candidate) ? candidate : null;
                 new IdentityStore(paths).Update(observation.Key, observation.Directory, value =>
                 {

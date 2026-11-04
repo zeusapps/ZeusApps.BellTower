@@ -298,6 +298,29 @@ static async Task Execute(string[] args)
         return start;
     }
 
+    ProcessStartInfo AsProviderAgent(ProcessStartInfo inner, string provider)
+    {
+        var directory = Path.Combine(trialRoot, "fixture-agents");
+        Directory.CreateDirectory(directory);
+        var agent = Path.Combine(directory, provider + ".exe");
+        if (!File.Exists(agent))
+        {
+            File.Copy(Path.Combine(Environment.SystemDirectory, "cmd.exe"), agent);
+        }
+        static string Quote(string value) => value.Length > 0 && value.IndexOfAny([' ', '	', '"']) < 0 ? value : "\"" + value.Replace("\"", "\\\"") + "\"";
+        return new ProcessStartInfo(agent)
+        {
+            UseShellExecute = false,
+            CreateNoWindow = true,
+            RedirectStandardInput = true,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            StandardInputEncoding = inner.StandardInputEncoding,
+            WorkingDirectory = inner.WorkingDirectory,
+            Arguments = "/d /s /c \"" + string.Join(' ', new[] { inner.FileName }.Concat(inner.ArgumentList).Select(Quote)) + "\""
+        };
+    }
+
     async Task<TimingSample> RunNoop(string provider, int sample)
     {
         var start = ShellStart(provider);
@@ -318,8 +341,10 @@ static async Task Execute(string[] args)
         {
             start.Environment.Remove(key);
         }
+        // The hook runs under a process image named like the provider, so adoption uses real process evidence (ancestry
+        // and the agent's command-line read) instead of a Bell Tower flag.
+        start = AsProviderAgent(start, provider);
         start.Environment["BELLTOWER_ATTACHMENT"] = "fixture-" + provider + "-" + sample % 4;
-        start.Environment["BELLTOWER_DEDICATED"] = "1";
         var clock = Stopwatch.StartNew();
         using var process = Process.Start(start) ?? throw new IOException("Fixture hook shell could not start.");
         var output = process.StandardOutput.ReadToEndAsync();

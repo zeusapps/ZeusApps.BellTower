@@ -13,5 +13,7 @@
     <Compile Include="../BellTower/IO/ProcessLiveness.cs" Link="ProcessLiveness.cs" />
     <Compile Include="../BellTower/Hosts/WindowProbe.cs" Link="WindowProbe.cs" />
     <Compile Include="../BellTower/Hosts/AttachmentCapture.cs" Link="AttachmentCapture.cs" />
+    <Compile Include="../BellTower/Core/NativeAdoption.cs" Link="NativeAdoption.cs" />
+    <Compile Include="../BellTower/Providers/AgentModeClassifier.cs" Link="AgentModeClassifier.cs" />
   </ItemGroup>
 </Project>

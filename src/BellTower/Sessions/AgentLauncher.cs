@@ -15,7 +15,8 @@ public sealed class AgentLauncher(DataPaths paths)
         {
             Id = Guid.NewGuid().ToString("N"),
             Process = null,
-            Ownership = "managed"
+            Ownership = "managed",
+            Evidence = AttachmentEvidence.ForManagedLaunch()
         };
         attachments.Save(attachment);
         new TrayController(paths).Start(options.Silent);
@@ -35,9 +36,11 @@ public sealed class AgentLauncher(DataPaths paths)
         start.Environment["BELLTOWER_CHANGE"] = options.Change;
         start.Environment["BELLTOWER_SHELL_PID"] = attachment.Host.Shell?.Pid.ToString();
         using var child = Process.Start(start) ?? throw new InvalidOperationException("Could not start agent.");
+        var agent = ProcessProbe.Identify(child.Id);
         attachment = attachment with
         {
-            Process = ProcessProbe.Identify(child.Id)
+            Process = agent,
+            Evidence = AttachmentEvidence.ForManagedLaunch(agent)
         };
         attachments.Save(attachment);
         child.WaitForExit();

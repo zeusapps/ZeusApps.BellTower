@@ -123,12 +123,11 @@ internal static class Program
             statusStart.RedirectStandardError = true;
             using var statusReader = Process.Start(statusStart)!;
             // Real new-version hooks run through the stable entry point while activation is in progress.
-            var hookStart = Info(installation.Launcher, ["event", "--provider", "codex", "--data-dir", paths.Root]);
+            var hookStart = AgentInfo("codex", installation.Launcher, ["event", "--provider", "codex", "--data-dir", paths.Root]);
             hookStart.RedirectStandardInput = true;
             hookStart.RedirectStandardOutput = true;
             hookStart.RedirectStandardError = true;
             hookStart.Environment["BELLTOWER_ATTACHMENT"] = "fixture";
-            hookStart.Environment["BELLTOWER_DEDICATED"] = "1";
             using (var hook = Process.Start(hookStart)!)
             {
                 hook.StandardInput.Write("{\"session_id\":\"fixture-session\",\"hook_event_name\":\"PermissionRequest\",\"tool_use_id\":\"permission\",\"cwd\":" + System.Text.Json.JsonSerializer.Serialize(root) + "}");
@@ -312,12 +311,11 @@ internal static class Program
         {
             var provider = i % 2 == 0 ? "claude" : "codex";
             var session = prefix + "-" + i;
-            var start = Info(executable, [.. verb, "--provider", provider, "--data-dir", paths.Root]);
+            var start = AgentInfo(provider, executable, [.. verb, "--provider", provider, "--data-dir", paths.Root]);
             start.RedirectStandardInput = true;
             start.RedirectStandardOutput = true;
             start.RedirectStandardError = true;
             start.Environment["BELLTOWER_ATTACHMENT"] = "fixture-" + session;
-            start.Environment["BELLTOWER_DEDICATED"] = "1";
             using var process = Process.Start(start)!;
             var output = process.StandardOutput.ReadToEndAsync();
             var error = process.StandardError.ReadToEndAsync();
@@ -362,6 +360,28 @@ internal static class Program
         }
         return keys;
     }
+    private static readonly Dictionary<string, string> FixtureAgents = [];
+
+    // Hooks run under a process image named like the provider, so adoption sees real ancestry and a command line
+    // instead of a Bell Tower flag. The image is a copy of cmd.exe that runs the real command.
+    private static ProcessStartInfo AgentInfo(string provider, string exe, string[] args)
+    {
+        if (!FixtureAgents.TryGetValue(provider, out var agent))
+        {
+            agent = Path.Combine(Directory.CreateTempSubdirectory("belltower-fixture-agent-").FullName, provider + ".exe");
+            File.Copy(Path.Combine(Environment.SystemDirectory, "cmd.exe"), agent);
+            FixtureAgents[provider] = agent;
+        }
+        static string Quote(string value) => value.Length > 0 && value.IndexOfAny([' ', '	', '"']) < 0 ? value : "\"" + value.Replace("\"", "\\\"") + "\"";
+        return new ProcessStartInfo(agent)
+        {
+            UseShellExecute = false,
+            CreateNoWindow = true,
+            WindowStyle = ProcessWindowStyle.Hidden,
+            Arguments = "/d /s /c \"" + string.Join(' ', new[] { exe }.Concat(args).Select(Quote)) + "\""
+        };
+    }
+
     private static ProcessStartInfo Info(string exe, string[] args)
     {
         var start = new ProcessStartInfo(exe) { UseShellExecute = false, CreateNoWindow = true, WindowStyle = ProcessWindowStyle.Hidden };
