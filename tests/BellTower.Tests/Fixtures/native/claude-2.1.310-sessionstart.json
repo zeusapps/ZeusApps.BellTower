@@ -1,0 +1,10 @@
+{
+  "provider": "claude",
+  "providerVersion": "2.1.310",
+  "source": "reconstructed",
+  "note": "Reconstructed. The session ID, hook ancestry image names and the dedicated classification were retained from one real native Claude Code 2.1.310 print-mode SessionStart. The payload follows the recorded field shapes with a placeholder path and a redacted prompt. agentArguments is the print-mode form that classification implies, not a captured command line.",
+  "payload": {"session_id":"5f6493d5-70e9-4c45-88d2-5386d5127730","transcript_path":"D:/example/transcripts/5f6493d5-70e9-4c45-88d2-5386d5127730.jsonl","cwd":"D:/example","hook_event_name":"SessionStart","source":"startup"},
+  "agentArguments": ["-p","<redacted>"],
+  "ancestorNames": ["bash.exe","bash.exe","claude.exe","pwsh.exe","codex.exe","node.exe","bell-tower.exe"],
+  "expected": { "mode": "headless", "dedicated": true, "lifecycleOwner": "agent-process" }
+}

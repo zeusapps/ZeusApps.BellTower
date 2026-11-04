@@ -1,0 +1,10 @@
+{
+  "provider": "codex",
+  "providerVersion": "0.164.0",
+  "source": "reconstructed",
+  "note": "Reconstructed. The session ID, hook ancestry image names and the fail-closed classification (no agent captured) were retained from one real native Codex 0.164.0 SessionStart. The payload follows the recorded field shapes with a placeholder path, a redacted prompt and a fixture model name. agentArguments is null because the retained capture found no agent.",
+  "payload": {"session_id":"01a17411-8218-7682-8ed5-5e46d1cf7629","transcript_path":"D:/example/transcripts/01a17411-8218-7682-8ed5-5e46d1cf7629.jsonl","cwd":"D:/example","hook_event_name":"SessionStart","source":"startup","permission_mode":"default","model":"fixture-model"},
+  "agentArguments": null,
+  "ancestorNames": ["pwsh.exe","codex.exe","codex.exe","pwsh.exe","codex.exe","node.exe","bell-tower.exe"],
+  "expected": { "mode": "unknown", "dedicated": false, "lifecycleOwner": "shared-backend" }
+}

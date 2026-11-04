@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Text.Json;
 using BellTower.Core;
 using BellTower.IO;
@@ -137,12 +136,6 @@ public sealed class NativeAdoptionTests
         Assert.Throws<InvalidDataException>(() => NativeAdoption.Apply(Captured(provider, null), null, mode, AgentModeClassifier.MayShareBackend(provider)));
     }
 
-    internal static Process Sleeper() => Process.Start(new ProcessStartInfo("cmd.exe", "/c ping -n 60 127.0.0.1 >nul")
-    {
-        CreateNoWindow = true,
-        UseShellExecute = false
-    })!;
-
     internal const string Start = """{"session_id":"nested-session","cwd":"D:/example","hook_event_name":"SessionStart","source":"startup"}""";
     internal const string Prompt = """{"session_id":"nested-session","cwd":"D:/example","hook_event_name":"UserPromptSubmit","prompt":"private"}""";
 
@@ -161,7 +154,7 @@ public sealed class NativeAdoptionTests
     public void ASharedBackendHookWithInheritedLaunchMetadataNeverTakesTheLaunchersTerminal(string provider)
     {
         using var workspace = new TestWorkspace();
-        using var launcherAgent = Sleeper();
+        using var launcherAgent = DisposableSleeper.Start();
         var launcher = ProcessProbe.Identify(launcherAgent.Id)!;
         var shell = ProcessProbe.Identify(Environment.ProcessId)!;
         var attachments = new AttachmentStore(workspace.Paths);
@@ -192,7 +185,7 @@ public sealed class NativeAdoptionTests
     public void TheLegacyIngestionPathAppliesTheSamePolicyWithoutAWrapperFlag(string provider)
     {
         using var workspace = new TestWorkspace();
-        using var agent = Sleeper();
+        using var agent = DisposableSleeper.Start();
         var identity = ProcessProbe.Identify(agent.Id)!;
         var direct = $"{provider}-{identity.Pid}-{identity.StartedUtcTicks}";
         new HookIngestor(workspace.Paths, (name, directory, session) =>

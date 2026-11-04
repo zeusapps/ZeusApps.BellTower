@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Text.Json;
 using System.Xml.Linq;
+using BellTower.Tests.Testing;
 using Xunit;
 
 namespace BellTower.Tests.Scripts;
@@ -184,6 +185,7 @@ public sealed class PackageScriptTests : IDisposable
     private static string Git(params string[] arguments)
     {
         var start = new ProcessStartInfo("git") { UseShellExecute = false, RedirectStandardOutput = true, CreateNoWindow = true, WorkingDirectory = ProjectRoot() };
+        GitHelper.Scrub(start); // reads the real repository on purpose, never one chosen by an inherited GIT_DIR
         foreach (var argument in arguments)
         {
             start.ArgumentList.Add(argument);

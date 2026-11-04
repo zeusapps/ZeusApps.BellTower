@@ -305,6 +305,7 @@ public sealed class ReviewIdentityScriptTests
                 RedirectStandardError = true,
                 StandardOutputEncoding = Encoding.UTF8
             };
+            GitHelper.Isolate(start, workingDirectory);
             start.Environment["GIT_CONFIG_GLOBAL"] = globalConfig;
             start.Environment["GIT_CONFIG_NOSYSTEM"] = "1";
             start.Environment["GIT_CONFIG_SYSTEM"] = globalConfig;

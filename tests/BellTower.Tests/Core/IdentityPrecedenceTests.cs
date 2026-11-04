@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using BellTower.Core;
 using BellTower.IO;
 using BellTower.Sessions;
@@ -55,18 +54,7 @@ public sealed class IdentityPrecedenceTests
         Assert.StartsWith("dep 7070 title", AlertPolicy.Phrase(session, identity), StringComparison.Ordinal);
     }
 
-    private static string Git(string directory, params string[] args)
-    {
-        var start = new ProcessStartInfo("git") { WorkingDirectory = directory, UseShellExecute = false, CreateNoWindow = true, RedirectStandardOutput = true, RedirectStandardError = true };
-        foreach (var arg in args)
-        { start.ArgumentList.Add(arg); }
-        using var process = Process.Start(start)!;
-        var output = process.StandardOutput.ReadToEndAsync();
-        var error = process.StandardError.ReadToEndAsync();
-        process.WaitForExit();
-        Assert.True(process.ExitCode == 0, error.GetAwaiter().GetResult());
-        return output.GetAwaiter().GetResult();
-    }
+    private static string Git(string directory, params string[] args) => GitHelper.Run(directory, args);
 
     [Theory]
     [InlineData("DEP-7070-login", new[] { "dep-7070-fix" }, "dep-7070-fix")]

@@ -16,17 +16,26 @@ public sealed class WorktreeFamily
         Worktrees = Path.Combine(root, "D360-worktrees");
     }
 
-    public static WorktreeFamily Create(string root)
+    public static WorktreeFamily Create(string root, IReadOnlyDictionary<string, string>? ambient = null)
     {
         var family = new WorktreeFamily(root);
         Directory.CreateDirectory(family.Main);
-        GitHelper.Run(family.Main, "init", "--initial-branch", "main");
-        Commit(family.Main);
+        GitHelper.RunWith(family.Main, ambient, "init", "--initial-branch", "main");
+        Commit(family.Main, ambient);
         return family;
     }
 
-    public static void Commit(string directory) => GitHelper.Run(directory, "-c", "user.name=Test", "-c", "user.email=test@example.invalid",
-        "-c", "commit.gpgsign=false", "commit", "--allow-empty", "-m", "initial");
+    // QA-1700: refuses to commit unless the directory is its own repository, so a fixture can never write to an enclosing one.
+    private static void Commit(string directory, IReadOnlyDictionary<string, string>? ambient)
+    {
+        if (!Directory.Exists(Path.Combine(directory, ".git")))
+        { throw new InvalidOperationException("The fixture directory did not become its own repository."); }
+        var toplevel = GitHelper.RunWith(directory, ambient, "rev-parse", "--show-toplevel").Trim();
+        if (!CheckoutPolicy.SamePath(toplevel, directory))
+        { throw new InvalidOperationException("The fixture repository resolved outside its directory."); }
+        GitHelper.RunWith(directory, ambient, "-c", "user.name=Test", "-c", "user.email=test@example.invalid",
+            "-c", "commit.gpgsign=false", "commit", "--allow-empty", "-m", "initial");
+    }
 
     // Adds a linked worktree named after the ticket on branch "<ticket>-<suffix>" and optionally a change folder inside it.
     public string Add(string ticket, string suffix = "login", params string[] changes)

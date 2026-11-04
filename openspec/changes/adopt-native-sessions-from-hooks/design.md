@@ -89,6 +89,18 @@ Separate provider hook and bridge setup from profile generation and PowerShell i
 
 Diagnostics expose discovery, conversation health, runtime access, terminal binding, navigation precision and each presentation/restoration surface separately. Use supported, proven-restricted and unverified consistently, including the exact provider version and mode and any first-hook timing limit.
 
+### 7. Tolerate provider drift with runtime self-checks, not version gates
+
+Claude Code and Codex release new versions daily, so a version allowlist that disables features until each release is re-verified would not scale (user decision, 2026-11-04). Terminal actions stay available on any provider version while Bell Tower's own runtime checks pass; a check failure disables host actions for that conversation only, while tracking, attention and notifications continue and diagnostics explain the failed check.
+
+- **Cross-check classification.** Mode classification uses the command line and the process relationships together. A Codex interactive client must not be the backend that other Codex clients connect to; a shared backend is started by a Codex client rather than directly by a shell. When the two signals disagree, the mode is unknown and fails closed. A renamed subcommand is then caught by process relationships even when the vocabulary misses it.
+- **Revalidate bindings at the action boundary.** In addition to the decision 3 listener, backend-connection and creation-identity checks, the shared-Codex binder confirms that the resolved client is connected to the backend that hosts the conversation. A field whose meaning has changed then fails this check instead of producing a silent wrong binding.
+- **Version table for diagnostics only.** A per-provider table records which versions were verified for each capability. A newer version does not disable anything; doctor reports it as newer than verified. Unrecognized command-line shapes are recorded locally for diagnostics, without prompt or path content.
+- **Retained real hooks as regression fixtures.** Sanitized hook inputs and classification records captured from native probes are kept as test fixtures and refreshed when a provider change is investigated.
+- **Scheduled drift detection.** A scheduled CI job installs the latest published `codex` and `claude` packages, compares their help output and Codex protocol schema with the recognized vocabulary and schema fields, and runs the isolated no-quota Codex probe. It opens an issue only when something differs, so releases follow actual drift rather than every provider release. Whether a Claude check can run without model quota must be confirmed before relying on it.
+
+Alternative: gating terminal actions on verified versions is safer for unknown behavior but would disable features for most users most of the time; rejected.
+
 ## Risks / Trade-offs
 
 - A shared-Codex client endpoint can go stale when another client joins a still-subscribed thread -> apply the latest-only rule, recheck the listener, backend connection and creation identity at the action boundary, and report unverified on any doubt; native acceptance covers the remaining sub-cases.
@@ -97,6 +109,7 @@ Diagnostics expose discovery, conversation health, runtime access, terminal bind
 - A bridge or runtime may disappear between observation and action -> recheck creation identities, generation and freshness at the action boundary and retain safe partial/unavailable results.
 - Native-name writes could erase a user title -> reuse pause/ownership/override policy; the disposable successful write is not consent to rename real sessions.
 - Observation may add startup latency or hook contention -> keep runtime and host work outside capture; verify unchanged hook latency budgets and bounded polling/backoff.
+- Provider versions drift daily -> rely on the decision 7 runtime cross-checks and action-time revalidation rather than version gates; report newer-than-verified versions and unrecognized shapes in diagnostics, and detect drift with a scheduled CI job. Residual risk: a change that keeps both the command line and the process relationships identical while changing behavior is only caught by the scheduled job or acceptance trials.
 - Probe topology differs from desktop behavior -> require native Claude/Codex trials in VS Code and Windows Terminal, including mixed and repeated same-directory sessions; do not count pseudo-consoles as that acceptance.
 
 ## Migration Plan

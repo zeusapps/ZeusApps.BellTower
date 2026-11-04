@@ -536,10 +536,7 @@ public sealed class CaptureTests
     public async Task ExecutableCapturesUnicodeAndFailsNeutralWithoutLeakingInput(string provider)
     {
         using var workspace = new TestWorkspace();
-        var output = new DirectoryInfo(AppContext.BaseDirectory);
-        var executable = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(BuiltApplication.Executable)!, "..", "..", "..", "..",
-            "BellTower.Ingress", "bin", output.Parent!.Name, output.Name, "win-x64", "bell-tower-ingress.exe"));
-        var start = new ProcessStartInfo(executable)
+        var start = new ProcessStartInfo(BuiltApplication.Ingress)
         {
             UseShellExecute = false,
             CreateNoWindow = true,

@@ -23,8 +23,8 @@ public sealed class NativeAdoptionReconcileTests
     public void ANestedClientThatInheritedAManagedIdentifierKeepsItsOwnIdentityAndNoLaunchPresentation(string provider, string mode, string shellSource)
     {
         using var workspace = new TestWorkspace();
-        using var launcherAgent = Sleeper();
-        using var nestedAgent = Sleeper();
+        using var launcherAgent = DisposableSleeper.Start();
+        using var nestedAgent = DisposableSleeper.Start();
         var launcher = ProcessProbe.Identify(launcherAgent.Id)!;
         var nested = ProcessProbe.Identify(nestedAgent.Id)!;
         var shell = ProcessProbe.Identify(Environment.ProcessId)!;
@@ -63,7 +63,7 @@ public sealed class NativeAdoptionReconcileTests
     public void ALegitimateManagedLaunchStillResolvesItsPresentationAndIdentity(string provider)
     {
         using var workspace = new TestWorkspace();
-        using var agent = Sleeper();
+        using var agent = DisposableSleeper.Start();
         var launcher = ProcessProbe.Identify(agent.Id)!;
         var shell = ProcessProbe.Identify(Environment.ProcessId)!;
         var record = Captured(provider, launcher, "launch-attachment", "managed", shell, "launch-env");
@@ -83,8 +83,8 @@ public sealed class NativeAdoptionReconcileTests
     public void ManagedPlusUnknownModeRelyOnTheVerifiedLaunchRecordOtherwiseFailsClosed(string provider)
     {
         using var workspace = new TestWorkspace();
-        using var launcherAgent = Sleeper();
-        using var other = Sleeper();
+        using var launcherAgent = DisposableSleeper.Start();
+        using var other = DisposableSleeper.Start();
         var launcher = ProcessProbe.Identify(launcherAgent.Id)!;
         var different = ProcessProbe.Identify(other.Id)!;
         var shell = ProcessProbe.Identify(Environment.ProcessId)!;
@@ -254,9 +254,9 @@ public sealed class NativeAdoptionReconcileTests
     public void AProfileLaunchIsPromotedOnlyFromItsLiveRecordedShell(string provider, string scenario)
     {
         using var workspace = new TestWorkspace();
-        using var shellProcess = Sleeper();
-        using var toolShell = Sleeper();
-        using var agentProcess = Sleeper();
+        using var shellProcess = DisposableSleeper.Start();
+        using var toolShell = DisposableSleeper.Start();
+        using var agentProcess = DisposableSleeper.Start();
         var launchShell = ProcessProbe.Identify(shellProcess.Id)!;
         var tool = ProcessProbe.Identify(toolShell.Id)!;
         var agent = ProcessProbe.Identify(agentProcess.Id)!;
