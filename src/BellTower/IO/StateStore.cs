@@ -11,9 +11,15 @@ public sealed class StateStore
     private readonly StateSnapshotStore snapshots;
     private readonly AttachmentStore attachments;
     private readonly ConfigStore configuration;
+    private readonly Func<ProcessIdentity, ProcessLiveness> inspect;
+    private readonly TimeProvider time;
 
-    public StateStore(DataPaths paths)
+    /// <param name="inspect">Process liveness check (PID plus creation time); injectable for deterministic tests.</param>
+    /// <param name="time">Clock for attachment reconciliation; injectable for deterministic tests.</param>
+    public StateStore(DataPaths paths, Func<ProcessIdentity, ProcessLiveness>? inspect = null, TimeProvider? time = null)
     {
+        this.time = time ?? TimeProvider.System;
+        this.inspect = inspect ?? ProcessProbe.Inspect;
         this.paths = paths;
         snapshots = new StateSnapshotStore(paths);
         attachments = new AttachmentStore(paths);
@@ -70,13 +76,14 @@ public sealed class StateStore
         persisted.Waits.Any(wait => (wait.Episode == persisted.Episode || wait.Episode is null && wait.Since == persisted.EpisodeStarted) && wait.Reason == session.Reason &&
             (wait.Reason != AttentionReason.Permission || wait.Confirmation == HumanConfirmation.Confirmed || session.NativePermissionPending == true));
 
-    public AppState Drain()
+    /// <param name="facts">Read-only observations for shared conversations, gathered by the caller before the locks are taken; none until the binder and runtime transport exist.</param>
+    public AppState Drain(ConversationEvidenceSnapshot? facts = null)
     {
         using var gate = new DataLock(paths, "state");
         var state = snapshots.Read();
         var accepted = new CaptureConsumer(paths).Prepare(state);
         accepted.AddRange(ReplayInbox(state));
-        var changed = ReconcileAttachments(state);
+        var changed = ReconcileAttachments(state, facts ?? ConversationEvidenceSnapshot.Empty);
         if (accepted.Count != 0 || changed || !File.Exists(paths.State))
         {
             if (state.Sessions.Count > 0)
@@ -151,10 +158,10 @@ public sealed class StateStore
         return accepted;
     }
 
-    private bool ReconcileAttachments(AppState state)
+    private bool ReconcileAttachments(AppState state, ConversationEvidenceSnapshot facts)
     {
         var changed = false;
-        var now = DateTimeOffset.UtcNow;
+        var now = time.GetUtcNow();
         var grace = TimeSpan.FromMinutes(new ConfigStore(paths).Read().AttachmentEvidenceGraceMinutes);
         foreach (var session in state.Sessions.Values)
         {
@@ -169,7 +176,8 @@ public sealed class StateStore
             }
             using var presentation = new DataLock(paths, "presentation");
             var attachment = attachments.Get(session.AttachmentId);
-            var evaluated = attachment is null ? null : new AttachmentHealth().Evaluate(attachment, now, grace);
+            var evaluated = attachment is null ? null
+                : new AttachmentHealth(inspect).Evaluate(attachment, now, grace, facts.Find(session.Key));
             if (evaluated is not null && evaluated != attachment)
             {
                 attachments.Save(evaluated);

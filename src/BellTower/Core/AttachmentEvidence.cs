@@ -27,6 +27,10 @@ public static class EvidenceStatus
     public const string Unverified = "unverified";
     public const string HookObserved = "hook-observed";
     public const string None = "none";
+    // Terminal facet values written by the lifecycle reducer. Disconnected and demoted never mean the conversation ended.
+    public const string Connected = "connected";
+    public const string Disconnected = "disconnected";
+    public const string Demoted = "demoted";
 }
 
 /// <summary>How Bell Tower can reach the provider runtime for status. Access never implies lifecycle ownership.</summary>
@@ -122,6 +126,9 @@ public sealed record AttachmentEvidence
             Generation = attachment.Process,
             LifecycleOwner = LifecycleFor(attachment.Ownership, attachment.Process is not null)
         };
+
+    /// <summary>Stored evidence whose revision this build does not understand. It is never rewritten, only left in place beside updated legacy fields.</summary>
+    public static bool IsUnusableRevision(Attachment attachment) => attachment.Evidence is { } stored && stored.Revision != CurrentRevision;
 
     public AttachmentEvidence Stamped(ProcessIdentity? generation) => this with { Revision = CurrentRevision, Generation = generation };
 

@@ -139,9 +139,9 @@ public sealed class AttachmentEvidenceTests
         store.Save(Capture(provider, "stale"));
         var adopted = store.Adopt(Capture(provider, "stale", stale), DateTimeOffset.UtcNow);
         Assert.Null(adopted.Process);
-        var evaluated = new AttachmentHealth().Evaluate(Capture(provider, "stale", stale), DateTimeOffset.UtcNow, TimeSpan.FromMinutes(1));
+        var evaluated = new AttachmentHealth(ProcessProbe.Inspect).Evaluate(Capture(provider, "stale", stale), DateTimeOffset.UtcNow, TimeSpan.FromMinutes(1));
         Assert.Equal("confirmed-ended", evaluated.Health);
-        Assert.Equal("verified-live", new AttachmentHealth().Evaluate(Capture(provider, "live", live), DateTimeOffset.UtcNow, TimeSpan.FromMinutes(1)).Health);
+        Assert.Equal("verified-live", new AttachmentHealth(ProcessProbe.Inspect).Evaluate(Capture(provider, "live", live), DateTimeOffset.UtcNow, TimeSpan.FromMinutes(1)).Health);
     }
 
     [Theory]

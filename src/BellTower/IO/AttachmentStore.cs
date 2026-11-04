@@ -102,7 +102,7 @@ public sealed class AttachmentStore(DataPaths paths)
             UnverifiedSince = replacement ? observedAt : previous.UnverifiedSince,
             Health = replacement ? "unverified" : previous.Health,
         };
-        updated = updated with { Evidence = AttachmentEvidence.Merge(previous, captured, replacement, observedAt).Stamped(updated.Process) };
+        updated = updated with { Evidence = AttachmentEvidence.IsUnusableRevision(previous) ? previous.Evidence : AttachmentEvidence.Merge(previous, captured, replacement, observedAt).Stamped(updated.Process) };
         Save(updated);
         return updated;
     }

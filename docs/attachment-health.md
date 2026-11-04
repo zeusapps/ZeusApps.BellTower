@@ -21,6 +21,15 @@ The tray computes desired titles and uses one asynchronous checkout cache for ov
 
 The future identity resolver supplies a separate working checkout to this cache boundary. Launch directory, planning-store path and process ownership are not interchangeable. This change continues using the session directory until that resolver is implemented.
 
+## Shared conversations
+
+A shared-backend Codex conversation has no agent process of its own, so it is never `verified-live` and never gets reminders, escalation or host actions. `AttachmentHealth` is the single evaluator: directly attached processes (Claude Code, embedded Codex, owned runtimes) keep the rules above unchanged, and a shared conversation is reduced by the shared lifecycle policy in `Core` from its stored evidence plus a read-only snapshot of terminal and work facts that the caller gathers before the state and presentation locks are taken. A missing observation never changes stored state.
+
+- The terminal facet in `evidence.terminal` is `connected`, `disconnected`, `demoted` or `unverified`, with a reason. A disconnect or demotion is never completion. A stored `connected` ages to `unverified` after five minutes without a new observation. The owner client's death (PID plus creation time) and the recorded terminal shell's exit (from `evidence.terminal`, never `Host.Shell`) are detected without any new facts.
+- The conversation evidence time only moves forward: it is the latest of the last hook, the stored anchor, registration and fresh active runtime work, so hooks and runtime-confirmed work get the same configured grace. Idle or merely loaded threads extend nothing.
+- An exact-conversation hook revives an `unavailable` shared conversation to `unverified` (never `verified-live`, never a host action). Direct records and other unknown-owner records keep the sticky `unavailable` rule. Rolling back to an older tray restores its permanent `unavailable` for shared conversations; it never fabricates liveness.
+- Evidence with a revision this build does not understand is left byte-for-byte as stored; only the legacy `Health` and `UnverifiedSince` fields are updated.
+
 ## Data compatibility
 
 State schema remains `1`; new attachment, launch and session fields are additive, with extension-data preservation for unknown root/session/attachment/host fields. Legacy records without health fields are evaluated from actual process evidence. Palette consumption now marks the launch record consumed rather than deleting its shell metadata. Legacy normalized event helpers and capture-v1 ingress remain readable; this is not a promise that old trays implement new health semantics.

@@ -1,13 +1,21 @@
-using BellTower.Core;
+using BellTower.IO;
 
-namespace BellTower.IO;
+namespace BellTower.Core;
 
-public sealed class AttachmentHealth(Func<ProcessIdentity, ProcessLiveness>? inspect = null)
+/// <summary>
+/// The single evaluator of attachment health. A directly attached process (and any non-shared record) keeps the original exit,
+/// grace and stickiness rules unchanged. A shared-backend conversation, which has no process of its own, is reduced by
+/// <see cref="ConversationLifecycle"/> from the stored evidence and an optional read-only facts snapshot. Pure policy: process
+/// liveness is injected, nothing here reads the disk or the machine.
+/// </summary>
+public sealed class AttachmentHealth(Func<ProcessIdentity, ProcessLiveness> inspect)
 {
-    private readonly Func<ProcessIdentity, ProcessLiveness> inspect = inspect ?? ProcessProbe.Inspect;
-
-    public Attachment Evaluate(Attachment attachment, DateTimeOffset now, TimeSpan grace)
+    public Attachment Evaluate(Attachment attachment, DateTimeOffset now, TimeSpan grace, ConversationFacts? facts = null)
     {
+        if (attachment.EndedAt is null && ConversationLifecycle.IsSharedConversation(attachment))
+        {
+            return ConversationLifecycle.Reduce(attachment, facts, now, grace, inspect);
+        }
         var agent = attachment.Process is { } process ? inspect(process) : ProcessLiveness.Unverified;
         var shell = attachment.Host.Shell is { } owner ? inspect(owner) : ProcessLiveness.Unverified;
         if (attachment.EndedAt is not null || agent == ProcessLiveness.Ended || shell == ProcessLiveness.Ended)
