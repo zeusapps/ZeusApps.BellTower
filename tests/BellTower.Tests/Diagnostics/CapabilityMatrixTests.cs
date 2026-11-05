@@ -1,6 +1,8 @@
 using System.Text.Json;
 using BellTower.Diagnostics;
 using BellTower.IO;
+using BellTower.Providers;
+using BellTower.Sessions;
 using BellTower.Tests.Testing;
 using Xunit;
 
@@ -10,7 +12,7 @@ namespace BellTower.Tests.Diagnostics;
 // providers, and a restriction is only allowed with the proof, fallback and regression evidence AGENTS.md requires.
 public sealed class CapabilityMatrixTests
 {
-    private static readonly string[] Statuses = [CapabilityMatrix.Supported, CapabilityMatrix.Restricted, CapabilityMatrix.Unverified];
+    private static readonly string[] Statuses = [CapabilityMatrix.Supported, CapabilityMatrix.Restricted, CapabilityMatrix.Unverified, CapabilityMatrix.NotApplicable];
 
     [Fact]
     public void EverySurfaceStatesBothProvidersWithAKnownStatus()
@@ -46,7 +48,7 @@ public sealed class CapabilityMatrixTests
         }
         // Unknown and unimplemented are never reported as restrictions: the unverified rows say what is missing.
         Assert.All(CapabilityMatrix.Rows.SelectMany(row => new[] { row.Claude, row.Codex }).Where(item => item.Status == CapabilityMatrix.Unverified),
-            item => Assert.DoesNotContain("restriction", item.Detail.Replace("(not a provider restriction)", "", StringComparison.Ordinal), StringComparison.OrdinalIgnoreCase));
+            item => Assert.DoesNotContain("restriction", System.Text.RegularExpressions.Regex.Replace(item.Detail, "not (?:a |by a )?(?:provider|proven) restriction", ""), StringComparison.OrdinalIgnoreCase));
     }
 
     [Fact]
@@ -105,5 +107,145 @@ public sealed class CapabilityMatrixTests
         Assert.Contains("HookShell matched its cmd.exe ancestor", row.Codex.Detail);
         Assert.Contains("no Bash selection branch", row.Codex.Detail);
         Assert.Contains("External-host Bash and other versions/path-priority combinations remain unverified", row.Codex.Detail);
+    }
+
+    private static readonly string[] ModeSurfaces =
+    [
+        "Native name and runtime status: Codex owned runtime",
+        "Native name and runtime status: Codex shared backend",
+        "Native name and runtime status: direct clients",
+        "Native name and runtime status: shared conversations not yet reached",
+        "Native name and runtime status: refused shared threads and backends",
+        "Observer read content handling"
+    ];
+
+    private static CapabilityRow Row(string surface) => CapabilityMatrix.Rows.Single(row => row.Surface == surface);
+
+    // The per-mode states are the single account of native-name and runtime-status access. Nothing in them may read as a provider
+    // restriction or as complete without backing: gaps are unverified (owned by a named task or change), absence of a mode is not
+    // applicable, and only the owned and shared observer paths with automated coverage are supported.
+    [Fact]
+    public void PerModeNativeNameAndStatusStatesAreHonestForBothProviders()
+    {
+        Assert.Equal(CapabilityMatrix.Supported, Row(ModeSurfaces[0]).Codex.Status);
+        Assert.Equal(CapabilityMatrix.Supported, Row(ModeSurfaces[1]).Codex.Status);
+        Assert.Equal(CapabilityMatrix.Unverified, Row(ModeSurfaces[2]).Codex.Status);
+        Assert.Equal(CapabilityMatrix.Unverified, Row(ModeSurfaces[3]).Codex.Status);
+        Assert.Equal(CapabilityMatrix.Unverified, Row(ModeSurfaces[4]).Codex.Status);
+        Assert.Contains("task 4.2", Row(ModeSurfaces[3]).Codex.Detail);
+        Assert.Contains("task 6.1", Row(ModeSurfaces[4]).Codex.Detail);
+        Assert.Contains("elevated", Row(ModeSurfaces[4]).Codex.Detail);
+        // Claude is treated as direct: its native-title write stays unfinished and owned by the separate change, never restricted or complete.
+        var direct = Row(ModeSurfaces[2]).Claude;
+        Assert.Equal(CapabilityMatrix.Unverified, direct.Status);
+        Assert.Contains("sync-native-session-titles", direct.Detail);
+        Assert.Contains("not a provider restriction", direct.Detail);
+        // A mode the provider does not have is stated as such, never as supported or unverified.
+        foreach (var surface in new[] { ModeSurfaces[0], ModeSurfaces[1], ModeSurfaces[3], ModeSurfaces[4], ModeSurfaces[5] })
+        {
+            Assert.Equal(CapabilityMatrix.NotApplicable, Row(surface).Claude.Status);
+        }
+        // Doctor reports the same per-mode text for Codex name synchronization from the matrix source.
+        Assert.Contains(CodexAccessStatus.NoRuntime, CapabilityMatrix.CodexNameModes);
+        Assert.Contains(CodexAccessStatus.Unverified, CapabilityMatrix.CodexNameModes);
+        Assert.Contains(CodexAccessStatus.NoRuntime, Row(ModeSurfaces[2]).Codex.Detail);
+        Assert.Contains(CodexAccessStatus.Unverified, Row(ModeSurfaces[4]).Codex.Detail);
+        Assert.Contains("task 4.2", CapabilityMatrix.CodexNameModes);
+        Assert.Contains("task 6.1", CapabilityMatrix.CodexNameModes);
+        Assert.Contains("read through the tray-home backend, which does not host it", CapabilityMatrix.CodexNameModes);
+        Assert.DoesNotContain("is not read through", CapabilityMatrix.CodexNameModes);
+    }
+
+    [Fact]
+    public void DoctorReportsTheSamePerModeCodexNameText()
+    {
+        using var workspace = new TestWorkspace();
+        using var report = JsonDocument.Parse(Json.Encode(new DiagnosticsReporter(workspace.Paths).Report()));
+        var codex = report.RootElement.GetProperty(Name(report.RootElement, "codex"));
+        Assert.Equal(CapabilityMatrix.CodexNameModes, codex.GetProperty(Name(codex, "nameSynchronization")).GetString());
+    }
+
+    // No refusal label claims a restriction or a completed capability: each states an unavailable access with its own reason.
+    [Fact]
+    public void EveryAccessRefusalLabelNamesAnUnavailableReasonAndNeverClaimsRestrictionOrCompletion()
+    {
+        var labels = new List<string> { CodexAccessStatus.NoRuntime, CodexAccessStatus.ConnectionFailed, CodexAccessStatus.Mismatch, CodexAccessStatus.Unverified };
+        var shared = new List<string>();
+        foreach (var failure in Enum.GetValues<CodexTransportFailure>())
+        {
+            var label = CodexAccessStatus.For(new CodexAccess.Shared("home"), new CodexTransportException(failure, "message"));
+            if (failure == CodexTransportFailure.BackedOff)
+            {
+                Assert.Null(label);
+                continue;
+            }
+            if (failure is not (CodexTransportFailure.ThreadUnmapped or CodexTransportFailure.ThreadUnverified))
+            {
+                shared.Add(label!);
+            }
+            labels.Add(label!);
+        }
+        Assert.Equal(shared.Count, shared.Distinct().Count());
+        foreach (var label in labels)
+        {
+            Assert.StartsWith("unavailable: ", label, StringComparison.Ordinal);
+            Assert.DoesNotContain("restrict", label, StringComparison.OrdinalIgnoreCase);
+            Assert.DoesNotMatch(@"\bsupported\b", label);
+            Assert.DoesNotContain("complete", label, StringComparison.OrdinalIgnoreCase);
+        }
+        var elevated = CodexAccessStatus.For(new CodexAccess.Shared("home"), new CodexTransportException(CodexTransportFailure.ElevatedPeer, "m"));
+        Assert.Equal("unavailable: shared backend runs elevated", elevated);
+    }
+
+    // A supported mode row names its automated backing, and each named test class and method exists.
+    [Fact]
+    public void SupportedModeRowsNameBackingTestsThatExist()
+    {
+        var assembly = typeof(CapabilityMatrixTests).Assembly;
+        foreach (var surface in new[] { ModeSurfaces[0], ModeSurfaces[1], ModeSurfaces[5] })
+        {
+            var detail = Row(surface).Codex.Detail;
+            var references = System.Text.RegularExpressions.Regex.Matches(detail, @"\b(\w+Tests)(?:\.(\w+))?\b");
+            Assert.NotEmpty(references);
+            foreach (System.Text.RegularExpressions.Match reference in references)
+            {
+                var type = assembly.GetTypes().SingleOrDefault(candidate => candidate.Name == reference.Groups[1].Value);
+                Assert.NotNull(type);
+                if (reference.Groups[2].Success)
+                {
+                    Assert.NotNull(type.GetMethod(reference.Groups[2].Value));
+                }
+            }
+        }
+    }
+
+    // docs/compatibility.md prints the same states as the source (and so as doctor): the first status word of each provider cell.
+    [Fact]
+    public void CompatibilityDocumentStatesMatchTheMatrixSource()
+    {
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+        while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "ZeusApps.BellTower.slnx")))
+        {
+            directory = directory.Parent;
+        }
+        var lines = File.ReadAllLines(Path.Combine(directory!.FullName, "docs", "compatibility.md"));
+        Assert.DoesNotContain(lines, line => line.Contains("is not read through", StringComparison.Ordinal) || line.Contains("verified interactive and", StringComparison.Ordinal));
+        Assert.DoesNotContain(CapabilityMatrix.Rows, row => row.Claude.Detail.Contains("verified interactive and", StringComparison.Ordinal));
+        Assert.DoesNotContain(CapabilityMatrix.Rows, row => row.Claude.Detail.Contains("always direct", StringComparison.Ordinal));
+        Assert.DoesNotContain(lines, line => line.Contains("always direct", StringComparison.Ordinal));
+        var table = lines.Where(line => line.StartsWith("| ", StringComparison.Ordinal)).Select(line => line.Split('|').Select(cell => cell.Trim()).ToArray())
+            .Where(cells => cells.Length >= 4).GroupBy(cells => cells[1], StringComparer.Ordinal).ToDictionary(group => group.Key, group => group.First(), StringComparer.Ordinal);
+        string[] words = [CapabilityMatrix.Supported, CapabilityMatrix.Restricted, CapabilityMatrix.Unverified, CapabilityMatrix.NotApplicable];
+        static string First(string cell, string[] words)
+        {
+            var plain = cell.Replace("*", "");
+            return words.Where(word => plain.Contains(word, StringComparison.OrdinalIgnoreCase)).OrderBy(word => plain.IndexOf(word, StringComparison.OrdinalIgnoreCase)).First();
+        }
+        foreach (var row in CapabilityMatrix.Rows)
+        {
+            Assert.True(table.TryGetValue(row.Surface, out var cells), "docs/compatibility.md lacks the row: " + row.Surface);
+            Assert.Equal(row.Claude.Status, First(cells![2], words));
+            Assert.Equal(row.Codex.Status, First(cells[3], words));
+        }
     }
 }

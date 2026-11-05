@@ -337,6 +337,22 @@ public sealed class CodexSharedRuntimeServiceTests : IDisposable
         Assert.Empty(server.RecordedMethods());
     }
 
+    // A conversation the tray-home backend does not host (for example one of another Codex home) is still read there. The backend
+    // answers with a JSON-RPC error; the status is the shared-backend refusal and no name is written without a successful exact read.
+    [Fact]
+    public void AConversationTheTrayHomeBackendDoesNotHostIsRefusedAndNeverWritten()
+    {
+        var home = Home();
+        var server = new CodexStandInServer(CodexSharedEndpoint.SocketPath(home), home, CodexStandInServer.Behavior.RejectAfterInitialize);
+        servers.Add(server);
+        var session = SharedSession("elsewhere", "Alpha");
+        new CodexNameService(workspace.Paths, opener: Opener(home)).Sync(session, new GitContext());
+        Assert.Equal("unavailable: shared backend rejected the request", Identity(session).NativeSyncStatus);
+        Assert.Contains("thread/read", server.RecordedMethods());
+        Assert.DoesNotContain("thread/name/set", server.RecordedMethods());
+        NeverResumesOrStartsTurns(server);
+    }
+
     // Production budgets on purpose: the shared open must end on its own budget, before the services' 3 s caller timeout.
     private CodexStandInServer SilentBackend(string home)
     {
@@ -378,5 +394,60 @@ public sealed class CodexSharedRuntimeServiceTests : IDisposable
         await pump.RefreshAsync([first, second]);
         Assert.Equal(1, server.Accepted);
         Assert.Equal(1, access.Failures(home));
+    }
+
+    // Task 3.4: a thread/read response can carry a prompt preview, turn and message contents and credentials. An observer read
+    // keeps only the id check, the name and the work status; nothing else reaches the local log, any stored state or any status
+    // text, on the owned and the shared path, for success, pause, refusal and mismatch.
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task ObserverReadsDiscardPreviewsTurnsAndTokens(bool owned)
+    {
+        string[] canaries = ["CANARY-PREVIEW-7c1e", "CANARY-TURN-51aa", "CANARY-MESSAGE-93bd", "sk-canary-token-4d2b", "CANARY-BEARER-e07f"];
+        var content = ",\"preview\":\"" + canaries[0] + "\",\"turns\":[{\"id\":\"turn-1\",\"items\":[{\"type\":\"userMessage\",\"content\":[{\"type\":\"text\",\"text\":\"" + canaries[1] +
+            "\"}]}]}],\"messages\":[{\"role\":\"user\",\"text\":\"" + canaries[2] + "\"}],\"accessToken\":\"" + canaries[3] + "\",\"headers\":{\"authorization\":\"Bearer " + canaries[4] +
+            "\"},\"status\":{\"type\":\"active\",\"activeFlags\":[\"waitingOnApproval\"]}";
+        var home = Home();
+        var server = owned ? new CodexStandInServer(null, "ignored") : Backend(home);
+        if (owned)
+        {
+            servers.Add(server);
+        }
+        SessionState Make(string id, string name) => owned ? OwnedSession(id, name, server.Port) : SharedSession(id, name);
+        server.Threads["ok"] = Thread("ok", extra: content);
+        server.Threads["paused"] = Thread("paused", "My own title", content);
+        server.Threads["fork"] = Thread("fork", extra: content + ",\"forkedFromId\":\"parent\"");
+        server.Threads["mismatch"] = Thread("other", extra: content);
+        var sessions = new[] { Make("ok", "Alpha"), Make("paused", "Beta"), Make("fork", "Gamma"), Make("mismatch", "Delta") };
+        var service = new CodexNameService(workspace.Paths, opener: Opener(home));
+        foreach (var session in sessions)
+        {
+            service.Sync(session, new GitContext());
+        }
+        var waiting = new[] { Waiting("ok", sessions[0].AttachmentId), Waiting("fork", sessions[2].AttachmentId), Waiting("mismatch", sessions[3].AttachmentId) };
+        using var pump = new CodexPermissionPump(workspace.Paths, opener: Opener(home));
+        await pump.RefreshAsync(waiting);
+        pump.Apply(waiting, DateTimeOffset.UtcNow);
+
+        // The reads really happened and carried the content; the outcomes show what was kept.
+        Assert.Equal("synchronized", Identity(sessions[0]).NativeSyncStatus);
+        Assert.StartsWith("paused", Identity(sessions[1]).NativeSyncStatus, StringComparison.Ordinal);
+        Assert.Equal(CodexAccessStatus.Mismatch, Identity(sessions[3]).NativeSyncStatus);
+        Assert.Equal(!owned ? CodexAccessStatus.Unverified : "synchronized", Identity(sessions[2]).NativeSyncStatus);
+        Assert.True(waiting[0].NativePermissionPending);
+        Assert.Contains("thread/read", server.RecordedMethods());
+        NeverResumesOrStartsTurns(server);
+
+        // Nothing of the content is anywhere Bell Tower stores or shows: the whole data directory (local log, identity, attachment,
+        // event and runtime stores), the status text, the identities and the session states.
+        var persisted = Directory.EnumerateFiles(workspace.Root, "*", SearchOption.AllDirectories).Select(File.ReadAllText).ToList();
+        Assert.True(persisted.Count > 5);
+        Assert.Contains(persisted, text => text.Contains("native-name-unavailable", StringComparison.Ordinal));
+        var shown = sessions.Select(session => Json.Encode(Identity(session))).Concat(waiting.Select(session => Json.Encode(session))).Concat(sessions.Select(session => Identity(session).NativeSyncStatus));
+        foreach (var canary in canaries)
+        {
+            Assert.DoesNotContain(persisted.Concat(shown), text => text.Contains(canary, StringComparison.OrdinalIgnoreCase));
+        }
     }
 }

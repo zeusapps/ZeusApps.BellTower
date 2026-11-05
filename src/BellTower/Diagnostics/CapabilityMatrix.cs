@@ -5,6 +5,7 @@ namespace BellTower.Diagnostics;
 //   supported   implemented with automated coverage for this provider (live trials may still be listed as open)
 //   restricted  a proven, version-scoped provider restriction with Proof, Fallback and Regression filled in (AGENTS.md rules)
 //   unverified  unfinished or not yet proven either way; never a claim of restriction
+//   not applicable  the provider has no such mode or surface (for example Claude Code has no shared backend), stated with the reason
 public sealed record ProviderCapability(string Status, string Detail);
 
 public sealed record CapabilityRow(string Surface, ProviderCapability Claude, ProviderCapability Codex, string? Proof = null, string? Fallback = null, string? Regression = null);
@@ -14,6 +15,7 @@ public static class CapabilityMatrix
     public const string Supported = "supported";
     public const string Restricted = "restricted";
     public const string Unverified = "unverified";
+    public const string NotApplicable = "not applicable";
 
     public const string ClaudeVersion = "Claude Code 2.1.306 (Agent SDK 0.3.309)";
     public const string CodexVersion = "Codex 0.164.0";
@@ -24,6 +26,18 @@ public static class CapabilityMatrix
 
     private static ProviderCapability Yes(string detail) => new(Supported, detail);
     private static ProviderCapability Open(string detail) => new(Unverified, detail);
+    private static ProviderCapability Never(string detail) => new(NotApplicable, detail);
+
+    // The one text for the per-mode Codex native-name and runtime-status states. Doctor's Codex.NameSynchronization reports it, so
+    // the matrix, doctor and docs/compatibility.md cannot drift apart. The refusal labels are the constants the name status uses.
+    public static readonly string CodexNameModes =
+        "owned runtime (new managed local sessions): supported, name read and write and work status over authenticated loopback; " +
+        "shared backend (existing native backend of the resolved Codex home): supported as a non-owning observer, name read and write and work status, never resume or a turn; " +
+        "direct/embedded client (--no-daemon, remote, no runtime): unverified, no access (" + Sessions.CodexAccessStatus.NoRuntime + "), not a proven restriction; " +
+        "shared conversations adopted after the launcher exited: unverified, no shared access until task 4.2; " +
+        "a shared conversation of another Codex home: still read through the tray-home backend, which does not host it, so the answer is unverified and expected to surface as a shared-backend refusal; no name is written unless the read succeeds for the exact thread id, and per-conversation home routing is task 4.2; " +
+        "fork or delegated threads: unverified, refused by a conservative policy (" + Sessions.CodexAccessStatus.Unverified + ") pending the task 6.1 probe; " +
+        "elevated shared backend: refused by scope (Bell Tower observes only a non-elevated backend); native /rename pauses writes";
 
     public static IReadOnlyList<CapabilityRow> Rows { get; } =
     [
@@ -44,13 +58,34 @@ public static class CapabilityMatrix
             Yes("exec_command and freeform apply_patch call/result pairs; shapes verified in rust-v0.164.0 sources and tests; no live capture of the installed binary")),
         new("History recovery of the native title",
             Yes("custom-title record (SDK probe against a disposable 2.1.306 transcript)"),
-            Open("not persisted in the rollout at 0.164.0 (kept in session_index.jsonl, an internal file); read through the thread name service for managed runtimes only, where an externally set name pauses writes but is not promoted to a user title because whether it was typed by the user or generated is unverified. Closing evidence: a documented or supported read with name provenance")),
+            Open("not persisted in the rollout at 0.164.0 (kept in session_index.jsonl, an internal file); read through the thread name service for owned runtimes and for a shared backend of the resolved Codex home, where an externally set name pauses writes but is not promoted to a user title because whether it was typed by the user or generated is unverified. Closing evidence: a documented or supported read with name provenance")),
         new("Native chat-name write (managed ownership)",
             Open("unfinished: not implemented in this release; deferred to the sync-native-session-titles change (not a provider restriction). Claude's own surfaces (status line, managed tab, chip, speech) show the shared identity"),
-            Yes("dedicated authenticated runtime for new managed local sessions; verified in an isolated native TUI trial; explicit --no-daemon and remote sessions stay unavailable (runtime missing, not a proven restriction)")),
+            Yes("dedicated authenticated runtime for new managed local sessions (isolated native TUI trial) and, as a non-owning observer, an existing shared backend of the resolved Codex home (stand-in and isolated native backend reads); explicit --no-daemon and remote sessions stay unavailable (no runtime access, not a proven restriction); the per-mode states are in the rows below")),
         new("Native-name read, ownership and pause",
             Open("no native write, so no ownership or pause state; only custom-title records that are neither Bell Tower's, the SDK fork title nor released count as user titles (generated ai-title records are ignored); Use Bell Tower name returns to the automatic name. Native sync switches refuse Claude"),
             Yes("shipped pause-only policy: a name set outside Bell Tower pauses writes until the user takes ownership with Use Bell Tower name; Bell Tower never overwrites it")),
+        new("Native name and runtime status: Codex owned runtime",
+            Never("Claude Code has no Bell Tower runtime: its native-title write is the unfinished row above (sync-native-session-titles) and its wait signal is a hook"),
+            Yes("authenticated loopback runtime Bell Tower started: exact-conversation thread/read (name, waitingOnApproval, waitingOnUserInput) and thread/name/set through the shared pause and ownership policy; a read sends no resume or turn and discards previews, turns and tokens (CodexSharedRuntimeServiceTests.ObserverReadsDiscardPreviewsTurnsAndTokens); only the owned manager ends the runtime")),
+        new("Native name and runtime status: Codex shared backend",
+            Never("Claude Code has no known shared-backend mode (design decision 4); retained evidence covers --print captures and launch-shape fixtures, and the interactive shape is a stated assumption"),
+            Yes("existing native backend of the resolved Codex home as a non-owning observer: one peer-verified connection, thread/read with includeTurns false for name and work status, thread/name/set under the same pause policy, never resume, turn or approval; the connection is the only thing Bell Tower closes (CodexSharedRuntimeServiceTests.ObserverReadsDiscardPreviewsTurnsAndTokens)")),
+        new("Native name and runtime status: direct clients",
+            Open("Claude Code is treated as direct (no known shared-backend mode; the interactive shape is a stated assumption, see the shared backend row): the native title is read from custom-title records and its write is unfinished (Native chat-name write row, owned by sync-native-session-titles, not a provider restriction); its wait signal is a hook and needs no runtime"),
+            Open("unverified: a standalone or embedded Codex client (--no-daemon, remote) exposes no runtime Bell Tower reaches, so native-name read and write and runtime work status report " + Sessions.CodexAccessStatus.NoRuntime + " and tracking continues from hooks; absence of an access path is not a proven restriction. Closing evidence: a supported external endpoint for that mode, or a documented statement that none exists")),
+        new("Native name and runtime status: shared conversations not yet reached",
+            Never("Claude Code has no shared backend, so there is no such conversation"),
+            Open("unverified (unfinished, task 4.2): a shared conversation adopted after its launching client exited has an unknown mode and gets no shared access, and a conversation of another Codex home is still read through the tray-home backend, which does not host it: the backend's answer is unverified and expected to surface as a shared-backend refusal, and no name is written unless the read succeeds for the exact thread id (CodexSharedRuntimeServiceTests.AConversationTheTrayHomeBackendDoesNotHostIsRefusedAndNeverWritten pins a rejecting stand-in only); the adopted-late conversation reports no access; both keep hook tracking. Closing evidence: the 4.2 binder and per-conversation home record")),
+        new("Native name and runtime status: refused shared threads and backends",
+            Never("Claude Code has no shared backend or runtime thread to refuse"),
+            Open("unverified: fork, parent or delegated threads are refused by a conservative policy (" + Sessions.CodexAccessStatus.Unverified + ") because which session id their hooks carry is unobserved (task 6.1 probe); an elevated shared backend is refused with its own reason by the non-elevated scope decision, not by a provider restriction. Closing evidence: the 6.1 fork and delegated-thread hook probe, or an explicit scope decision for elevated backends")),
+        new("Observer read content handling",
+            Never("Claude Code has no observer runtime read; transcript history recovery is the separate history rows"),
+            Yes("an observer read keeps only the thread id check, the name and the work status flags; previews, turn and message contents and tokens in a response are discarded and never reach the local log, stored identity, attachment or session state, or status text (CodexSharedRuntimeServiceTests.ObserverReadsDiscardPreviewsTurnsAndTokens)")),
+        new("Transcript read content handling",
+            Yes("the history reader (native custom title and work association) keeps only the verified title, work association and call ids; prompt, assistant and tool-result text never reach the data directory, serialized identity or status text (IdentityHistoryTests.TranscriptReadsKeepNoPromptAssistantOrToolContent, disposable transcript canaries)"),
+            Yes("the same history reader over a disposable rollout keeps only the verified work association and call ids; prompt, assistant and tool output text never reach the data directory, serialized identity or status text (IdentityHistoryTests.TranscriptReadsKeepNoPromptAssistantOrToolContent, disposable rollout canaries)")),
         new("Fork, clear and resume",
             Open("SDK forkSession (probe): the parent is proven by the transcript's own forkedFrom records, the fork inherits the parent's pins and work evidence once and keeps its own palette, and the generated \"(fork)\" title is ignored; interactive --fork-session and /branch are unverified and fall back to automatic resolution with the \"(fork)\" title ignored; clear restarts derived state; resume keeps pins and palette"),
             Yes("fork: a thread created by codex fork records its parent in its own first rollout line (session_meta.forked_from_id; openai/codex rust-v0.164.0 protocol, rollout recorder and thread manager sources), so the shared inheritance copies the parent's pins and work evidence once and the fork keeps its own palette; parent_thread_id (spawned sub-agents) is not fork evidence; no live codex fork capture yet. clear and resume use the same shared derived-state reset; no Codex-specific clear or resume transcript captured")),
@@ -68,7 +103,7 @@ public static class CapabilityMatrix
             Yes("PermissionRequest is provisional; the owning runtime's waitingOnApproval status confirms it with the same shared policy and a five-second grace from the first runtime report; a fresh negative status suppresses a stale request; fixture and fake-runtime verified; user-operated native trials passed managed human/automatic, --no-daemon fallback and mixed-provider scenarios on 2026-10-27")),
         new("Human-wait confirmation without an owning runtime",
             Yes("the confirming signal is a hook, so no runtime is needed"),
-            Open("unverified: Codex sessions without a verified owning runtime (explicit --no-daemon, existing or remote sessions) have no human-wait signal in the 0.164.0 hooks (PermissionRequest runs before guardian or user review: openai/codex codex-rs hooks permission_request event), so their approval requests are never confirmed. Supported unverified fallback (shared Core policy, applied to any session without a signal): a request pending 15 seconds shows a visibly unverified \"possibly waiting for approval\" chip with no sound and no reminder or escalation eligibility, cleared by the correlated resolution, stop or end; doctor reports these sessions as unavailable. Closing evidence for a confirmed wait: a supported hook or notification payload that distinguishes a human prompt, or a verified attach path to the owning runtime")),
+            Open("unverified: Codex sessions with neither a verified owning runtime nor a verified shared backend (explicit --no-daemon, remote sessions, shared conversations not yet reached by the task 4.2 binder) have no human-wait signal in the 0.164.0 hooks (PermissionRequest runs before guardian or user review: openai/codex codex-rs hooks permission_request event), so their approval requests are never confirmed. A shared-backend conversation reaches the runtime status over the observer path. Supported unverified fallback (shared Core policy, applied to any session without a signal): a request pending 15 seconds shows a visibly unverified \"possibly waiting for approval\" chip with no sound and no reminder or escalation eligibility, cleared by the correlated resolution, stop or end; doctor reports these sessions as unavailable. Closing evidence for a confirmed wait: a supported hook or notification payload that distinguishes a human prompt, or a verified attach path to the owning runtime")),
         new("Question-tool approval flows",
             Yes("AskUserQuestion runs through the approval flow (PermissionRequest without tool_use_id, then permission_prompt about 6.2 s later) in auto and default modes at 2.1.310; both stay confirming evidence for the one question wait, never a permission wait; a question plus an uncorrelated permission makes an unattributed prompt ambiguous and it is never credited to the permission later by elimination (an isolated capture showed the question's own dialog emits that prompt and a following permission dialog is sequential and relies on its own prompt); a prompt cannot confirm a request younger than the documented notification delay (about 6 seconds, floor 5)"),
             Yes("request_user_input emits PreToolUse and a correlated PostToolUse with no approval hook in Plan mode and in Default mode with default_mode_request_user_input; a Default-mode rejection clears at Stop; the owning runtime's waitingOnUserInput status (probe-verified) is read as confirmation evidence and never gates a question; request_user_input_async is not offered by 0.164.0 (hook shape unverified)")),

@@ -43,7 +43,7 @@ Codex's native footer can show `thread-name` and `git-branch` with native stylin
 
 Updated local **Start-Codex** launches create one dedicated app-server with a random loopback port and capability-token authentication. Bell Tower updates the exact native thread through its owned runtime. The backend and shell share a verified console; the interactive TUI remains a direct shell child. The runtime ends after that client exits or its shell disappears. Ordinary Bell Tower tray exit/detach management does not stop agents.
 
-Existing sessions and explicit remote connections are unchanged. An explicit `--no-daemon` agent argument retains standalone operation, whose native name cannot be updated externally. Dedicated-startup failures fall back to standalone tracking. Native executables and the official npm bootstrap are supported; custom shims may require standalone mode.
+Existing sessions and explicit remote connections are unchanged, except that a conversation served by an existing shared backend is read and named as a non-owning observer (see [compatibility](compatibility.md)). An explicit `--no-daemon` agent argument retains standalone operation, whose native name cannot be updated externally. Dedicated-startup failures fall back to standalone tracking. Native executables and the official npm bootstrap are supported; custom shims may require standalone mode.
 
 A pre-existing explicit native name or native `/rename` pauses automatic writes. **Sessions > Use name in native chat** (or **Use Bell Tower name**) explicitly takes ownership/resumes; **Pause native names** disables writes. These switches act on Codex sessions only; Claude Code's native title write is deferred to `sync-native-session-titles`. CLI equivalents:
 

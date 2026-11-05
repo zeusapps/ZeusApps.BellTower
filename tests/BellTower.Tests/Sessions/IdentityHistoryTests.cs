@@ -241,6 +241,59 @@ public sealed class IdentityHistoryTests : IDisposable
         Assert.Equal("change-b", Get(session).ActiveWork);
     }
 
+    // Task 3.4 parity: the transcript analogue of the Codex observer content-discard test, for both providers. The history reader
+    // (which also recovers the Claude native custom title) reads prompt-bearing transcripts and rollouts; only the verified title,
+    // work association and call ids may be kept.
+    [Theory]
+    [InlineData("claude")]
+    [InlineData("codex")]
+    public void TranscriptReadsKeepNoPromptAssistantOrToolContent(string provider)
+    {
+        string[] canaries = ["CANARY-PROMPT-3a9c", "CANARY-ASSISTANT-71d2", "CANARY-TOOLRESULT-b05e", "CANARY-TOOLINPUT-e8f4"];
+        IdentityFixtures.Change(workspace.Root, "change-a");
+        string Raw(object value) => System.Text.Json.JsonSerializer.Serialize(value);
+        var claude = provider == "claude";
+        string[] lines = claude
+            ?
+            [
+                Raw(new { type = "user", isSidechain = false, message = new { role = "user", content = canaries[0] }, timestamp = IdentityFixtures.Timestamp(0), sessionId = Id }),
+                Raw(new { type = "assistant", isSidechain = false, message = new { role = "assistant", content = new[] { new { type = "text", text = canaries[1] } } }, timestamp = IdentityFixtures.Timestamp(1), sessionId = Id }),
+                IdentityFixtures.Claude.Use(Id, "inspect", "Bash", new { command = "echo " + canaries[3] }, workspace.Root, 2),
+                IdentityFixtures.Claude.Result(Id, "inspect", 3, text: canaries[2]),
+                IdentityFixtures.Claude.Write(Id, "write", workspace.Root, "change-a", 4),
+                IdentityFixtures.Claude.Result(Id, "write", 5, text: canaries[2]),
+                IdentityFixtures.Claude.Title(Id, "Canary title")
+            ]
+            :
+            [
+                Raw(new { timestamp = IdentityFixtures.Timestamp(0), type = "response_item", payload = new { type = "message", role = "user", content = new[] { new { type = "input_text", text = canaries[0] } } } }),
+                Raw(new { timestamp = IdentityFixtures.Timestamp(1), type = "response_item", payload = new { type = "message", role = "assistant", content = new[] { new { type = "output_text", text = canaries[1] } } } }),
+                IdentityFixtures.Codex.Exec("inspect", "echo " + canaries[3], 2),
+                IdentityFixtures.Codex.ExecResult("inspect", 3, output: canaries[2]),
+                IdentityFixtures.Codex.Patch("write", workspace.Root, "change-a", 4),
+                IdentityFixtures.Codex.PatchResult("write", 5)
+            ];
+        IdentityFixtures.Write(transcript, lines);
+        var session = Bind(provider);
+        Tick(session);
+        var identity = Get(session);
+
+        // The reads really happened: the verified outcomes were recovered.
+        Assert.Equal("change-a", identity.ActiveWork);
+        if (claude)
+        {
+            Assert.Equal("Canary title", identity.NativeTitle);
+        }
+
+        var persisted = Directory.EnumerateFiles(workspace.Paths.Root, "*", SearchOption.AllDirectories).Select(File.ReadAllText).ToList();
+        Assert.NotEmpty(persisted);
+        var shown = new[] { Json.Encode(identity), Json.Encode(session), identity.Name ?? "", identity.NativeTitle ?? "", identity.NativeSyncStatus ?? "" };
+        foreach (var canary in canaries)
+        {
+            Assert.DoesNotContain(persisted.Concat(shown), text => text.Contains(canary, StringComparison.OrdinalIgnoreCase));
+        }
+    }
+
     [Fact]
     public void ClaudeToolPairFixtureResolvesOnlyTheMainSessionSuccess()
     {

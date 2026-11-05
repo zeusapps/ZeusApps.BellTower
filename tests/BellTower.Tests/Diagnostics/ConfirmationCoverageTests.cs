@@ -91,6 +91,81 @@ public sealed class ConfirmationCoverageTests
         }
     }
 
+    // The coverage count uses the permission pump's own selection rule: an owned runtime or a verified shared backend is a status
+    // source; a conversation with neither (no-daemon, remote, unclassified) is unavailable.
+    [Fact]
+    public void CodexCoverageCountsOwnedAndSharedBackendSessionsAsVerifiableAndOthersAsUnavailable()
+    {
+        using var workspace = new TestWorkspace();
+        var process = ProcessProbe.Identify(Environment.ProcessId)!;
+        var state = new AppState();
+        var attachments = new AttachmentStore(workspace.Paths);
+        var runtimes = new CodexRuntimeStore(workspace.Paths);
+
+        void Add(string id, Attachment attachment)
+        {
+            attachments.Save(attachment);
+            var session = new SessionState { Key = "codex:" + id, Provider = "codex", SessionId = id, AttachmentId = attachment.Id, Directory = workspace.Root };
+            state.Sessions[session.Key] = session;
+        }
+
+        var captured = new Attachment("captured", "codex", null, new("unknown"), workspace.Root, DateTimeOffset.UtcNow);
+        Add("shared", NativeAdoption.Shared(captured, "shared", AgentModes.SharedBackend));
+        Add("unclassified", NativeAdoption.Shared(captured with { Id = "captured-2" }, "unclassified"));
+        Add("plain", new("plain-attachment", "codex", null, new("unknown"), workspace.Root, DateTimeOffset.UtcNow));
+        Directory.CreateDirectory(Path.GetDirectoryName(runtimes.TokenPath("owned"))!);
+        AtomicFile.Write(runtimes.RecordPath("owned"), Json.Encode(new CodexRuntime("owned", "ws://127.0.0.1:1", process, process)));
+        File.WriteAllText(runtimes.TokenPath("owned"), "token");
+        Add("owned", new("owned", "codex", process, new("unknown", process), workspace.Root, DateTimeOffset.UtcNow));
+        AtomicFile.Write(workspace.Paths.State, Json.Encode(state));
+
+        var coverage = Coverage(workspace, out var document);
+        using (document)
+        {
+            var codex = Get(coverage, "codex");
+            Assert.Equal(4, Get(codex, "activeSessions").GetInt32());
+            Assert.Equal(2, Get(codex, "withVerifiableRuntime").GetInt32());
+            Assert.Equal(2, Get(codex, "unavailableWithoutRuntime").GetInt32());
+            Assert.Contains("verified shared backend", Get(codex, "status").GetString());
+        }
+    }
+
+    [Fact]
+    public void AVerifiedSharedBackendSessionAloneLeavesCodexCoverageWithoutAnUnavailableCount()
+    {
+        using var workspace = new TestWorkspace();
+        var state = new AppState();
+        var captured = new Attachment("captured", "codex", null, new("unknown"), workspace.Root, DateTimeOffset.UtcNow);
+        var attachment = NativeAdoption.Shared(captured, "shared", AgentModes.SharedBackend);
+        new AttachmentStore(workspace.Paths).Save(attachment);
+        var session = new SessionState { Key = "codex:shared", Provider = "codex", SessionId = "shared", AttachmentId = attachment.Id, Directory = workspace.Root };
+        state.Sessions[session.Key] = session;
+        AtomicFile.Write(workspace.Paths.State, Json.Encode(state));
+        var coverage = Coverage(workspace, out var document);
+        using (document)
+        {
+            var codex = Get(coverage, "codex");
+            Assert.Equal(1, Get(codex, "withVerifiableRuntime").GetInt32());
+            Assert.Equal(0, Get(codex, "unavailableWithoutRuntime").GetInt32());
+            Assert.DoesNotContain("unavailable", Get(codex, "status").GetString());
+        }
+    }
+
+    [Fact]
+    public void ClaudeCoverageIsUnchangedByCodexBackendSelection()
+    {
+        using var workspace = new TestWorkspace();
+        new EventStore(workspace.Paths).Publish(TestWorkspace.Event(EventKind.Permission, DateTimeOffset.UtcNow, "tool"));
+        new StateStore(workspace.Paths).Drain();
+        var coverage = Coverage(workspace, out var document);
+        using (document)
+        {
+            var claude = Get(coverage, "claude");
+            Assert.Equal(1, Get(claude, "activeSessions").GetInt32());
+            Assert.Equal(1, Get(claude, "sessionsWithoutObservedPrompt").GetInt32());
+        }
+    }
+
     [Fact]
     public void LegacyTimingOnlyWaitsAreCountedAsUnverifiedNeverConfirmed()
     {

@@ -30,11 +30,11 @@ public sealed class DiagnosticsReporter(DataPaths paths, IMicrophoneActivitySour
             {
                 HookStatus = Observed("codex") ? "observed; see timestamp" : "not observed; review /hooks",
                 Footer = "native thread-name/git-branch fields; setup --status-line or --desktop configures them reversibly; native styling",
-                NameSynchronization = "dedicated authenticated loopback runtime for new managed local sessions; explicit --no-daemon and existing/remote sessions without a verified runtime remain unavailable; native /rename pauses managed writes",
+                NameSynchronization = CapabilityMatrix.CodexNameModes,
                 ApprovalResolution = "PermissionRequest is provisional; verified owning-runtime waitingOnApproval status confirms a human wait (5-second grace from the first report) and a fresh negative status suppresses a stale request; without a verified runtime (or when the status read fails) the request is never confirmed: after 15 seconds it shows a visibly unverified \"possibly waiting for approval\" chip with no sound, reminder or escalation (no timing-based confirmation); denial-only signal unverified",
                 Questions = "request_user_input question waits from PreToolUse (no approval hook); owning-runtime waitingOnUserInput status read as confirmation evidence only; Default-mode rejections clear at Stop; request_user_input_async not offered at 0.164.0 (unverified)",
                 TrustStatus = "not independently verified; review /hooks",
-                Attachment = "managed local sessions own one dedicated runtime; fallback --no-daemon retains local attachment; explicit shared/remote origin remains unverified"
+                Attachment = "managed local sessions own one dedicated runtime; fallback --no-daemon retains local attachment; a shared backend is observed without ownership and its conversations carry no terminal binding until task 4.2; remote origin remains unverified"
             },
             WindowsTerminal = new
             {

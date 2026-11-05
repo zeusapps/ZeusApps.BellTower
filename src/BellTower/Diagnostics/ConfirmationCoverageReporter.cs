@@ -1,6 +1,7 @@
 using BellTower.Core;
 using BellTower.IO;
 using BellTower.Providers;
+using BellTower.Sessions;
 
 namespace BellTower.Diagnostics;
 
@@ -9,7 +10,7 @@ namespace BellTower.Diagnostics;
 // substitutes for a signal.
 public sealed class ConfirmationCoverageReporter(DataPaths paths)
 {
-    public const string Policy = "approval-flow starts (PermissionRequest) are provisional and never attention by themselves; a supported human-wait signal confirms them; the shared five-second grace counts any provider delay already elapsed; timing-only evidence is reported as unverified and never alerts, but a session with no supported signal (Codex without a verified owning runtime, or Claude where no permission_prompt has been observed) shows a visibly unverified \"possibly waiting for approval\" chip after 15 seconds with no sound, reminder or escalation and is never labelled confirmed";
+    public const string Policy = "approval-flow starts (PermissionRequest) are provisional and never attention by themselves; a supported human-wait signal confirms them; the shared five-second grace counts any provider delay already elapsed; timing-only evidence is reported as unverified and never alerts, but a session with no supported signal (Codex without a verified owning runtime or shared backend, or Claude where no permission_prompt has been observed) shows a visibly unverified \"possibly waiting for approval\" chip after 15 seconds with no sound, reminder or escalation and is never labelled confirmed";
 
     public object Report()
     {
@@ -45,18 +46,19 @@ public sealed class ConfirmationCoverageReporter(DataPaths paths)
     {
         var observed = ConfirmationEvidence.Read(paths, "codex");
         var active = sessions.Where(session => session.Provider == "codex" && !session.Ended).ToList();
-        var runtimes = new CodexRuntimeStore(paths);
-        var verifiable = active.Count(session => runtimes.Get(session.AttachmentId) is not null);
+        // The one selection rule the permission pump uses: an owned runtime or a verified shared backend counts as a status source.
+        var opener = new CodexRuntimeOpener(paths);
+        var verifiable = active.Count(session => opener.Select(session) is not null);
         return new
         {
             Signal = ConfirmationEvidence.CodexSignal,
-            Configured = "managed local sessions own a dedicated authenticated loopback runtime that supplies the status",
+            Configured = "managed local sessions own a dedicated authenticated loopback runtime, and a verified shared-backend conversation is observed on its backend, that supply the status",
             Observed = observed is null ? "not observed in this data directory" : $"last verified {observed.At:O}",
             ActiveSessions = active.Count,
             WithVerifiableRuntime = verifiable,
             UnavailableWithoutRuntime = active.Count - verifiable,
             Status = active.Count - verifiable > 0
-                ? "unavailable for sessions without a verified owning runtime (explicit --no-daemon, existing or remote sessions) or whose status read fails: a request pending 15 seconds shows a visibly unverified \"possibly waiting for approval\" chip with no sound, reminder or escalation, never labelled confirmed"
+                ? "unavailable for sessions with neither a verified owning runtime nor a verified shared backend (explicit --no-daemon, remote, and shared conversations not yet reached by the task 4.2 binder) or whose status read fails: a request pending 15 seconds shows a visibly unverified \"possibly waiting for approval\" chip with no sound, reminder or escalation, never labelled confirmed"
                 : IngressStatus("codex") ?? (observed is null ? "configured, not yet observed" : "observed"),
             IngressImage = IngressImage("codex"),
             VerifiedVersionModes = CapabilityMatrix.CodexConfirmationEvidence,
