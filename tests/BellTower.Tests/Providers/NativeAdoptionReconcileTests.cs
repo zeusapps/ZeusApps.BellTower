@@ -92,7 +92,7 @@ public sealed class NativeAdoptionReconcileTests
         attachments.Save(Captured(provider, launcher, "launch-attachment", "managed", shell, "launch-env") with { Evidence = AttachmentEvidence.ForManagedLaunch(launcher) });
         var shares = AgentModeClassifier.MayShareBackend(provider);
 
-        var matching = NativeAdoption.Apply(Captured(provider, launcher, "launch-attachment", "managed", shell, "launch-env"), "session-a", AgentModes.Unknown, shares, shell, [shell], agentParentIsAgent: false);
+        var matching = NativeAdoption.Apply(Captured(provider, launcher, "launch-attachment", "managed", shell, "launch-env"), "session-a", AgentModes.Unknown, shares, shell, [shell]);
         // Codex puts the unproven launch on the wire in the fail-closed shape; Claude keeps its direct classification.
         Assert.Equal(!shares, matching.Dedicated);
         Assert.Equal(shares, matching.Attachment.Evidence!.Provisional);
@@ -280,7 +280,7 @@ public sealed class NativeAdoptionReconcileTests
         }
         new LaunchPresentationStore(workspace.Paths).Prepare("profile-launch", recorded);
         var shares = AgentModeClassifier.MayShareBackend(provider);
-        var outcome = NativeAdoption.Apply(Captured(provider, agent, "profile-launch", "managed", launchShell, "launch-env"), "profile-session", AgentModes.Unknown, shares, parent, [parent], agentParentIsAgent: false);
+        var outcome = NativeAdoption.Apply(Captured(provider, agent, "profile-launch", "managed", launchShell, "launch-env"), "profile-session", AgentModes.Unknown, shares, parent, [parent]);
         if (outcome.Attachment.Evidence?.Candidate is { } candidate)
         {
             // AttachmentCapture.Resolve attaches the launch identity text to the candidate.

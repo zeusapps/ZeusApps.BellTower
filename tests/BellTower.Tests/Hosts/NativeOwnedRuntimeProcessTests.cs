@@ -34,6 +34,51 @@ public sealed class NativeOwnedRuntimeProcessTests
         public void Dispose() { }
     }
 
+    // Writes a stand-in agent script: optional preamble, a started flag, a wait for the go flag, the hook, a done flag, then it keeps
+    // running so the attachment is still live when it is inspected.
+    private static void WriteWaitThenHook(string path, string preamble, string started, string go, string hook, string done) =>
+        File.WriteAllText(path,
+            "@echo off\r\n" + preamble +
+            $"echo started>\"{started}\"\r\n" +
+            ":wait\r\n" +
+            $"if exist \"{go}\" goto go\r\n" +
+            "ping -n 1 127.0.0.1 >nul\r\n" +
+            "goto wait\r\n" +
+            ":go\r\n" +
+            hook + "\r\n" +
+            $"echo done>\"{done}\"\r\n" +
+            "ping -n 60 127.0.0.1 >nul\r\n");
+
+    // The managed runtime-host manager stand-in, with what the Start-Codex module exports (a shell that deliberately differs
+    // from the runtime record's shell when `inheritedShell` is given).
+    private static ProcessStartInfo ManagerStart(string image, string script, int? inheritedShell)
+    {
+        var start = new ProcessStartInfo(image)
+        {
+            UseShellExecute = false,
+            CreateNoWindow = true,
+            RedirectStandardInput = true,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            Arguments = StandIns.Under("", $"\"{script}\"")
+        };
+        StandIns.ScrubEnvironment(start);
+        start.Environment["BELLTOWER_ATTACHMENT"] = Managed;
+        start.Environment["BELLTOWER_DEDICATED"] = "1";
+        if (inheritedShell is { } pid)
+        {
+            start.Environment["BELLTOWER_SHELL_PID"] = pid.ToString();
+        }
+        return start;
+    }
+
+    private static void WriteRecord(CodexRuntimeStore store, CodexRuntime runtime)
+    {
+        Directory.CreateDirectory(Path.GetDirectoryName(store.RecordPath(runtime.Attachment))!);
+        AtomicFile.Write(store.RecordPath(runtime.Attachment), Json.Encode(runtime));
+        File.WriteAllText(store.TokenPath(runtime.Attachment), "fixture-token");
+    }
+
     // (provider, backend arguments, images between the manager and the backend joined by '+' or "", record variant, outcome).
     // The record variant says what the runtime record claims; "independent" starts the backend under a plain shell with no
     // manager above it while a live decoy manager and shell are recorded.
@@ -104,17 +149,7 @@ public sealed class NativeOwnedRuntimeProcessTests
         var started = Path.Combine(workspace.Root, "started.flag");
         var marker = Path.Combine(workspace.Root, "done.flag");
         var backendScript = Path.Combine(workspace.Root, "backend.cmd");
-        File.WriteAllText(backendScript,
-            "@echo off\r\n" +
-            $"echo started>\"{started}\"\r\n" +
-            ":wait\r\n" +
-            $"if exist \"{go}\" goto go\r\n" +
-            "ping -n 1 127.0.0.1 >nul\r\n" +
-            "goto wait\r\n" +
-            ":go\r\n" +
-            StandIns.Hook(entry, provider, workspace) + "\r\n" +
-            $"echo done>\"{marker}\"\r\n" +
-            "ping -n 60 127.0.0.1 >nul\r\n");
+        WriteWaitThenHook(backendScript, "", started, go, StandIns.Hook(entry, provider, workspace), marker);
         var line = $"\"{backendImage}\" {StandIns.Under(arguments + (arguments.Length > 0 ? " --listen ws://127.0.0.1:1" : ""), $"\"{backendScript}\"")}";
         var launchers = between.Length == 0 ? [] : between.Split('+');
         for (var level = launchers.Length - 1; level >= 0; level--)
@@ -131,22 +166,8 @@ public sealed class NativeOwnedRuntimeProcessTests
         using var shell = Process.Start(new ProcessStartInfo(shellImage, "/s /c \"ping -n 120 127.0.0.1 >nul\"") { UseShellExecute = false, CreateNoWindow = true })!;
         // An independent backend sits under a plain shell; the manager image only exists as a recorded decoy.
         var root = record == "independent" ? shellImage : manager;
-        var start = new ProcessStartInfo(root)
-        {
-            UseShellExecute = false,
-            CreateNoWindow = true,
-            RedirectStandardInput = true,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            Arguments = StandIns.Under("", $"\"{managerScript}\"")
-        };
-        StandIns.ScrubEnvironment(start);
-        // What the Start-Codex module exports, with a shell that deliberately differs from the runtime record's shell.
         var inherited = ProcessProbe.Identify(Environment.ProcessId)!;
-        start.Environment["BELLTOWER_ATTACHMENT"] = Managed;
-        start.Environment["BELLTOWER_DEDICATED"] = "1";
-        start.Environment["BELLTOWER_SHELL_PID"] = inherited.Pid.ToString();
-        using var process = Process.Start(start)!;
+        using var process = Process.Start(ManagerStart(root, managerScript, inherited.Pid))!;
         try
         {
             var stdout = process.StandardOutput.ReadToEndAsync();
@@ -172,9 +193,7 @@ public sealed class NativeOwnedRuntimeProcessTests
             };
             if (record != "none")
             {
-                Directory.CreateDirectory(Path.GetDirectoryName(store.RecordPath(runtime.Attachment))!);
-                AtomicFile.Write(store.RecordPath(runtime.Attachment), Json.Encode(runtime));
-                File.WriteAllText(store.TokenPath(runtime.Attachment), "fixture-token");
+                WriteRecord(store, runtime);
             }
             if (record == "dead-shell")
             {
@@ -251,65 +270,53 @@ public sealed class NativeOwnedRuntimeProcessTests
         }
     }
 
-    // QA-2500: a model-started `codex app-server` inside the owned backend has the manager above it, but its direct parent is a
-    // Codex agent, so it never takes the managed attachment, whichever hook arrives first; the real backend binds in both orders.
+    // QA-2500, ANALYSIS-1800: a model-started `codex app-server` inside the owned backend has the manager above it, but a Codex agent
+    // sits between them (directly, or with a tool shell in between), so it never takes the managed attachment, whichever hook
+    // arrives first; the real backend binds in both orders.
     [Theory]
-    [InlineData(Event, true)]
-    [InlineData(Event, false)]
-    [InlineData(Ingress, true)]
-    [InlineData(Ingress, false)]
-    public async Task ANestedAppServerInsideTheOwnedBackendStaysSharedInEitherHookOrder(string entry, bool nestedFirst)
+    [InlineData(Event, true, false)]
+    [InlineData(Event, false, false)]
+    [InlineData(Ingress, true, false)]
+    [InlineData(Ingress, false, false)]
+    [InlineData(Event, true, true)]
+    [InlineData(Event, false, true)]
+    [InlineData(Ingress, true, true)]
+    [InlineData(Ingress, false, true)]
+    public async Task ANestedAppServerInsideTheOwnedBackendStaysSharedInEitherHookOrder(string entry, bool nestedFirst, bool throughToolShell)
     {
         using var workspace = new TestWorkspace();
         var fixture = NativeFixture.SessionStart("codex");
         var backendImage = StandIns.CopyImage(workspace, "codex", "backend");
         var nestedImage = StandIns.CopyImage(workspace, "codex", "nested");
+        var toolImage = StandIns.CopyImage(workspace, "powershell", "tool");
         var manager = StandIns.CopyImage(workspace, "bell-tower", "manager");
         var shellImage = StandIns.CopyImage(workspace, "pwsh", "shell");
         string Flag(string name) => Path.Combine(workspace.Root, name + ".flag");
         const string backendSession = "owned-backend-session";
         const string nestedSession = "nested-app-server-session";
-        string Script(string name, string session, string go)
+        const string listen = "app-server --listen ws://127.0.0.1:1";
+        string Script(string name, string session, string preamble)
         {
             var payload = Path.Combine(workspace.Root, name + ".json");
             File.WriteAllText(payload, fixture.PayloadText.Replace(fixture.SessionId, session, StringComparison.Ordinal));
             var path = Path.Combine(workspace.Root, name + ".cmd");
-            // The backend starts the nested app-server beside itself (a child that keeps running), then both wait for their go flag.
-            var nest = name == "backend"
-                ? $"start \"\" /b \"{nestedImage}\" {StandIns.Under("app-server --listen ws://127.0.0.1:1", $"\"{Path.Combine(workspace.Root, "nested.cmd")}\"")}\r\n"
-                : "";
-            File.WriteAllText(path,
-                "@echo off\r\n" + nest +
-                $"echo started>\"{Flag(name + "-started")}\"\r\n" +
-                ":wait\r\n" +
-                $"if exist \"{go}\" goto go\r\n" +
-                "ping -n 1 127.0.0.1 >nul\r\n" +
-                "goto wait\r\n" +
-                ":go\r\n" +
-                StandIns.Hook(entry, "codex", workspace) + $" < \"{payload}\"\r\n" +
-                $"echo done>\"{Flag(name + "-done")}\"\r\n" +
-                "ping -n 60 127.0.0.1 >nul\r\n");
+            WriteWaitThenHook(path, preamble, Flag(name + "-started"), Flag(name + "-go"),
+                StandIns.Hook(entry, "codex", workspace) + $" < \"{payload}\"", Flag(name + "-done"));
             return path;
         }
-        var backendScript = Script("backend", backendSession, Flag("backend-go"));
-        Script("nested", nestedSession, Flag("nested-go"));
+        var nestedScript = Script("nested", nestedSession, "");
+        var toolScript = Path.Combine(workspace.Root, "tool.cmd");
+        File.WriteAllText(toolScript, "@echo off\r\n" + $"\"{nestedImage}\" {StandIns.Under(listen, $"\"{nestedScript}\"")}\r\n");
+        // The backend starts the nested app-server beside itself (a child that keeps running), directly or through a tool shell.
+        var nestedStart = throughToolShell
+            ? $"\"{toolImage}\" {StandIns.Under("", $"\"{toolScript}\"")}"
+            : $"\"{nestedImage}\" {StandIns.Under(listen, $"\"{nestedScript}\"")}";
+        var backendScript = Script("backend", backendSession, $"start \"\" /b {nestedStart}\r\n");
         var managerScript = Path.Combine(workspace.Root, "manager.cmd");
-        File.WriteAllText(managerScript, "@echo off\r\n" + $"\"{backendImage}\" {StandIns.Under("app-server --listen ws://127.0.0.1:1", $"\"{backendScript}\"")}\r\n");
+        File.WriteAllText(managerScript, "@echo off\r\n" + $"\"{backendImage}\" {StandIns.Under(listen, $"\"{backendScript}\"")}\r\n");
 
         using var shell = Process.Start(new ProcessStartInfo(shellImage, "/s /c \"ping -n 120 127.0.0.1 >nul\"") { UseShellExecute = false, CreateNoWindow = true })!;
-        var start = new ProcessStartInfo(manager)
-        {
-            UseShellExecute = false,
-            CreateNoWindow = true,
-            RedirectStandardInput = true,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            Arguments = StandIns.Under("", $"\"{managerScript}\"")
-        };
-        StandIns.ScrubEnvironment(start);
-        start.Environment["BELLTOWER_ATTACHMENT"] = Managed;
-        start.Environment["BELLTOWER_DEDICATED"] = "1";
-        using var process = Process.Start(start)!;
+        using var process = Process.Start(ManagerStart(manager, managerScript, inheritedShell: null))!;
         try
         {
             _ = process.StandardOutput.ReadToEndAsync();
@@ -321,9 +328,7 @@ public sealed class NativeOwnedRuntimeProcessTests
             var nested = Assert.Single(StandIns.Find(nestedImage));
             var store = new CodexRuntimeStore(workspace.Paths);
             var runtime = new CodexRuntime(Managed, "ws://127.0.0.1:1", ProcessProbe.Identify(process.Id)!, ProcessProbe.Identify(shell.Id)!);
-            Directory.CreateDirectory(Path.GetDirectoryName(store.RecordPath(Managed))!);
-            AtomicFile.Write(store.RecordPath(Managed), Json.Encode(runtime));
-            File.WriteAllText(store.TokenPath(Managed), "fixture-token");
+            WriteRecord(store, runtime);
 
             foreach (var step in nestedFirst ? new[] { "nested", "backend" } : ["backend", "nested"])
             {
@@ -350,7 +355,6 @@ public sealed class NativeOwnedRuntimeProcessTests
             // ANALYSIS-1700: the adopted attachment keeps none of the proof inputs.
             Assert.Null(adopted.Evidence!.AgentParent);
             Assert.Null(adopted.Evidence.AgentAncestors);
-            Assert.False(adopted.Evidence.AgentParentIsAgent);
         }
         finally
         {

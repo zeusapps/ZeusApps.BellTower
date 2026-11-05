@@ -17,10 +17,10 @@ public static class AttachmentCapture
     /// <summary>The same decision over a process table the caller already took, so one hook reads the table once.</summary>
     public static NativeAdoption.Outcome Resolve(string provider, string directory, string? sessionId, ProcessTable table)
     {
-        var attachment = Capture(provider, directory, table, out var agent, out var parent, out var lineage, out var parentIsAgent);
+        var attachment = Capture(provider, directory, table, out var agent, out var parent, out var lineage);
         var arguments = agent.Pid > 0 && ProcessProbe.CommandLine(agent.Pid) is { } commandLine ? AgentModeClassifier.Arguments(commandLine) : null;
         var mode = CrossChecked(provider, AgentModeClassifier.Classify(provider, agent.Pid > 0, arguments), attachment.Process, table);
-        var outcome = NativeAdoption.Apply(attachment, sessionId, mode, AgentModeClassifier.MayShareBackend(provider), parent, lineage, parentIsAgent);
+        var outcome = NativeAdoption.Apply(attachment, sessionId, mode, AgentModeClassifier.MayShareBackend(provider), parent, lineage);
         if (outcome.Attachment.Evidence is { Candidate: { } candidate } evidence)
         {
             // The identity text of a provisional launch rides with its candidate, never in the shared-shaped envelope fields.
@@ -59,30 +59,29 @@ public static class AttachmentCapture
                     neighbors.Children.Select(Related).ToList(), neighbors.Complete) : null);
     }
 
-    public static Attachment Capture(string provider, string directory) => Capture(provider, directory, ProcessTable.Take(), out _, out _, out _, out _);
+    public static Attachment Capture(string provider, string directory) => Capture(provider, directory, ProcessTable.Take(), out _, out _, out _);
 
     private static Attachment Capture(string provider, string directory, ProcessTable table, out (int Pid, string Name) agent, out ProcessIdentity? parent,
-        out IReadOnlyList<ProcessIdentity> lineage, out bool parentIsAgent)
+        out IReadOnlyList<ProcessIdentity> lineage)
     {
         var ancestors = table.Ancestors(Environment.ProcessId);
         var found = ancestors.FirstOrDefault(a => a.Name.Equals(provider + ".exe", StringComparison.OrdinalIgnoreCase));
         agent = found;
         var agentIndex = found.Pid > 0 ? ancestors.FindIndex(a => a.Pid == found.Pid) : -1;
         // The nearest few ancestors with their creation times, for an owned runtime whose manager sits behind a launcher; Core
-        // checks every hop. The walk stops at the first ancestor that cannot be identified.
+        // checks every hop. The walk stops at the first ancestor that cannot be identified and at the first ancestor that is an
+        // image of this provider, so a nested agent never reaches a manager through another agent of its provider, directly or
+        // through a tool shell. The cut only rejects; nothing is accepted by image name.
         var chain = new List<ProcessIdentity>();
         foreach (var hop in agentIndex >= 0 ? ancestors.Skip(agentIndex + 1).Take(NativeAdoption.MaxOwnedDepth) : [])
         {
-            if (ProcessProbe.Identify(hop.Pid) is not { } identified)
+            if (hop.Name.Equals(provider + ".exe", StringComparison.OrdinalIgnoreCase) || ProcessProbe.Identify(hop.Pid) is not { } identified)
             {
                 break;
             }
             chain.Add(identified);
         }
         lineage = chain;
-        // Only ever used to reject the owned-runtime proof: the direct parent is itself an image of this provider.
-        parentIsAgent = agentIndex >= 0 && agentIndex + 1 < ancestors.Count &&
-            ancestors[agentIndex + 1].Name.Equals(provider + ".exe", StringComparison.OrdinalIgnoreCase);
         // The direct parent (the first hop) is the only link that can prove a profile launch from its recorded shell.
         parent = chain.Count > 0 ? chain[0] : null;
         var shell = ancestors.Skip(agentIndex >= 0 ? agentIndex + 1 : 0).FirstOrDefault(ancestor =>

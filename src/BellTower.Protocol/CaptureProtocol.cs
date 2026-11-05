@@ -68,6 +68,9 @@ public static class CaptureProtocol
         return envelope;
     }
 
+    /// <summary>The most ancestors an envelope or its agent lineage may carry.</summary>
+    public const int MaxAncestors = 32;
+
     public static void Validate(CaptureEnvelope envelope)
     {
         var observation = envelope.Observation;
@@ -79,11 +82,11 @@ public static class CaptureProtocol
             observation.IngressAt != envelope.IngressAt || observation.At > envelope.IngressAt || observation.At == default ||
             !Text(observation.Directory, 32768) || observation.Directory != attachment.Directory || !Enum.IsDefined(observation.Kind) ||
             envelope.IngressAt > DateTimeOffset.UtcNow.AddMinutes(5) || envelope.IngressAt == default ||
-            envelope.Ancestors is null || envelope.Ancestors.Count > 32 ||
+            envelope.Ancestors is null || envelope.Ancestors.Count > MaxAncestors ||
             envelope.Ancestors.Any(p => p is null || p.Identity is null || p.Identity.Pid <= 0 || p.Identity.StartedUtcTicks <= 0 || !Text(p.Name, 260)) ||
-            // Owned-runtime ancestry evidence: a malformed list is rejected like any invalid envelope (the cap mirrors the
-            // ingress's own bound, which Protocol cannot reference).
-            attachment.Evidence?.AgentAncestors is { } lineage && (lineage.Count > 32 || lineage.Any(h => h is null || h.Pid <= 0 || h.StartedUtcTicks <= 0)) ||
+            // Owned-runtime ancestry evidence: a malformed list is rejected like any invalid envelope. The cap is a sanity cap equal
+            // to the envelope's ancestor cap; policy reads at most NativeAdoption.MaxOwnedDepth hops, which Protocol cannot reference.
+            attachment.Evidence?.AgentAncestors is { } lineage && (lineage.Count > MaxAncestors || lineage.Any(h => h is null || h.Pid <= 0 || h.StartedUtcTicks <= 0)) ||
             envelope.Name?.Length > 200 || envelope.Change?.Length > 200 ||
             envelope.TranscriptPath?.Length > 32768 || observation.OperationId?.Length > 256 ||
             observation.OperationFingerprint?.Length > 256 || observation.TurnId?.Length > 256 ||

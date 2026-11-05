@@ -80,7 +80,7 @@ public static class NativeAdoption
 
     /// <summary>Capture-time decision from the classified mode. Provider facts (can it share a backend) come from the adapter.</summary>
     public static Outcome Apply(Attachment captured, string? sessionId, string mode, bool mayShareBackend, ProcessIdentity? agentParent = null,
-        IReadOnlyList<ProcessIdentity>? agentAncestors = null, bool agentParentIsAgent = false)
+        IReadOnlyList<ProcessIdentity>? agentAncestors = null)
     {
         var lifecycle = AttachmentEvidence.LifecycleFor(captured.Ownership, captured.Process is not null);
         var generation = captured.Process;
@@ -113,7 +113,6 @@ public static class NativeAdoption
                     Provisional = true,
                     AgentParent = agentParent,
                     AgentAncestors = agentAncestors,
-                    AgentParentIsAgent = agentParentIsAgent,
                     Candidate = new DirectCandidate
                     {
                         Id = captured.Id,
@@ -188,10 +187,10 @@ public static class NativeAdoption
             // A Bell Tower owned Codex runtime: its own record names the manager that started this backend and the shell it
             // serves. The backend's direct parent must be exactly that live manager (same creation time) and the shell live.
             // The host shell comes from the record, never from the inherited variable, which only located the record.
-            // A hooked agent whose direct parent is itself a same-provider agent (a nested app-server inside the owned backend)
-            // is never the owned backend, whatever sits above it.
+            // A nested agent never reaches the manager through another agent of its provider: Hosts ends the lineage at the first
+            // ancestor that is an image of the provider, so the manager is then absent from AgentAncestors.
             if (profile && !recordedLaunch && !shell && runtime is { } owned && owned.Attachment == captured.Id &&
-                !pending.AgentParentIsAgent && live(owned.Manager) && live(owned.Shell) && ManagerBehindAgent(captured.Process, pending, owned.Manager))
+                live(owned.Manager) && live(owned.Shell) && ManagerBehindAgent(captured.Process, pending, owned.Manager))
             {
                 return captured with
                 {
@@ -229,8 +228,7 @@ public static class NativeAdoption
     {
         Provisional = false,
         AgentParent = null,
-        AgentAncestors = null,
-        AgentParentIsAgent = false
+        AgentAncestors = null
     };
 
     /// <summary>

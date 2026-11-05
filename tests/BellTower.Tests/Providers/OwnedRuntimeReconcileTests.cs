@@ -16,10 +16,10 @@ public sealed class OwnedRuntimeReconcileTests
     private const string Id = "owned-attachment";
 
     private static Attachment Provisional(ProcessIdentity? parent, Attachment? previous = null, NativeAdoption.OwnedRuntime? runtime = null, Func<ProcessIdentity, bool>? live = null,
-        IReadOnlyList<ProcessIdentity>? lineage = null, bool parentIsAgent = false)
+        IReadOnlyList<ProcessIdentity>? lineage = null)
     {
         var outcome = NativeAdoption.Apply(Captured("codex", Backend, Id, "managed", Inherited, "launch-env"), "owned-session", AgentModes.Unknown,
-            AgentModeClassifier.MayShareBackend("codex"), parent, lineage, parentIsAgent);
+            AgentModeClassifier.MayShareBackend("codex"), parent, lineage);
         Assert.False(outcome.Dedicated);
         var promoted = NativeAdoption.Promote(outcome.Attachment)!.Value.Attachment;
         return NativeAdoption.Reconcile(promoted, previous, "owned-session", live ?? (_ => true), launchShell: null, runtime);
@@ -52,7 +52,6 @@ public sealed class OwnedRuntimeReconcileTests
     {
         Assert.Null(result.Evidence!.AgentParent);
         Assert.Null(result.Evidence.AgentAncestors);
-        Assert.False(result.Evidence.AgentParentIsAgent);
     }
 
     [Fact]
@@ -164,16 +163,18 @@ public sealed class OwnedRuntimeReconcileTests
         AssertShared(Provisional(chain.Count > 0 ? chain[0] : null, runtime: runtime, live: live, lineage: chain));
     }
 
-    // QA-2500: a nested app-server whose direct parent is itself an agent of the provider is never the owned backend, however the
-    // manager sits above it; the real backend (parent is the manager or a launcher) still binds.
+    // QA-2500, ANALYSIS-1800: Hosts ends a nested agent's lineage at the first ancestor that is an image of its provider, so the
+    // manager is absent from it, directly under the backend (empty lineage) or behind a tool shell (the shell is the only hop).
+    // The real backend (the manager or a launcher above it) still binds.
     [Theory]
     [InlineData(0)]
     [InlineData(1)]
-    public void AHookedAgentWhoseDirectParentIsAnAgentIsRejectedEvenWithTheManagerAbove(int launchers)
+    public void ANestedAgentWhoseLineageEndsAtTheBackendNeverReachesTheManager(int toolShells)
     {
-        var chain = Behind(launchers);
-        AssertShared(Provisional(chain[0], runtime: new(Id, Manager, Shell), lineage: chain, parentIsAgent: true));
-        Assert.Equal(Id, Provisional(chain[0], runtime: new(Id, Manager, Shell), lineage: chain, parentIsAgent: false).Id);
+        var cut = Behind(toolShells + 1).Take(toolShells).ToList();
+        AssertShared(Provisional(cut.Count > 0 ? cut[0] : null, runtime: new(Id, Manager, Shell), lineage: cut));
+        var real = Behind(toolShells);
+        Assert.Equal(Id, Provisional(real[0], runtime: new(Id, Manager, Shell), lineage: real).Id);
     }
 
     [Fact]
