@@ -24,7 +24,6 @@ public sealed class NativeOwnedRuntimeProcessTests
     private sealed class FakeCodex : ICodexNameClient
     {
         public int Writes { get; private set; }
-        public Task ConnectAsync(string endpoint, string token, CancellationToken cancellation) => Task.CompletedTask;
         public Task<string?> ReadNameAsync(string thread, CancellationToken cancellation) => Task.FromResult<string?>(null);
         public Task SetNameAsync(string thread, string name, CancellationToken cancellation)
         {
@@ -236,7 +235,7 @@ public sealed class NativeOwnedRuntimeProcessTests
                     Assert.Equal(resolved.Shell, attachments.Get(session.AttachmentId)!.Host.Shell);
                     var codex = new FakeCodex();
                     new IdentityStore(workspace.Paths).Update(session.Key, session.Directory, value => { value.ManualName = "Owned"; return true; });
-                    new CodexNameService(workspace.Paths, () => codex).Sync(session, new GitContext());
+                    new CodexNameService(workspace.Paths, (_, _) => Task.FromResult<ICodexNameClient>(codex)).Sync(session, new GitContext());
                     var status = new IdentityStore(workspace.Paths).Get(session.Key, session.Directory).NativeSyncStatus;
                     Assert.True(codex.Writes == 1, "name sync status: " + status);
                 }
@@ -257,12 +256,26 @@ public sealed class NativeOwnedRuntimeProcessTests
             Assert.Equal("shared-runtime", shared.Ownership);
             Assert.Equal(mode, shared.Evidence!.Mode);
             Assert.Equal(shared.Id, session.AttachmentId);
-            // No verified runtime: the native-name path stays unavailable and writes nothing.
+            // The owned runtime record never reaches a shared conversation. An unproven mode has no access path at all (unavailable,
+            // nothing written); a proven shared backend selects the shared access of the resolved home, never the owned record.
             var unavailable = new FakeCodex();
+            CodexAccess? selected = null;
             new IdentityStore(workspace.Paths).Update(session.Key, session.Directory, current => { current.ManualName = "Owned"; return true; });
-            new CodexNameService(workspace.Paths, () => unavailable).Sync(session, new GitContext());
-            Assert.Equal(0, unavailable.Writes);
-            Assert.StartsWith("unavailable", new IdentityStore(workspace.Paths).Get(session.Key, session.Directory).NativeSyncStatus);
+            new CodexNameService(workspace.Paths, (access, _) =>
+            {
+                selected = access;
+                return Task.FromResult<ICodexNameClient>(unavailable);
+            }).Sync(session, new GitContext());
+            if (outcome == SharedUnknown)
+            {
+                Assert.Null(selected);
+                Assert.Equal(0, unavailable.Writes);
+                Assert.StartsWith("unavailable", new IdentityStore(workspace.Paths).Get(session.Key, session.Directory).NativeSyncStatus);
+            }
+            else
+            {
+                Assert.IsType<CodexAccess.Shared>(selected);
+            }
         }
         finally
         {

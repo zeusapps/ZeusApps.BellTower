@@ -64,8 +64,10 @@ public sealed class TrayApplication : ApplicationContext
         identityResolver = new(paths, checkout);
         history = new(paths);
         titles = new(paths, checkout);
-        nativeNames = new(paths, checkout);
-        permissions = new(paths);
+        // One runtime opener: both services use the same access selection and share the shared-backend backoff.
+        var codexRuntime = new CodexRuntimeOpener(paths);
+        nativeNames = new(paths, checkout, opener: codexRuntime);
+        permissions = new(paths, opener: codexRuntime);
         config = configuration.Read();
         updates = new(paths, new ReleaseClient(updateHttp));
         if (Installation.ForPayload(Environment.ProcessPath!) is not null)

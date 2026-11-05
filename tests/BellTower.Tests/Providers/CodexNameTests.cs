@@ -39,6 +39,13 @@ public sealed class CodexNameTests
         public void Dispose() { }
     }
 
+    private static Func<CodexAccess, CancellationToken, Task<ICodexNameClient>> Connect(Names names) => async (access, cancellation) =>
+    {
+        var client = new Client(names);
+        await client.ConnectAsync(access.Key, "", cancellation);
+        return client;
+    };
+
     private static SessionState Prepare(TestWorkspace workspace, string thread, string name, int port = 12345, string? attachmentId = null)
     {
         var process = ProcessProbe.Identify(Environment.ProcessId)!;
@@ -59,7 +66,7 @@ public sealed class CodexNameTests
         using var workspace = new TestWorkspace();
         var session = Prepare(workspace, "one", "Managed");
         var names = new Names();
-        var service = new CodexNameService(workspace.Paths, () => new Client(names));
+        var service = new CodexNameService(workspace.Paths, Connect(names));
         var reads = 0;
         var now = DateTimeOffset.UtcNow;
         var cache = new CheckoutCache(_ => { reads++; return new("feature", "linked-checkout"); }, () => now);
@@ -84,7 +91,7 @@ public sealed class CodexNameTests
         using var workspace = new TestWorkspace();
         var session = Prepare(workspace, "one", "First");
         var names = new Names();
-        var service = new CodexNameService(workspace.Paths, () => new Client(names));
+        var service = new CodexNameService(workspace.Paths, Connect(names));
         service.Sync(session);
         service.Sync(session);
         Assert.Equal(1, names.Writes);
@@ -102,13 +109,13 @@ public sealed class CodexNameTests
         using var workspace = new TestWorkspace();
         var session = Prepare(workspace, "one", "Saved title");
         var names = new Names();
-        new CodexNameService(workspace.Paths, () => new Client(names)).Sync(session);
+        new CodexNameService(workspace.Paths, Connect(names)).Sync(session);
         var palette = new IdentityStore(workspace.Paths).Get(session.Key, workspace.Root).Palette;
         new CodexRuntimeStore(workspace.Paths).Stop(session.AttachmentId);
         var resumed = Prepare(workspace, "one", "Stale launch title", 12346, "resumed-attachment-one");
         // The replacement server reads the same durable native thread name.
         names.Values[("ws://127.0.0.1:12346", "one")] = "Saved title";
-        var restartedService = new CodexNameService(workspace.Paths, () => new Client(names));
+        var restartedService = new CodexNameService(workspace.Paths, Connect(names));
         restartedService.Sync(resumed);
         Assert.Equal(1, names.Writes);
         var restored = new IdentityStore(workspace.Paths).Get(session.Key, workspace.Root);
@@ -133,7 +140,7 @@ public sealed class CodexNameTests
         using var workspace = new TestWorkspace();
         var session = Prepare(workspace, "one", "Managed");
         var names = new Names();
-        var service = new CodexNameService(workspace.Paths, () => new Client(names));
+        var service = new CodexNameService(workspace.Paths, Connect(names));
         service.Sync(session);
         names.Values[("ws://127.0.0.1:12345", "one")] = "Native manual";
         service.Sync(session);
@@ -155,7 +162,7 @@ public sealed class CodexNameTests
         var session = Prepare(workspace, "one", "Managed");
         var names = new Names();
         names.Values[("ws://127.0.0.1:12345", "one")] = "Saved name";
-        var service = new CodexNameService(workspace.Paths, () => new Client(names));
+        var service = new CodexNameService(workspace.Paths, Connect(names));
         service.Sync(session);
         Assert.Equal(0, names.Writes);
         service.SetEnabled(session, false);
@@ -170,7 +177,7 @@ public sealed class CodexNameTests
         var one = Prepare(workspace, "one", "First", 12345);
         var two = Prepare(workspace, "two", "Second", 12346);
         var names = new Names();
-        var service = new CodexNameService(workspace.Paths, () => new Client(names));
+        var service = new CodexNameService(workspace.Paths, Connect(names));
         service.Sync(one);
         service.Sync(two);
         Assert.Equal("First", names.Values[("ws://127.0.0.1:12345", "one")]);
@@ -193,7 +200,7 @@ public sealed class CodexNameTests
         var states = new StateStore(workspace.Paths);
         var before = Json.Encode(states.Drain());
         var names = new Names { Fail = true };
-        var service = new CodexNameService(workspace.Paths, () => new Client(names));
+        var service = new CodexNameService(workspace.Paths, Connect(names));
         service.Sync(session);
         Assert.Equal("unavailable: native metadata connection failed", new IdentityStore(workspace.Paths).Get(session.Key, workspace.Root).NativeSyncStatus);
         new CodexRuntimeStore(workspace.Paths).Stop(session.AttachmentId);

@@ -26,7 +26,7 @@ public sealed class CodexTransportTests : IDisposable
     }
 
     private static CodexSharedAccess Access(Func<ProcessIdentity, bool>? isBackend = null, NativeNameSchedule? schedule = null) =>
-        new(schedule, Quick, isBackend ?? (_ => true));
+        new(schedule, Quick, CodexBackendCheck.Accepting(isBackend));
 
     public void Dispose()
     {
@@ -107,9 +107,9 @@ public sealed class CodexTransportTests : IDisposable
     {
         var home = Home();
         var server = Serve(home);
-        // The listener is this test host: live, but neither a codex image nor a shared-backend command line.
+        // The listener is this test host: live, but not a codex image.
         var exception = await Assert.ThrowsAsync<CodexTransportException>(() => new CodexSharedAccess(null, Quick).OpenAsync(home, CancellationToken.None));
-        Assert.Equal(CodexTransportFailure.BackendNotVerified, exception.Failure);
+        Assert.Equal(CodexTransportFailure.ImageMismatch, exception.Failure);
         Assert.Empty(server.RecordedMethods());
     }
 
@@ -122,7 +122,7 @@ public sealed class CodexTransportTests : IDisposable
         var line = BellTower.IO.ProcessProbe.CommandLine(child.Identity.Pid)!;
         Assert.Equal(AgentModes.SharedBackend, AgentModeClassifier.Classify("codex", true, AgentModeClassifier.Arguments(line)));
         var exception = await Assert.ThrowsAsync<CodexTransportException>(() => new CodexSharedAccess(null, Quick).OpenAsync(home, CancellationToken.None));
-        Assert.Equal(CodexTransportFailure.BackendNotVerified, exception.Failure);
+        Assert.Equal(CodexTransportFailure.ImageMismatch, exception.Failure);
     }
 
     [Fact]
@@ -130,9 +130,9 @@ public sealed class CodexTransportTests : IDisposable
     {
         var home = Home();
         var server = Serve(home);
-        var access = new CodexSharedAccess(null, Quick, _ => true, _ => null);
+        var access = new CodexSharedAccess(null, Quick, CodexBackendCheck.Accepting(), _ => null);
         var exception = await Assert.ThrowsAsync<CodexTransportException>(() => access.OpenAsync(home, CancellationToken.None));
-        Assert.Equal(CodexTransportFailure.PeerUnavailable, exception.Failure);
+        Assert.Equal(CodexTransportFailure.PeerUnsupported, exception.Failure);
         Assert.Empty(server.RecordedMethods());
     }
 
@@ -277,37 +277,61 @@ public sealed class CodexTransportTests : IDisposable
     }
 
     [Fact]
-    public async Task DifferentProcessListeningAtTheSamePathAfterVerificationIsDetected()
+    public async Task EachOpenMakesOneBackendConnectionAndRequestsMakeNone()
     {
         var home = Home();
-        var path = CodexSharedEndpoint.SocketPath(home);
-        var first = Serve(home);
-        var (connection, _, backend) = await Access().OpenAsync(home, CancellationToken.None);
-        Assert.Equal(Environment.ProcessId, backend.Pid);
+        var server = Serve(home);
+        var (connection, _, _) = await Access().OpenAsync(home, CancellationToken.None);
         using (connection)
         {
-            _ = await connection.CallAsync("thread/read", new { threadId = "one" }, CancellationToken.None);
-            // The verified server stays alive and connected; another process takes over the path right away (inside the NTFS
-            // tunneling window, so the file's creation time alone could not show it).
-            first.Dispose();
-            using var intruder = ChildListener.Start(path);
-            var exception = await Assert.ThrowsAsync<CodexTransportException>(() => connection.CallAsync("thread/read", new { threadId = "one" }, CancellationToken.None));
-            Assert.Equal(CodexTransportFailure.EndpointReplaced, exception.Failure);
+            Assert.Equal(1, server.Accepted);
+            for (var request = 0; request < 3; request++)
+            {
+                _ = await connection.CallAsync("thread/read", new { threadId = "one" }, CancellationToken.None);
+            }
+            Assert.Equal(1, server.Accepted);
         }
     }
 
     [Fact]
-    public async Task RemovedSocketIsReportedAsReplaced()
+    public async Task ASupersedingListenerIsSeenByTheNextOpenAndTheVerifiedConnectionKeepsItsBackend()
+    {
+        var home = Home();
+        var path = CodexSharedEndpoint.SocketPath(home);
+        var first = Serve(home);
+        using var intruder = ChildListener.Start(Path.Combine(Home(), "app-server-control", "app-server-control.sock"));
+        var peer = Environment.ProcessId;
+        var access = new CodexSharedAccess(null, Quick, CodexBackendCheck.Accepting(), _ => peer);
+        var (connection, replaced, backend) = await access.OpenAsync(home, CancellationToken.None);
+        Assert.False(replaced);
+        using (connection)
+        {
+            // Another process now answers as the peer of new connections; the established connection still talks to the
+            // verified one and needs no probe, so it keeps working and the stand-in sees no extra connection.
+            peer = intruder.Identity.Pid;
+            var thread = await connection.CallAsync("thread/read", new { threadId = "one" }, CancellationToken.None);
+            Assert.Equal("name-of-one", thread.GetProperty("thread").GetProperty("name").GetString());
+            Assert.Equal(1, first.Accepted);
+            Assert.True(File.Exists(path));
+            var (next, nextReplaced, nextBackend) = await access.OpenAsync(home, CancellationToken.None);
+            next.Dispose();
+            Assert.True(nextReplaced);
+            Assert.Equal(intruder.Identity, nextBackend);
+            Assert.NotEqual(backend, nextBackend);
+        }
+    }
+
+    [Fact]
+    public async Task RemovedSocketFailsTheNextOpenAsMissing()
     {
         var home = Home();
         var first = Serve(home);
-        var (connection, _, _) = await Access().OpenAsync(home, CancellationToken.None);
-        using (connection)
-        {
-            first.Dispose();
-            var exception = await Assert.ThrowsAsync<CodexTransportException>(() => connection.CallAsync("thread/read", new { threadId = "one" }, CancellationToken.None));
-            Assert.Equal(CodexTransportFailure.EndpointReplaced, exception.Failure);
-        }
+        var access = Access();
+        var (connection, _, _) = await access.OpenAsync(home, CancellationToken.None);
+        connection.Dispose();
+        first.Dispose();
+        var exception = await Assert.ThrowsAsync<CodexTransportException>(() => access.OpenAsync(home, CancellationToken.None));
+        Assert.Equal(CodexTransportFailure.EndpointMissing, exception.Failure);
     }
 
     [Fact]
@@ -317,7 +341,7 @@ public sealed class CodexTransportTests : IDisposable
         var now = DateTimeOffset.UtcNow;
         using var restarted = ChildListener.Start(CodexSharedEndpoint.SocketPath(Home()));
         var peer = Environment.ProcessId;
-        var access = new CodexSharedAccess(new(TimeSpan.Zero, () => now), Quick, _ => true, _ => peer);
+        var access = new CodexSharedAccess(new(TimeSpan.Zero, () => now), Quick, CodexBackendCheck.Accepting(), _ => peer);
         var first = Serve(home);
         var (one, replaced, b1) = await access.OpenAsync(home, CancellationToken.None);
         one.Dispose();

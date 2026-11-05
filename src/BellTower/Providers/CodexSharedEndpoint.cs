@@ -14,18 +14,29 @@ public static class CodexSharedEndpoint
     // Windows sockaddr_un.sun_path holds 108 bytes including the terminator.
     public const int MaxPathBytes = 107;
 
-    public static string SocketPath(string codexHome)
+    /// <summary>
+    /// The one normalized spelling of a Codex home, used as the key for backoff and replacement and as the base of the socket path:
+    /// absolute, fully resolved and without a trailing separator, compared case-insensitively on Windows.
+    /// </summary>
+    public static string HomeKey(string codexHome)
     {
         if (string.IsNullOrWhiteSpace(codexHome) || !Path.IsPathFullyQualified(codexHome))
         {
             throw new CodexTransportException(CodexTransportFailure.EndpointMissing, "A resolved absolute Codex home is required.");
         }
-        var home = Path.TrimEndingDirectorySeparator(Path.GetFullPath(codexHome));
-        var path = Path.Combine(home, ControlDirectory, SocketName);
-        if (!Path.GetFullPath(path).StartsWith(home + Path.DirectorySeparatorChar, PathComparison))
-        {
-            throw new CodexTransportException(CodexTransportFailure.HomeMismatch, "The control socket is not under the Codex home.");
-        }
+        var home = Normalize(codexHome);
+        return OperatingSystem.IsWindows() ? home.ToUpperInvariant() : home;
+    }
+
+    /// <summary>The Codex home Bell Tower resolves for itself: <c>CODEX_HOME</c> when set, otherwise <c>.codex</c> in the user profile.</summary>
+    public static string DefaultHome() =>
+        Environment.GetEnvironmentVariable("CODEX_HOME") is { Length: > 0 } configured
+            ? configured : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".codex");
+
+    public static string SocketPath(string codexHome)
+    {
+        _ = HomeKey(codexHome);
+        var path = Path.Combine(Normalize(codexHome), ControlDirectory, SocketName);
         if (Encoding.UTF8.GetByteCount(path) > MaxPathBytes)
         {
             throw new CodexTransportException(CodexTransportFailure.PathTooLong,

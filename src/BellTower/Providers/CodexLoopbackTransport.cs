@@ -36,6 +36,10 @@ internal static class CodexSocket
         do
         {
             received = await socket.ReceiveAsync(buffer.AsMemory(), cancellation).ConfigureAwait(false);
+            if (received.MessageType == WebSocketMessageType.Close)
+            {
+                throw new IOException("The Codex runtime closed the connection.");
+            }
             if (received.MessageType != WebSocketMessageType.Text || message.Length + received.Count > CodexLimits.MessageBytes)
             {
                 throw new InvalidDataException("Invalid Codex response.");

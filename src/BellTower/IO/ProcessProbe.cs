@@ -108,8 +108,86 @@ public static class ProcessProbe
     /// <summary>The ancestors of a process from a fresh snapshot. A caller that also needs relatives takes one <see cref="ProcessTable"/> instead.</summary>
     public static List<(int Pid, string Name)> Ancestors(int pid) => ProcessTable.Take().Ancestors(pid);
 
+    /// <summary>
+    /// Whether a process runs with an elevated token or at high integrity or above, read with limited query rights. Null when the
+    /// process or its token cannot be read; a caller that must not cross a privilege boundary treats null as unreadable.
+    /// </summary>
+    public static bool? IsElevated(int pid)
+    {
+        const uint QueryLimited = 0x1000;
+        const uint TokenQuery = 0x0008;
+        const int TokenElevationClass = 20;
+        const int TokenIntegrityLevelClass = 25;
+        const uint HighIntegrity = 0x3000;
+        var process = OpenProcess(QueryLimited, false, pid);
+        if (process == IntPtr.Zero)
+        {
+            return null;
+        }
+        var token = IntPtr.Zero;
+        try
+        {
+            if (!OpenProcessToken(process, TokenQuery, out token))
+            {
+                return null;
+            }
+            var elevation = Marshal.AllocHGlobal(sizeof(int));
+            try
+            {
+                if (!GetTokenInformation(token, TokenElevationClass, elevation, sizeof(int), out _))
+                {
+                    return null;
+                }
+                if (Marshal.ReadInt32(elevation) != 0)
+                {
+                    return true;
+                }
+            }
+            finally
+            {
+                Marshal.FreeHGlobal(elevation);
+            }
+            GetTokenInformation(token, TokenIntegrityLevelClass, IntPtr.Zero, 0, out var needed);
+            if (needed is 0 or > 1024)
+            {
+                return null;
+            }
+            var label = Marshal.AllocHGlobal((int)needed);
+            try
+            {
+                if (!GetTokenInformation(token, TokenIntegrityLevelClass, label, needed, out _))
+                {
+                    return null;
+                }
+                var sid = Marshal.ReadIntPtr(label);
+                var count = Marshal.ReadByte(GetSidSubAuthorityCount(sid));
+                return count > 0 && (uint)Marshal.ReadInt32(GetSidSubAuthority(sid, (uint)(count - 1))) >= HighIntegrity;
+            }
+            finally
+            {
+                Marshal.FreeHGlobal(label);
+            }
+        }
+        finally
+        {
+            if (token != IntPtr.Zero)
+            {
+                CloseHandle(token);
+            }
+            CloseHandle(process);
+        }
+    }
+
     [DllImport("kernel32.dll")]
     private static extern bool CloseHandle(IntPtr handle);
+    [DllImport("advapi32.dll", SetLastError = true)]
+    private static extern bool OpenProcessToken(IntPtr process, uint access, out IntPtr token);
+    [DllImport("advapi32.dll", SetLastError = true)]
+    private static extern bool GetTokenInformation(IntPtr token, int information, IntPtr buffer, uint length, out uint needed);
+    [DllImport("advapi32.dll")]
+    private static extern IntPtr GetSidSubAuthorityCount(IntPtr sid);
+    [DllImport("advapi32.dll")]
+    private static extern IntPtr GetSidSubAuthority(IntPtr sid, uint index);
     [DllImport("kernel32.dll")]
     private static extern IntPtr OpenProcess(uint access, bool inherit, int pid);
     [DllImport("ntdll.dll")]

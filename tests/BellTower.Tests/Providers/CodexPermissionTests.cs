@@ -47,6 +47,20 @@ public sealed class CodexPermissionTests
         public void Dispose() { }
     }
 
+    private static Func<CodexAccess, CancellationToken, Task<ICodexAttentionClient>> Connect(Status status) => async (access, cancellation) =>
+    {
+        var client = new Client(status);
+        await client.ConnectAsync(access.Key, "", cancellation);
+        return client;
+    };
+
+    private static Func<CodexAccess, CancellationToken, Task<ICodexAttentionClient>> ConnectNext(Queue<Status> statuses) => async (access, cancellation) =>
+    {
+        var client = new Client(statuses.Dequeue());
+        await client.ConnectAsync(access.Key, "", cancellation);
+        return client;
+    };
+
     private static SessionState Prepare(TestWorkspace workspace, string thread = "one", EventKind kind = EventKind.Permission)
     {
         var process = ProcessProbe.Identify(Environment.ProcessId)!;
@@ -101,7 +115,7 @@ public sealed class CodexPermissionTests
         using var workspace = new TestWorkspace();
         var session = Prepare(workspace, kind: EventKind.Question);
         var status = new Status { Pending = false, UserInput = userInput };
-        using var pump = new CodexPermissionPump(workspace.Paths, () => new Client(status));
+        using var pump = new CodexPermissionPump(workspace.Paths, Connect(status));
         var now = DateTimeOffset.UtcNow;
         // Before the first check and after every answer the question is attention: its timing is unchanged.
         Assert.True(session.RequiresAttention(now));
@@ -119,7 +133,7 @@ public sealed class CodexPermissionTests
         using var workspace = new TestWorkspace();
         var session = Prepare(workspace);
         var status = new Status { Pending = false };
-        using var pump = new CodexPermissionPump(workspace.Paths, () => new Client(status));
+        using var pump = new CodexPermissionPump(workspace.Paths, Connect(status));
         await pump.RefreshAsync([session]);
         var now = DateTimeOffset.UtcNow;
         pump.Apply([session], now);
@@ -140,7 +154,7 @@ public sealed class CodexPermissionTests
         var originalSince = session.Since;
         var originalEpisode = session.Episode;
         var status = new Status { Pending = true };
-        using var pump = new CodexPermissionPump(workspace.Paths, () => new Client(status));
+        using var pump = new CodexPermissionPump(workspace.Paths, Connect(status));
         await pump.RefreshAsync([session]);
         pump.Apply([session], DateTimeOffset.UtcNow);
         var due = session.NativePermissionSince!.Value.AddSeconds(5);
@@ -162,7 +176,7 @@ public sealed class CodexPermissionTests
         using var workspace = new TestWorkspace();
         var session = Prepare(workspace);
         var status = new Status { Pending = false };
-        using var pump = new CodexPermissionPump(workspace.Paths, () => new Client(status));
+        using var pump = new CodexPermissionPump(workspace.Paths, Connect(status));
         await pump.RefreshAsync([session]);
         pump.Apply([session], DateTimeOffset.UtcNow.AddSeconds(6));
         Assert.Null(session.NativePermissionPending);
@@ -190,7 +204,7 @@ public sealed class CodexPermissionTests
         using var workspace = new TestWorkspace();
         var session = Prepare(workspace);
         var restartedAt = DateTimeOffset.UtcNow;
-        using var pump = new CodexPermissionPump(workspace.Paths, () => new Client(new Status { Pending = true }));
+        using var pump = new CodexPermissionPump(workspace.Paths, Connect(new Status { Pending = true }));
         await pump.RefreshAsync([session]);
         pump.Apply([session], DateTimeOffset.UtcNow);
         Assert.True(session.RequiresAttention(session.Due!.Value));
@@ -204,7 +218,7 @@ public sealed class CodexPermissionTests
         var session = Prepare(workspace);
         var ready = new TaskCompletionSource();
         var status = new Status { Pending = false, ConnectWait = ready.Task };
-        using var pump = new CodexPermissionPump(workspace.Paths, () => new Client(status));
+        using var pump = new CodexPermissionPump(workspace.Paths, Connect(status));
         var refresh = pump.RefreshAsync([session]);
         try
         {
@@ -226,7 +240,7 @@ public sealed class CodexPermissionTests
         using var workspace = new TestWorkspace();
         var session = Prepare(workspace);
         var status = new Status { Pending = null };
-        using var pump = new CodexPermissionPump(workspace.Paths, () => new Client(status));
+        using var pump = new CodexPermissionPump(workspace.Paths, Connect(status));
         await pump.RefreshAsync([session]);
         var ready = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         status.ConnectWait = ready.Task;
@@ -268,7 +282,7 @@ public sealed class CodexPermissionTests
         var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var read = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var statuses = new Queue<Status>([new() { ConnectWait = release.Task }, new() { Pending = false, Read = read }]);
-        using var pump = new CodexPermissionPump(workspace.Paths, () => new Client(statuses.Dequeue()));
+        using var pump = new CodexPermissionPump(workspace.Paths, ConnectNext(statuses));
         var refresh = pump.RefreshAsync([slow, fast]);
         try
         {
@@ -312,7 +326,7 @@ public sealed class CodexPermissionTests
         using var workspace = new TestWorkspace();
         var session = Prepare(workspace);
         var status = new Status { Pending = false };
-        using var pump = new CodexPermissionPump(workspace.Paths, () => new Client(status));
+        using var pump = new CodexPermissionPump(workspace.Paths, Connect(status));
         await pump.RefreshAsync([session]);
         if (changeAttachment)
         { session.AttachmentId = "replacement"; }
@@ -338,7 +352,7 @@ public sealed class CodexPermissionTests
         var session = new StateStore(workspace.Paths).Drain().Sessions["codex:one"];
         Assert.Equal(HumanConfirmation.Provisional, Assert.Single(session.Waits).Confirmation);
         var status = new Status { Pending = true };
-        using var pump = new CodexPermissionPump(workspace.Paths, () => new Client(status));
+        using var pump = new CodexPermissionPump(workspace.Paths, Connect(status));
         await pump.RefreshAsync([session]);
         Assert.Single(Directory.GetFiles(workspace.Paths.Inbox));
         var stored = new StateStore(workspace.Paths).Drain().Sessions["codex:one"];
@@ -368,7 +382,7 @@ public sealed class CodexPermissionTests
         using var workspace = new TestWorkspace();
         var session = Prepare(workspace);
         var status = new Status { Pending = false };
-        using var pump = new CodexPermissionPump(workspace.Paths, () => new Client(status));
+        using var pump = new CodexPermissionPump(workspace.Paths, Connect(status));
         await pump.RefreshAsync([session]);
         pump.Apply([session], DateTimeOffset.UtcNow);
         Assert.False(session.ConfirmationSignalUnavailable);
@@ -401,7 +415,7 @@ public sealed class CodexPermissionTests
         SessionReducer.Apply(state, TestWorkspace.Event(EventKind.Permission, at, "tool") with { Provider = "claude" });
         var codex = state.Sessions["codex:session-1"];
         var claude = state.Sessions["claude:session-1"];
-        using var pump = new CodexPermissionPump(workspace.Paths, () => new Client(new Status { Pending = true }));
+        using var pump = new CodexPermissionPump(workspace.Paths, Connect(new Status { Pending = true }));
         await pump.RefreshAsync([codex, claude]);
         pump.Apply([codex, claude], DateTimeOffset.UtcNow);
         Assert.True(codex.PossiblyWaiting(DateTimeOffset.UtcNow));
@@ -430,7 +444,7 @@ public sealed class CodexPermissionTests
         var store = new StateStore(workspace.Paths);
         var first = store.Drain().Sessions["codex:one"];
         var status = new Status { Pending = true };
-        using var pump = new CodexPermissionPump(workspace.Paths, () => new Client(status));
+        using var pump = new CodexPermissionPump(workspace.Paths, Connect(status));
         await pump.RefreshAsync([first]);
         var confirmed = store.Drain().Sessions["codex:one"];
         Assert.Equal(HumanConfirmation.Confirmed, Assert.Single(confirmed.Waits).Confirmation);
@@ -472,7 +486,7 @@ public sealed class CodexPermissionTests
         var delayed = new DelayedStatus();
         var ready = new Status { Pending = true };
         var clients = new Queue<ICodexAttentionClient>([delayed, new Client(ready)]);
-        using var pump = new CodexPermissionPump(workspace.Paths, () => clients.Dequeue());
+        using var pump = new CodexPermissionPump(workspace.Paths, (_, _) => Task.FromResult(clients.Dequeue()));
 
         var oldRead = pump.RefreshAsync([first]);
         await delayed.Started.Task.WaitAsync(TimeSpan.FromSeconds(2));
@@ -548,7 +562,7 @@ public sealed class CodexPermissionTests
         var delayed = new DelayedStatus();
         var ready = new Status { Pending = true };
         var clients = new Queue<ICodexAttentionClient>([delayed, new Client(ready)]);
-        using var pump = new CodexPermissionPump(workspace.Paths, () => clients.Dequeue());
+        using var pump = new CodexPermissionPump(workspace.Paths, (_, _) => Task.FromResult(clients.Dequeue()));
         var oldRead = pump.RefreshAsync([first]);
         await delayed.Started.Task.WaitAsync(TimeSpan.FromSeconds(2));
 

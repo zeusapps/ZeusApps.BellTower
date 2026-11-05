@@ -22,10 +22,17 @@ public interface ICodexTransport : IDisposable
     {
     }
 
-    /// <summary>Re-checks that the endpoint is still the verified one. Throws when it was replaced or went away.</summary>
+    /// <summary>Re-checks before a request that the verified runtime is still the one serving this connection. Throws when it ended.</summary>
     void EnsureCurrent()
     {
     }
+
+    /// <summary>
+    /// True when the runtime is not owned by Bell Tower, so the returned thread must carry exactly the requested id (the proof,
+    /// on a peer-verified backend). Refusing a fork or delegated thread is a conservative policy, not a proof; see
+    /// <see cref="CodexThreadIdentity"/>.
+    /// </summary>
+    bool RequiresProvenThreads => false;
 
     Task SendAsync(ReadOnlyMemory<byte> message, CancellationToken cancellation);
 
@@ -44,6 +51,12 @@ public static class CodexLimits
 public sealed record CodexTransportBudget(TimeSpan Connect, TimeSpan Handshake, TimeSpan Read)
 {
     public static CodexTransportBudget Default { get; } = new(TimeSpan.FromSeconds(3), TimeSpan.FromSeconds(3), TimeSpan.FromSeconds(3));
+
+    /// <summary>
+    /// The shared backend's open budgets: together clearly shorter than the services' 3 s operation timeout, so a stalled backend
+    /// ends the open as a recorded <see cref="CodexTransportFailure.Timeout"/> before the caller's own token can fire.
+    /// </summary>
+    public static CodexTransportBudget Shared { get; } = new(TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1.5), TimeSpan.FromSeconds(3));
 }
 
 public enum CodexTransportFailure
@@ -54,10 +67,26 @@ public enum CodexTransportFailure
     Timeout,
     Malformed,
     HomeMismatch,
+    /// <summary>The process serving the socket is not live, or is not the expected one.</summary>
     BackendNotVerified,
-    PeerUnavailable,
+    /// <summary>The platform cannot report the process serving a local socket.</summary>
+    PeerUnsupported,
+    /// <summary>The serving process is known but cannot be read (identity, command line or token).</summary>
+    PeerUnreadable,
+    /// <summary>The serving process is not a codex image.</summary>
+    ImageMismatch,
+    /// <summary>The serving process is a codex image whose command line is not a shared backend.</summary>
+    CommandLineMismatch,
+    /// <summary>The shared backend runs elevated; Bell Tower observes only a non-elevated backend.</summary>
+    ElevatedPeer,
     EndpointReplaced,
-    BackedOff
+    BackedOff,
+    /// <summary>The runtime answered the request with an error.</summary>
+    Rejected,
+    /// <summary>The runtime returned no thread, no identifier, or a different thread than the one requested (a true mismatch).</summary>
+    ThreadUnmapped,
+    /// <summary>A fork or delegated thread on an unowned runtime, refused as a conservative policy: the hook-to-thread mapping is unverified, not disproven.</summary>
+    ThreadUnverified
 }
 
 /// <summary>A fail-closed transport refusal. The message names the reason only; it never carries response or credential content.</summary>

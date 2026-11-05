@@ -16,12 +16,13 @@ public sealed class NativeNamePump : IDisposable
     private volatile bool disposed;
     private DateTimeOffset next;
 
-    public NativeNamePump(DataPaths paths, CheckoutCache? checkout = null, CodexNameService? codex = null, NativeNameSchedule? codexSchedule = null)
+    public NativeNamePump(DataPaths paths, CheckoutCache? checkout = null, CodexNameService? codex = null, NativeNameSchedule? codexSchedule = null,
+        CodexRuntimeOpener? opener = null)
     {
         this.paths = paths;
         this.checkout = checkout ?? new();
         this.codexSchedule = codexSchedule ?? new(CodexNameService.VerifyEvery);
-        this.codex = codex ?? new CodexNameService(paths, schedule: this.codexSchedule);
+        this.codex = codex ?? new CodexNameService(paths, schedule: this.codexSchedule, opener: opener);
     }
 
     public void Update(IReadOnlyList<SessionState> sessions)

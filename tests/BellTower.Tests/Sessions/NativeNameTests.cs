@@ -75,7 +75,7 @@ public sealed class NativeNameTests : IDisposable
     private (CodexNameService Service, NativeNameSchedule Schedule) Codex()
     {
         var schedule = new NativeNameSchedule(CodexNameService.VerifyEvery, () => clock.Now);
-        return (new CodexNameService(workspace.Paths, () => codexClient, schedule), schedule);
+        return (new CodexNameService(workspace.Paths, async (_, cancellation) => { await codexClient.ConnectAsync("", "", cancellation); return codexClient; }, schedule), schedule);
     }
 
     [Fact]

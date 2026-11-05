@@ -6,8 +6,15 @@ using BellTower.Providers;
 
 namespace BellTower.Sessions;
 
-public sealed class CodexNameService(DataPaths paths, Func<ICodexNameClient>? createClient = null, NativeNameSchedule? schedule = null)
+/// <summary>
+/// Codex native-name synchronization over the one runtime opener. <paramref name="connect"/> replaces the production connector
+/// (tests); it receives the selected access and returns an already connected client.
+/// </summary>
+public sealed class CodexNameService(DataPaths paths, Func<CodexAccess, CancellationToken, Task<ICodexNameClient>>? connect = null,
+    NativeNameSchedule? schedule = null, CodexRuntimeOpener? opener = null)
 {
+    private readonly CodexRuntimeOpener opener = opener ?? new(paths);
+
     public static readonly TimeSpan VerifyEvery = TimeSpan.FromSeconds(10);
 
     public void Sync(SessionState session, GitContext? context = null)
@@ -26,6 +33,7 @@ public sealed class CodexNameService(DataPaths paths, Func<ICodexNameClient>? cr
             return;
         }
         string? scheduledName = null;
+        CodexAccess? access = null;
         try
         {
             var desired = SessionPresentation.CodexName(identity.Name, context ?? new GitReader().Read(identity.Checkout(session.Directory)));
@@ -34,19 +42,15 @@ public sealed class CodexNameService(DataPaths paths, Func<ICodexNameClient>? cr
                 return;
             }
             scheduledName = desired;
-            var runtimes = new CodexRuntimeStore(paths);
-            var runtime = runtimes.Get(session.AttachmentId);
-            var attachment = new AttachmentStore(paths).Get(session.AttachmentId);
-            if (runtime is null || attachment is not { EndedAt: null } || attachment.Host.Shell != runtime.Shell)
+            access = opener.Select(session);
+            if (access is null)
             {
-                SetStatus(identities, session, "unavailable: no verified dedicated runtime");
+                SetStatus(identities, session, CodexAccessStatus.NoRuntime);
                 schedule?.Failed(session.Key, desired);
                 return;
             }
-            var token = File.ReadAllText(runtimes.TokenPath(runtime.Attachment));
-            using var client = createClient?.Invoke() ?? new CodexConnection();
             using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(3));
-            client.ConnectAsync(runtime.Endpoint, token, timeout.Token).GetAwaiter().GetResult();
+            using var client = OpenAsync(access, timeout.Token).GetAwaiter().GetResult();
             var current = client.ReadNameAsync(session.SessionId, timeout.Token).GetAwaiter().GetResult();
             if (NativeNamePolicy.Conflict(identity, current))
             {
@@ -72,11 +76,20 @@ public sealed class CodexNameService(DataPaths paths, Func<ICodexNameClient>? cr
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or WebSocketException or
             OperationCanceledException or JsonException or InvalidOperationException or ArgumentException)
         {
+            var status = access is null ? CodexAccessStatus.ConnectionFailed : CodexAccessStatus.For(access, exception);
+            if (status is null)
+            {
+                // A backoff in progress: nothing was attempted, so neither the status nor the schedule changes.
+                return;
+            }
             schedule?.Failed(session.Key, scheduledName ?? "");
-            SetStatus(identities, session, "unavailable: native metadata connection failed");
+            SetStatus(identities, session, status);
             new LocalLog(paths).Write("native-name-unavailable");
         }
     }
+
+    private async Task<ICodexNameClient> OpenAsync(CodexAccess access, CancellationToken cancellation) =>
+        connect is null ? await opener.ConnectAsync(access, cancellation).ConfigureAwait(false) : await connect(access, cancellation).ConfigureAwait(false);
 
     public void SetEnabled(SessionState session, bool enabled) => NativeNameControl.SetEnabled(paths, session, enabled);
 

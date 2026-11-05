@@ -1,34 +1,37 @@
-using System.Diagnostics;
 using System.Net.Sockets;
 using System.Net.WebSockets;
 using System.Text.Json;
 using BellTower.Core;
-using BellTower.IO;
 
 namespace BellTower.Providers;
 
 /// <summary>
 /// Non-owning access to a shared Codex backend through its local control socket. The socket path comes only from the resolved
 /// Codex home. The backend identity is derived from the connected socket itself (the server's process ID, then PID plus creation
-/// time) before any byte is sent: the process must be live, its image must be codex and its command line must classify as a shared
-/// backend. The initialize response must also report the same Codex home. The connected peer is rechecked after the handshake and
-/// before every request, so a restarted backend or a different process listening at the path drops the connection instead of
-/// being reused. Disposing closes only this connection; the backend is never stopped, reconfigured or resumed from here.
+/// time) before any byte is sent: the process must be live, its image must be codex, its command line must classify as a shared
+/// backend and it must not be elevated, each refused with its own reason (<see cref="CodexBackendCheck"/>). The initialize response
+/// must also report the same Codex home. One connection serves one open; the verified backend's liveness is rechecked before every
+/// request, so an ended or restarted backend drops the connection. A different process that later listens at the path is not
+/// probed per request (every frame on this connection goes to the verified process): it is detected on the next open, whose peer
+/// differs, through <see cref="CodexSharedAccess"/> <c>Replaced</c>. Disposing closes only this connection; the backend is never
+/// stopped, reconfigured or resumed from here.
 /// </summary>
 /// <param name="expected">Optional extra comparison: when given, the derived backend must equal it.</param>
-/// <param name="isBackend">Replaces the live/image/command-line check (tests).</param>
+/// <param name="check">Replaces the backend requirements (tests).</param>
 /// <param name="peerOf">Replaces the peer process lookup of a connected socket (tests).</param>
 public sealed class CodexSharedTransport(string codexHome, ProcessIdentity? expected = null, CodexTransportBudget? budget = null,
-    Func<ProcessIdentity, bool>? isBackend = null, Func<Socket, int?>? peerOf = null) : ICodexTransport
+    CodexBackendCheck? check = null, Func<Socket, int?>? peerOf = null) : ICodexTransport
 {
     private readonly ClientWebSocket socket = new();
-    private readonly Func<ProcessIdentity, bool> isBackend = isBackend ?? IsLiveSharedBackend;
+    private readonly CodexBackendCheck check = check ?? new();
     private string? socketPath;
     private CodexTransportException? refusal;
 
-    public CodexTransportBudget? Budget { get; } = budget ?? CodexTransportBudget.Default;
+    public CodexTransportBudget? Budget { get; } = budget ?? CodexTransportBudget.Shared;
 
     public bool Strict => true;
+
+    public bool RequiresProvenThreads => true;
 
     /// <summary>The backend process verified through the connected socket; set once the connection is established.</summary>
     public ProcessIdentity? Backend { get; private set; }
@@ -57,7 +60,6 @@ public sealed class CodexSharedTransport(string codexHome, ProcessIdentity? expe
         {
             throw new CodexTransportException(CodexTransportFailure.Refused, "The shared Codex backend refused or dropped the connection.", exception);
         }
-        EnsureCurrent();
     }
 
     private async ValueTask<Stream> ConnectSocketAsync(SocketsHttpConnectionContext context, CancellationToken cancellation)
@@ -91,10 +93,7 @@ public sealed class CodexSharedTransport(string codexHome, ProcessIdentity? expe
         {
             throw new CodexTransportException(CodexTransportFailure.BackendNotVerified, "A different process than the expected one serves the control socket.");
         }
-        if (!isBackend(identity))
-        {
-            throw new CodexTransportException(CodexTransportFailure.BackendNotVerified, "The process serving the control socket is not a live Codex shared backend.");
-        }
+        check.Verify(identity);
         return identity;
     }
 
@@ -121,49 +120,14 @@ public sealed class CodexSharedTransport(string codexHome, ProcessIdentity? expe
         }
     }
 
-    /// <summary>
-    /// The verified backend must still be live, and the process now listening at the path must be that same backend. The listener is
-    /// identified by a short connect to the path that sends nothing (the socket's creation time cannot show a quick re-creation,
-    /// because NTFS keeps it across a short delete and create).
-    /// </summary>
+    /// <summary>The verified backend must still be live; an ended or restarted backend drops this connection.</summary>
     public void EnsureCurrent()
     {
-        var backend = Backend;
-        if (backend is null)
+        if (Backend is { } backend && !check.IsLive(backend))
         {
-            return;
-        }
-        if (!isBackend(backend))
-        {
-            throw Replaced("The shared Codex backend was replaced or ended.");
-        }
-        var current = ListenerIdentity();
-        if (current != backend)
-        {
-            throw Replaced("A different process is listening at the shared Codex control socket.");
+            throw new CodexTransportException(CodexTransportFailure.EndpointReplaced, "The shared Codex backend was replaced or ended.");
         }
     }
-
-    private ProcessIdentity? ListenerIdentity()
-    {
-        using var probe = new Socket(AddressFamily.Unix, SocketType.Stream, ProtocolType.Unspecified);
-        try
-        {
-            using var limit = new CancellationTokenSource(TimeSpan.FromSeconds(1));
-            probe.ConnectAsync(new UnixDomainSocketEndPoint(socketPath!), limit.Token).AsTask().GetAwaiter().GetResult();
-            return CodexSharedPeer.Identify(probe, peerOf);
-        }
-        catch (CodexTransportException)
-        {
-            return null;
-        }
-        catch (Exception exception) when (exception is SocketException or OperationCanceledException or IOException)
-        {
-            return null;
-        }
-    }
-
-    private static CodexTransportException Replaced(string message) => new(CodexTransportFailure.EndpointReplaced, message);
 
     public Task SendAsync(ReadOnlyMemory<byte> message, CancellationToken cancellation) =>
         socket.SendAsync(message, WebSocketMessageType.Text, true, cancellation).AsTask();
@@ -171,23 +135,4 @@ public sealed class CodexSharedTransport(string codexHome, ProcessIdentity? expe
     public Task<byte[]> ReceiveAsync(CancellationToken cancellation) => CodexSocket.ReceiveAsync(socket, cancellation);
 
     public void Dispose() => socket.Dispose();
-
-    private static bool IsLiveSharedBackend(ProcessIdentity identity) =>
-        ProcessProbe.Inspect(identity) == ProcessLiveness.Live && IsCodexImage(identity.Pid) &&
-        ProcessProbe.CommandLine(identity.Pid) is { } text &&
-        AgentModeClassifier.Classify("codex", true, AgentModeClassifier.Arguments(text)) == AgentModes.SharedBackend;
-
-    // The image name only: the managed package root differs between installs and shims and is not a requirement.
-    private static bool IsCodexImage(int pid)
-    {
-        try
-        {
-            using var process = Process.GetProcessById(pid);
-            return string.Equals(process.ProcessName, "codex", StringComparison.OrdinalIgnoreCase);
-        }
-        catch (Exception exception) when (exception is ArgumentException or InvalidOperationException or System.ComponentModel.Win32Exception)
-        {
-            return false;
-        }
-    }
 }

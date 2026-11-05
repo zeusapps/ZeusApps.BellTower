@@ -15,7 +15,12 @@ public sealed class CodexStandInServer : IDisposable
         Normal,
         Malformed,
         MissingHome,
-        Silent
+        Silent,
+        // Answers the handshake, then misbehaves on every later request.
+        SilentAfterInitialize,
+        DropAfterInitialize,
+        MalformedAfterInitialize,
+        RejectAfterInitialize
     }
 
     private readonly Socket listener;
@@ -54,6 +59,11 @@ public sealed class CodexStandInServer : IDisposable
     public string? Authorization { get; private set; }
     public List<string> Methods { get; } = [];
     public int Accepted;
+    /// <summary>Raw JSON of the thread object returned for a thread id; threads not listed answer with a generated name.</summary>
+    public Dictionary<string, string> Threads { get; } = [];
+    /// <summary>Names written through thread/name/set by thread id; they also answer later reads.</summary>
+    public Dictionary<string, string> Names { get; } = [];
+    public List<string> Requests { get; } = [];
 
     private async Task AcceptLoop()
     {
@@ -117,13 +127,25 @@ public sealed class CodexStandInServer : IDisposable
                 var root = document.RootElement;
                 var method = root.GetProperty("method").GetString()!;
                 lock (gate)
-                { Methods.Add(method); }
+                {
+                    Methods.Add(method);
+                    Requests.Add(root.GetRawText());
+                }
                 if (!root.TryGetProperty("id", out var id) || BehaviorMode == Behavior.Silent)
                 {
                     continue;
                 }
                 string reply;
-                if (BehaviorMode == Behavior.Malformed)
+                if (method != "initialize" && BehaviorMode == Behavior.DropAfterInitialize)
+                {
+                    socket.Abort();
+                    return;
+                }
+                if (method != "initialize" && BehaviorMode == Behavior.SilentAfterInitialize)
+                {
+                    continue;
+                }
+                if (BehaviorMode == Behavior.Malformed || (method != "initialize" && BehaviorMode == Behavior.MalformedAfterInitialize))
                 {
                     reply = "{ not json";
                 }
@@ -133,11 +155,30 @@ public sealed class CodexStandInServer : IDisposable
                         ? $"{{\"id\":{id.GetRawText()},\"result\":{{\"userAgent\":\"stand-in\"}}}}"
                         : JsonSerializer.Serialize(new { id = id.GetInt32(), result = new { codexHome = ReportedHome, userAgent = "stand-in" } });
                 }
+                else if (BehaviorMode == Behavior.RejectAfterInitialize)
+                {
+                    reply = $"{{\"id\":{id.GetRawText()},\"error\":{{\"code\":-32600,\"message\":\"rejected\"}}}}";
+                }
                 else
                 {
-                    var thread = root.GetProperty("params").TryGetProperty("threadId", out var value) ? value.GetString() : null;
+                    var arguments = root.GetProperty("params");
+                    var thread = arguments.TryGetProperty("threadId", out var value) ? value.GetString() : null;
                     await Task.Delay(thread == "slow" ? 150 : 0);
-                    reply = JsonSerializer.Serialize(new { id = id.GetInt32(), result = new { thread = new { id = thread, name = "name-of-" + thread } } });
+                    if (method == "thread/name/set" && thread is not null)
+                    {
+                        lock (gate)
+                        { Names[thread] = arguments.GetProperty("name").GetString()!; }
+                    }
+                    string? stored;
+                    string? custom;
+                    lock (gate)
+                    {
+                        stored = thread is not null && Names.TryGetValue(thread, out var written) ? written : null;
+                        custom = thread is not null && Threads.TryGetValue(thread, out var json) ? json : null;
+                    }
+                    reply = custom is not null
+                        ? $"{{\"id\":{id.GetRawText()},\"result\":{{\"thread\":{custom}}}}}"
+                        : JsonSerializer.Serialize(new { id = id.GetInt32(), result = new { thread = new { id = thread, name = stored ?? "name-of-" + thread } } });
                 }
                 await socket.SendAsync(Encoding.UTF8.GetBytes(reply), WebSocketMessageType.Text, true, stop.Token);
             }
@@ -155,6 +196,12 @@ public sealed class CodexStandInServer : IDisposable
             lock (gate)
             { return sockets.Count > 0 && sockets.Any(socket => socket.State == WebSocketState.Open); }
         }
+    }
+
+    public string[] RecordedRequests()
+    {
+        lock (gate)
+        { return [.. Requests]; }
     }
 
     public string[] RecordedMethods()

@@ -83,6 +83,8 @@ Reuse `thread/read` for exact-conversation runtime state and existing native-nam
 
 Access and lifecycle ownership are distinct records. Closing Bell Tower closes its observer connection only. The existing managed-runtime manager retains authority solely for backends it created. This change adds no Claude native-title transport by assumption: reconcile its still-unfinished write surface with `sync-native-session-titles`, and preserve honest per-surface diagnostics.
 
+The shared transport derives the backend from the connected socket's peer process and requires a live `codex` image classified as a shared backend (task 3.1). Bell Tower observes only a non-elevated shared backend: an elevated peer is refused with its own reason rather than observed across the privilege boundary, matching the non-elevated scope of decision 2 (orchestrator default recorded 2026-11-05, ANALYSIS-2302).
+
 Parse and retain only the fields needed for identity, name ownership and runtime status. A metadata response can still contain a prompt preview even when turn history is omitted; discard previews, message contents and credentials rather than persisting or logging the raw response.
 
 Alternative: starting a dedicated backend from every hook changes the user's launch and cannot take over an already running native TUI safely. Reading or editing native databases/transcripts to simulate protocol control is not selected.

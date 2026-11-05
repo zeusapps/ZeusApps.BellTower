@@ -7,8 +7,10 @@ using BellTower.Providers;
 
 namespace BellTower.Sessions;
 
-public sealed class CodexPermissionPump(DataPaths paths, Func<ICodexAttentionClient>? createClient = null) : IDisposable
+public sealed class CodexPermissionPump(DataPaths paths, Func<CodexAccess, CancellationToken, Task<ICodexAttentionClient>>? connect = null,
+    CodexRuntimeOpener? opener = null) : IDisposable
 {
+    private readonly CodexRuntimeOpener opener = opener ?? new(paths);
     private sealed record Verification(string Attachment, string? Episode, string Scope, long Revision, bool Pending, DateTimeOffset Since, DateTimeOffset Observed, bool? UserInput = null);
     private sealed record ScopeKey(string Attachment, string? Episode, string Scope, long Revision);
     private sealed record Check(SessionState Session, ScopeKey Scope, WaitState[] PermissionWaits, string[] PermissionScopeIds, string ObservationId,
@@ -100,17 +102,16 @@ public sealed class CodexPermissionPump(DataPaths paths, Func<ICodexAttentionCli
             {
                 return;
             }
-            var runtimes = new CodexRuntimeStore(paths);
-            var runtime = runtimes.Get(check.Scope.Attachment);
-            var attachment = new AttachmentStore(paths).Get(check.Scope.Attachment);
-            if (runtime is null || attachment is not { EndedAt: null } || attachment.Host.Shell != runtime.Shell)
+            // The same selection and opener as the name service: an owned runtime or the shared backend of the resolved home.
+            var access = opener.Select(session);
+            if (access is null)
             {
                 verified.TryRemove(session.Key, out _);
                 return;
             }
-            using var client = createClient?.Invoke() ?? new CodexConnection();
             using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(3));
-            await client.ConnectAsync(runtime.Endpoint, File.ReadAllText(runtimes.TokenPath(runtime.Attachment)), timeout.Token).ConfigureAwait(false);
+            using var client = connect is null
+                ? await opener.ConnectAsync(access, timeout.Token).ConfigureAwait(false) : await connect(access, timeout.Token).ConfigureAwait(false);
             var waiting = await client.ReadPermissionPendingAsync(check.SessionId, timeout.Token).ConfigureAwait(false);
             if (waiting is null)
             {
@@ -146,7 +147,11 @@ public sealed class CodexPermissionPump(DataPaths paths, Func<ICodexAttentionCli
                 OperationCanceledException or JsonException or InvalidOperationException or ArgumentException)
         {
             verified.TryRemove(session.Key, out _);
-            new LocalLog(paths).Write("permission-verification-unavailable");
+            // A backoff in progress attempted nothing; the failure that started it was already recorded.
+            if (exception is not CodexTransportException { Failure: CodexTransportFailure.BackedOff })
+            {
+                new LocalLog(paths).Write("permission-verification-unavailable");
+            }
         }
         finally
         {
