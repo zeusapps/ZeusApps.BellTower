@@ -1,4 +1,3 @@
-using System.Net.WebSockets;
 using System.Text;
 using System.Text.Json;
 using BellTower.Cli;
@@ -7,8 +6,16 @@ namespace BellTower.Providers;
 
 public sealed class CodexConnection : ICodexNameClient, ICodexAttentionClient
 {
-    private readonly ClientWebSocket socket = new();
+    private ICodexTransport? transport;
     private int nextId;
+
+    /// <summary>An owned authenticated-loopback connection; <see cref="ConnectAsync(string, string, CancellationToken)"/> supplies the endpoint.</summary>
+    public CodexConnection()
+    {
+    }
+
+    /// <summary>A connection over an already chosen transport, for example the non-owning shared-backend transport.</summary>
+    public CodexConnection(ICodexTransport transport) => this.transport = transport;
 
     public async Task<string?> ReadNameAsync(string thread, CancellationToken cancellation)
     {
@@ -56,39 +63,63 @@ public sealed class CodexConnection : ICodexNameClient, ICodexAttentionClient
 
     public async Task ConnectAsync(string endpoint, string token, CancellationToken cancellation)
     {
-        if (!Uri.TryCreate(endpoint, UriKind.Absolute, out var address) ||
-            address.Scheme != "ws" || address.Host != "127.0.0.1")
+        if (transport is not null)
         {
-            throw new InvalidDataException("A dedicated loopback Codex endpoint is required.");
+            throw new InvalidOperationException("The Codex connection already has a transport.");
         }
-        socket.Options.SetRequestHeader("Authorization", "Bearer " + token);
-        await socket.ConnectAsync(address, cancellation).ConfigureAwait(false);
-        await CallAsync("initialize", new { clientInfo = new { name = "bell_tower", version = ApplicationInfo.Version } }, cancellation).ConfigureAwait(false);
-        await socket.SendAsync(Encoding.UTF8.GetBytes("{\"method\":\"initialized\",\"params\":{}}").AsMemory(),
-            WebSocketMessageType.Text, true, cancellation).ConfigureAwait(false);
+        transport = new CodexLoopbackTransport(endpoint, token);
+        await ConnectAsync(cancellation).ConfigureAwait(false);
+    }
+
+    /// <summary>Connects the transport given at construction, verifies it with the initialize response, then completes the handshake.</summary>
+    public async Task ConnectAsync(CancellationToken cancellation)
+    {
+        var active = transport ?? throw new InvalidOperationException("The Codex connection has no transport.");
+        var budget = active.Budget;
+        try
+        {
+            using (var connect = Limited(budget?.Connect, cancellation))
+            {
+                await active.ConnectAsync(connect.Token).ConfigureAwait(false);
+            }
+            using var handshake = Limited(budget?.Handshake, cancellation);
+            var result = await CallAsync("initialize", new { clientInfo = new { name = "bell_tower", version = ApplicationInfo.Version } }, handshake.Token).ConfigureAwait(false);
+            active.VerifyInitialized(result);
+            await active.SendAsync(Encoding.UTF8.GetBytes("{\"method\":\"initialized\",\"params\":{}}"), handshake.Token).ConfigureAwait(false);
+            active.EnsureCurrent();
+        }
+        catch (OperationCanceledException) when (active.Strict && !cancellation.IsCancellationRequested)
+        {
+            throw new CodexTransportException(CodexTransportFailure.Timeout, "The Codex runtime did not answer within its time budget.");
+        }
+        catch (Exception exception) when (active.Strict && exception is JsonException or InvalidDataException or KeyNotFoundException or InvalidOperationException)
+        {
+            throw new CodexTransportException(CodexTransportFailure.Malformed, "The Codex runtime sent a malformed handshake response.", exception);
+        }
+    }
+
+    private static CancellationTokenSource Limited(TimeSpan? limit, CancellationToken cancellation)
+    {
+        var source = CancellationTokenSource.CreateLinkedTokenSource(cancellation);
+        if (limit is { } value)
+        {
+            source.CancelAfter(value);
+        }
+        return source;
     }
 
     public async Task<JsonElement> CallAsync(string method, object parameters, CancellationToken cancellation)
     {
+        var active = transport ?? throw new InvalidOperationException("The Codex connection has no transport.");
         var id = ++nextId;
         var request = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(new { id, method, @params = parameters }));
-        await socket.SendAsync(request.AsMemory(), WebSocketMessageType.Text, true, cancellation).ConfigureAwait(false);
-        var buffer = new byte[8192];
-        while (true)
+        active.EnsureCurrent();
+        using var read = Limited(active.Budget?.Read, cancellation);
+        await active.SendAsync(request, read.Token).ConfigureAwait(false);
+        for (var skipped = 0; skipped <= CodexLimits.SkippedMessages; skipped++)
         {
-            using var message = new MemoryStream();
-            WebSocketReceiveResult received;
-            do
-            {
-                received = await socket.ReceiveAsync(buffer, cancellation).ConfigureAwait(false);
-                if (received.MessageType != WebSocketMessageType.Text || message.Length + received.Count > 1024 * 1024)
-                {
-                    throw new InvalidDataException("Invalid Codex response.");
-                }
-                message.Write(buffer, 0, received.Count);
-            }
-            while (!received.EndOfMessage);
-            using var document = JsonDocument.Parse(message.ToArray());
+            var message = await active.ReceiveAsync(read.Token).ConfigureAwait(false);
+            using var document = JsonDocument.Parse(message);
             var data = document.RootElement;
             if (!data.TryGetProperty("id", out var responseId) || responseId.ValueKind != JsonValueKind.Number ||
                 !responseId.TryGetInt32(out var number) || number != id)
@@ -101,7 +132,8 @@ public sealed class CodexConnection : ICodexNameClient, ICodexAttentionClient
             }
             return data.GetProperty("result").Clone();
         }
+        throw new InvalidDataException("Invalid Codex response.");
     }
 
-    public void Dispose() => socket.Dispose();
+    public void Dispose() => transport?.Dispose();
 }
