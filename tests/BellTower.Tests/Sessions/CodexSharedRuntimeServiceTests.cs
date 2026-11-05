@@ -91,6 +91,33 @@ public sealed class CodexSharedRuntimeServiceTests : IDisposable
     private static void NeverResumesOrStartsTurns(CodexStandInServer server) =>
         Assert.DoesNotContain(server.RecordedMethods(), method => method is "thread/resume" or "thread/start" || method.StartsWith("turn/", StringComparison.Ordinal));
 
+    // Task 3.3: closing Bell Tower's connection (tray exit, detach, update restart) is observer disposal only. Neither a shared
+    // backend nor an owned runtime is shut down, reconfigured or loses its listener, and both can be reached again.
+    [Fact]
+    public async Task DisposingAnObserverConnectionLeavesBothBackendsServingTheNextOne()
+    {
+        var home = Home();
+        var shared = Backend(home);
+        var owned = new CodexStandInServer(null, "owned");
+        servers.Add(owned);
+        var opener = Opener(home);
+        var sharedSession = SharedSession("a", "Alpha");
+        var ownedSession = OwnedSession("o", "Omega", owned.Port);
+        for (var round = 0; round < 2; round++)
+        {
+            foreach (var session in new[] { sharedSession, ownedSession })
+            {
+                var access = opener.Select(session)!;
+                using (await opener.ConnectAsync(access, CancellationToken.None))
+                {
+                }
+            }
+        }
+        Assert.Equal(2, shared.RecordedMethods().Count(method => method == "initialize"));
+        Assert.Equal(2, owned.RecordedMethods().Count(method => method == "initialize"));
+        Assert.DoesNotContain(shared.RecordedMethods().Concat(owned.RecordedMethods()), method => method is "thread/resume" or "thread/start" or "thread/archive" || method.StartsWith("turn/", StringComparison.Ordinal));
+    }
+
     [Fact]
     public void SharedConversationNameIsWrittenThroughTheBackendToThatThreadOnly()
     {

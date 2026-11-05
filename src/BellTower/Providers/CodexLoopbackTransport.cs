@@ -5,7 +5,8 @@ namespace BellTower.Providers;
 /// <summary>Owned, authenticated loopback WebSocket to a runtime Bell Tower started. Behavior is the original CodexConnection transport.</summary>
 public sealed class CodexLoopbackTransport(string endpoint, string token) : ICodexTransport
 {
-    private readonly ClientWebSocket socket = new();
+    // Never through a proxy: the bearer token must only travel the direct loopback connection (as CodexSharedTransport).
+    private readonly ClientWebSocket socket = new() { Options = { Proxy = null } };
 
     public async Task ConnectAsync(CancellationToken cancellation)
     {

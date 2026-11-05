@@ -12,7 +12,7 @@ public abstract record CodexAccess
 {
     public abstract string Key { get; }
 
-    /// <summary>A runtime Bell Tower started: authenticated loopback, with the recorded endpoint.</summary>
+    /// <summary>A runtime Bell Tower started: authenticated loopback, with the recorded endpoint. An access record never stops anything: the stop path is the attachment's <c>CodexRuntime</c> record plus a marker (<c>CodexRuntimeStore.Stop</c>) honored by that record's own manager.</summary>
     public sealed record Owned(string Endpoint, string TokenPath) : CodexAccess
     {
         public override string Key => Endpoint;

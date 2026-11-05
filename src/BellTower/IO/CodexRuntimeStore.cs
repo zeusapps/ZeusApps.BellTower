@@ -17,6 +17,10 @@ public sealed class CodexRuntimeStore(DataPaths paths)
             !File.Exists(StopPath(attachment)) ? runtime : null;
     }
 
+    /// <summary>
+    /// The only shutdown request for an owned runtime. It writes a marker that the runtime-host manager Bell Tower started
+    /// honors and sends no signal, so a stale or reused-PID record can never cause an unowned process to be terminated.
+    /// </summary>
     public void Stop(string attachment)
     {
         if (File.Exists(RecordPath(attachment)) || File.Exists(TokenPath(attachment)))

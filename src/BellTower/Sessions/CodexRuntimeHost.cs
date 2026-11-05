@@ -133,7 +133,8 @@ public sealed class CodexRuntimeHost(DataPaths paths)
                 }
                 if (!ready)
                 {
-                    new LocalLog(paths).Write(server.HasExited ? "codex-runtime-exit-" + server.ExitCode : "codex-runtime-timeout");
+                    new LocalLog(paths).Write(server.HasExited ? "codex-runtime-exit-" + server.ExitCode :
+                        File.Exists(store.StopPath(attachment)) ? "codex-runtime-stop-requested" : "codex-runtime-timeout");
                     throw new IOException("Dedicated Codex server did not become ready.");
                 }
                 AtomicFile.Write(store.RecordPath(attachment), Json.Encode(new CodexRuntime(attachment, endpoint,

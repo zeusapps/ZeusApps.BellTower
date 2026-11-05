@@ -59,6 +59,8 @@ public sealed class CodexStandInServer : IDisposable
     public string? Authorization { get; private set; }
     public List<string> Methods { get; } = [];
     public int Accepted;
+    /// <summary>WebSocket sessions that have ended (closed by the client or dropped).</summary>
+    public int Closed;
     /// <summary>Raw JSON of the thread object returned for a thread id; threads not listed answer with a generated name.</summary>
     public Dictionary<string, string> Threads { get; } = [];
     /// <summary>Names written through thread/name/set by thread id; they also answer later reads.</summary>
@@ -85,6 +87,7 @@ public sealed class CodexStandInServer : IDisposable
 
     private async Task Serve(Socket client)
     {
+        var upgraded = false;
         try
         {
             var stream = new NetworkStream(client, true);
@@ -115,6 +118,7 @@ public sealed class CodexStandInServer : IDisposable
             var socket = WebSocket.CreateFromStream(stream, isServer: true, null, TimeSpan.Zero);
             lock (gate)
             { sockets.Add(socket); }
+            upgraded = true;
             var buffer = new byte[65536];
             while (socket.State == WebSocketState.Open)
             {
@@ -186,6 +190,13 @@ public sealed class CodexStandInServer : IDisposable
         catch (Exception)
         {
             // A client that disconnects or sends garbage only ends its own stand-in session.
+        }
+        finally
+        {
+            if (upgraded)
+            {
+                Interlocked.Increment(ref Closed);
+            }
         }
     }
 
