@@ -15,8 +15,8 @@
       "bell-tower": {
         "type": "Project",
         "dependencies": {
-          "BellTower.Distribution": "[0.1.8, )",
-          "BellTower.Protocol": "[0.1.8, )",
+          "BellTower.Distribution": "[0.1.9, )",
+          "BellTower.Protocol": "[0.1.9, )",
           "System.CommandLine": "[2.0.13, )",
           "Tomlyn": "[2.10.1, )"
         }
