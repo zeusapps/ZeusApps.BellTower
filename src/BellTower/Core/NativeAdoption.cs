@@ -11,6 +11,66 @@ public static class NativeAdoption
 {
     public sealed record Outcome(Attachment Attachment, bool Dedicated);
 
+    /// <summary>What an owned Codex runtime record proves: the attachment it serves, its live manager and the shell it belongs to.</summary>
+    public sealed record OwnedRuntime(string Attachment, ProcessIdentity Manager, ProcessIdentity Shell);
+
+    /// <summary>A same-provider process next to the agent, with the mode its own command line classifies as.</summary>
+    public sealed record RelatedProcess(ProcessIdentity Identity, string Mode);
+
+    /// <summary>The agent's direct same-provider parent and children; <c>Complete</c> is false when children were not all listed.</summary>
+    public sealed record ProcessRelations(RelatedProcess? Parent, IReadOnlyList<RelatedProcess> Children, bool Complete = true);
+
+    /// <summary>Which relationships the cross-check reads for a mode.</summary>
+    [Flags]
+    public enum Relation
+    {
+        None = 0,
+        Parent = 1,
+        Children = 2
+    }
+
+    /// <summary>
+    /// The relationships <see cref="CrossCheck"/> needs, so a caller reads only those. A provider without a shared backend and a
+    /// mode no rule judges need none; a shared backend is judged by its parent alone; a client by parent and children.
+    /// </summary>
+    public static Relation Needs(string mode, bool mayShareBackend) => !mayShareBackend ? Relation.None : mode switch
+    {
+        AgentModes.SharedBackend => Relation.Parent,
+        AgentModes.InteractiveClient or AgentModes.EmbeddedRuntime => Relation.Parent | Relation.Children,
+        _ => Relation.None
+    };
+
+    /// <summary>
+    /// Cross-checks a command-line mode against process relationships (design decision 7). The result is either the given
+    /// mode or unknown, never a stronger mode, so an unreadable command line is never promoted by relationships alone.
+    /// A provider without a shared backend has no relationship rule and keeps its mode. For a provider with one: a shared
+    /// backend must be started by a same-provider client; a client (interactive or embedded) must not be started by a
+    /// same-provider process, which is where a backend sits, nor start same-provider backends or clients of its own.
+    /// <paramref name="relations"/> is called at most once, and only with the relationships <see cref="Needs"/> names; a null
+    /// result (unreadable) fails a backend to unknown and leaves a client's mode.
+    /// </summary>
+    public static string CrossCheck(string mode, bool mayShareBackend, Func<Relation, ProcessRelations?> relations)
+    {
+        var needs = Needs(mode, mayShareBackend);
+        if (needs == Relation.None)
+        {
+            return mode;
+        }
+        static bool Client(string value) => value is AgentModes.InteractiveClient or AgentModes.EmbeddedRuntime;
+        var found = relations(needs);
+        if (mode == AgentModes.SharedBackend)
+        {
+            return found?.Parent is { } launcher && Client(launcher.Mode) ? mode : AgentModes.Unknown;
+        }
+        if (found is null)
+        {
+            return mode;
+        }
+        var contradicted = !found.Complete || found.Parent is not null ||
+            found.Children.Any(child => child.Mode == AgentModes.SharedBackend || Client(child.Mode));
+        return contradicted ? AgentModes.Unknown : mode;
+    }
+
     /// <summary>Capture-time decision from the classified mode. Provider facts (can it share a backend) come from the adapter.</summary>
     public static Outcome Apply(Attachment captured, string? sessionId, string mode, bool mayShareBackend, ProcessIdentity? agentParent = null)
     {
@@ -103,16 +163,30 @@ public static class NativeAdoption
     /// different live agent is a nested client: it keeps its own process identity and acquires no presentation consent,
     /// launch-derived shell or launch identity text.
     /// </summary>
-    public static Attachment Reconcile(Attachment captured, Attachment? previous, string? sessionId, Func<ProcessIdentity, bool> live, ProcessIdentity? launchShell = null)
+    public static Attachment Reconcile(Attachment captured, Attachment? previous, string? sessionId, Func<ProcessIdentity, bool> live,
+        ProcessIdentity? launchShell = null, OwnedRuntime? runtime = null)
     {
         if (captured.Evidence is { Provisional: true } pending)
         {
-            // Proof is either the launch record's own process (bell-tower launch) or the recorded launching shell of a profile
-            // launch, which must be live with the same creation time and be the hooked agent's direct parent. A nested
+            // Proof is the launch record's own process (bell-tower launch), the recorded launching shell of a profile launch, or
+            // the runtime record of an owned Codex runtime (below); each must be live with the same creation time and be the
+            // hooked agent's direct parent. A nested
             // client's parent is another shell, a stale record's shell is dead or reused, and neither proves anything.
             var recordedLaunch = previous is { Ownership: "managed", Process: { } owner } && captured.Process == owner && live(owner);
             var profile = previous is not { Process: { } other } || other == captured.Process;
             var shell = profile && launchShell is { } launch && pending.AgentParent == launch && live(launch);
+            // A Bell Tower owned Codex runtime: its own record names the manager that started this backend and the shell it
+            // serves. The backend's direct parent must be exactly that live manager (same creation time) and the shell live.
+            // The host shell comes from the record, never from the inherited variable, which only located the record.
+            if (profile && !recordedLaunch && !shell && runtime is { } owned && owned.Attachment == captured.Id &&
+                pending.AgentParent == owned.Manager && live(owned.Manager) && live(owned.Shell))
+            {
+                return captured with
+                {
+                    Host = captured.Host with { Shell = owned.Shell, ShellSource = "launch-record" },
+                    Evidence = pending with { Provisional = false }
+                };
+            }
             var verified = recordedLaunch || shell;
             return verified ? captured with { Evidence = pending with { Provisional = false } } : Shared(captured, sessionId, pending.Mode);
         }

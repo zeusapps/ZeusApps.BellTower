@@ -40,7 +40,9 @@ public sealed class AttachmentStore(DataPaths paths)
         var previous = Get(captured.Id);
         var original = captured.Id;
         var preparedShell = captured.Evidence is { Provisional: true } ? new LaunchPresentationStore(paths).Shell(captured.Id) : null;
-        captured = NativeAdoption.Reconcile(captured, previous, sessionId, process => ProcessProbe.Inspect(process) == ProcessLiveness.Live, preparedShell);
+        var runtime = captured.Evidence is { Provisional: true } && new CodexRuntimeStore(paths).Get(captured.Id) is { } record
+            ? new NativeAdoption.OwnedRuntime(record.Attachment, record.Manager, record.Shell) : null;
+        captured = NativeAdoption.Reconcile(captured, previous, sessionId, process => ProcessProbe.Inspect(process) == ProcessLiveness.Live, preparedShell, runtime);
         if (captured.Id != original)
         {
             previous = Get(captured.Id);

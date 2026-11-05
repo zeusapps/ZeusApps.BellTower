@@ -30,11 +30,13 @@ public static class Program
             var at = DateTimeOffset.UtcNow;
             using var input = CaptureProtocol.ReadInput(Console.OpenStandardInput());
             // Process evidence decides adoption; an inherited BELLTOWER_* flag is never ownership evidence.
+            // One process table per hook serves the ancestry, the agent's neighbors and the envelope ancestors below.
+            var table = ProcessTable.Take();
             var outcome = AttachmentCapture.Resolve(provider, HookInput.Text(input.RootElement, "cwd") ?? Environment.CurrentDirectory,
-                HookInput.Text(input.RootElement, "session_id"));
+                HookInput.Text(input.RootElement, "session_id"), table);
             var attachment = outcome.Attachment;
             var dedicated = outcome.Dedicated;
-            var ancestors = ProcessProbe.Ancestors(Environment.ProcessId)
+            var ancestors = table.Ancestors(Environment.ProcessId)
                 .Select(p => (Process: ProcessProbe.Identify(p.Pid), p.Name))
                 .Where(p => p.Process is not null)
                 .Select(p => new ProcessEvidence(p.Process!, p.Name)).ToList();

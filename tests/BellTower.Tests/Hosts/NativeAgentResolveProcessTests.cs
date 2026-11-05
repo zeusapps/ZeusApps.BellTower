@@ -27,7 +27,8 @@ public sealed class NativeAgentResolveProcessTests
         ("codex", "\"fixture prompt\"", AgentModes.EmbeddedRuntime),
         ("codex", "exec", AgentModes.Headless),
         ("codex", "e", AgentModes.Headless),
-        ("codex", "app-server", AgentModes.SharedBackend),
+        // A backend started directly by a non-client launcher (here the test process) is not a verified shared backend (task 2.5).
+        ("codex", "app-server", AgentModes.Unknown),
         ("codex", "review", AgentModes.Unknown),
         ("codex", "--future-option value", AgentModes.Unknown)
     ];
@@ -45,12 +46,12 @@ public sealed class NativeAgentResolveProcessTests
         return data;
     }
 
-    private sealed record Run(int ExitCode, string Output, string Error, ProcessIdentity Agent)
+    internal sealed record Run(int ExitCode, string Output, string Error, ProcessIdentity Agent)
     {
         public string Message => $"exit={ExitCode}; stdout={Output}; stderr={Error}";
     }
 
-    private static string CopyImage(TestWorkspace workspace, string provider, string folder = "image")
+    internal static string CopyImage(TestWorkspace workspace, string provider, string folder = "image")
     {
         var directory = Directory.CreateDirectory(Path.Combine(workspace.Root, folder)).FullName;
         var image = Path.Combine(directory, provider + ".exe");
@@ -58,16 +59,16 @@ public sealed class NativeAgentResolveProcessTests
         return image;
     }
 
-    private static string Hook(string entry, string provider, TestWorkspace workspace) => entry == Ingress
+    internal static string Hook(string entry, string provider, TestWorkspace workspace) => entry == Ingress
         ? $"\"{BuiltApplication.Ingress}\" --provider {provider} --data-dir \"{workspace.Paths.Root}\""
         : $"\"{BuiltApplication.Executable}\" event --provider {provider} --data-dir \"{workspace.Paths.Root}\"";
 
     // cmd.exe strips the outer quotes of a /s /c command, so the whole command is wrapped in one more pair.
-    private static string Under(string arguments, string command) => $"{arguments} /s /c \"{command}\"";
+    internal static string Under(string arguments, string command) => $"{arguments} /s /c \"{command}\"";
 
     // Starts the image, pipes the payload in and always kills the whole tree, so a failure never leaves processes that lock
     // the workspace and mask the real assertion; stdout and stderr are returned for the assertion messages.
-    private static async Task<Run> Launch(string image, string arguments, string payload)
+    internal static async Task<Run> Launch(string image, string arguments, string payload)
     {
         var start = new ProcessStartInfo(image)
         {
@@ -111,7 +112,7 @@ public sealed class NativeAgentResolveProcessTests
         }
     }
 
-    private static void AssertRan(Run run)
+    internal static void AssertRan(Run run)
     {
         Assert.True(run.ExitCode == 0, run.Message);
         Assert.True(run.Output == "{}", run.Message);
@@ -142,6 +143,7 @@ public sealed class NativeAgentResolveProcessTests
             Assert.Null(shared.Process);
             Assert.Equal("shared-runtime", shared.Ownership);
             Assert.Equal(LifecycleOwners.SharedBackend, shared.Evidence!.LifecycleOwner);
+            Assert.Equal(expectedMode, shared.Evidence.Mode);
             return;
         }
         var attachment = attachments.Get(NativeAdoption.OwnId(provider, run.Agent));
