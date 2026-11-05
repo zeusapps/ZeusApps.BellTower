@@ -16,10 +16,10 @@ public sealed class OwnedRuntimeReconcileTests
     private const string Id = "owned-attachment";
 
     private static Attachment Provisional(ProcessIdentity? parent, Attachment? previous = null, NativeAdoption.OwnedRuntime? runtime = null, Func<ProcessIdentity, bool>? live = null,
-        IReadOnlyList<ProcessIdentity>? lineage = null)
+        IReadOnlyList<ProcessIdentity>? lineage = null, bool parentIsAgent = false)
     {
         var outcome = NativeAdoption.Apply(Captured("codex", Backend, Id, "managed", Inherited, "launch-env"), "owned-session", AgentModes.Unknown,
-            AgentModeClassifier.MayShareBackend("codex"), parent, lineage);
+            AgentModeClassifier.MayShareBackend("codex"), parent, lineage, parentIsAgent);
         Assert.False(outcome.Dedicated);
         var promoted = NativeAdoption.Promote(outcome.Attachment)!.Value.Attachment;
         return NativeAdoption.Reconcile(promoted, previous, "owned-session", live ?? (_ => true), launchShell: null, runtime);
@@ -44,6 +44,15 @@ public sealed class OwnedRuntimeReconcileTests
         Assert.Equal("launch-record", result.Host.ShellSource);
         Assert.False(result.Evidence!.Provisional);
         Assert.Equal(LifecycleOwners.BellTower, result.Evidence.LifecycleOwner);
+        AssertProofInputsCleared(result);
+    }
+
+    // ANALYSIS-1700: a proven capture keeps none of the inputs that proved it.
+    private static void AssertProofInputsCleared(Attachment result)
+    {
+        Assert.Null(result.Evidence!.AgentParent);
+        Assert.Null(result.Evidence.AgentAncestors);
+        Assert.False(result.Evidence.AgentParentIsAgent);
     }
 
     [Fact]
@@ -105,6 +114,7 @@ public sealed class OwnedRuntimeReconcileTests
         Assert.Equal(Backend, result.Process);
         Assert.Equal(Shell, result.Host.Shell);
         Assert.Equal("launch-record", result.Host.ShellSource);
+        AssertProofInputsCleared(result);
     }
 
     [Fact]
@@ -117,7 +127,7 @@ public sealed class OwnedRuntimeReconcileTests
     public static TheoryData<string> LineageFailures => new()
     {
         "no-record", "other-attachment", "manager-pid", "manager-reused", "manager-dead", "shell-dead",
-        "hop-older-than-agent-child", "manager-younger-than-hop", "independent", "empty"
+        "hop-older-than-agent-child", "manager-younger-than-hop", "independent", "empty", "null-hop"
     };
 
     [Theory]
@@ -135,6 +145,8 @@ public sealed class OwnedRuntimeReconcileTests
             // An independently started backend: the recorded manager is nowhere in its ancestry.
             "independent" => [Hop(1), Hop(2), Inherited],
             "empty" => [],
+            // ANALYSIS-1701: a null hop from a malformed spool capture ends the chain instead of throwing.
+            "null-hop" => [null!, Manager],
             _ => Behind(1)
         };
         var runtime = failure switch
@@ -150,6 +162,18 @@ public sealed class OwnedRuntimeReconcileTests
             _ => _ => true
         };
         AssertShared(Provisional(chain.Count > 0 ? chain[0] : null, runtime: runtime, live: live, lineage: chain));
+    }
+
+    // QA-2500: a nested app-server whose direct parent is itself an agent of the provider is never the owned backend, however the
+    // manager sits above it; the real backend (parent is the manager or a launcher) still binds.
+    [Theory]
+    [InlineData(0)]
+    [InlineData(1)]
+    public void AHookedAgentWhoseDirectParentIsAnAgentIsRejectedEvenWithTheManagerAbove(int launchers)
+    {
+        var chain = Behind(launchers);
+        AssertShared(Provisional(chain[0], runtime: new(Id, Manager, Shell), lineage: chain, parentIsAgent: true));
+        Assert.Equal(Id, Provisional(chain[0], runtime: new(Id, Manager, Shell), lineage: chain, parentIsAgent: false).Id);
     }
 
     [Fact]

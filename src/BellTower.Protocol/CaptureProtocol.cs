@@ -81,6 +81,9 @@ public static class CaptureProtocol
             envelope.IngressAt > DateTimeOffset.UtcNow.AddMinutes(5) || envelope.IngressAt == default ||
             envelope.Ancestors is null || envelope.Ancestors.Count > 32 ||
             envelope.Ancestors.Any(p => p is null || p.Identity is null || p.Identity.Pid <= 0 || p.Identity.StartedUtcTicks <= 0 || !Text(p.Name, 260)) ||
+            // Owned-runtime ancestry evidence: a malformed list is rejected like any invalid envelope (the cap mirrors the
+            // ingress's own bound, which Protocol cannot reference).
+            attachment.Evidence?.AgentAncestors is { } lineage && (lineage.Count > 32 || lineage.Any(h => h is null || h.Pid <= 0 || h.StartedUtcTicks <= 0)) ||
             envelope.Name?.Length > 200 || envelope.Change?.Length > 200 ||
             envelope.TranscriptPath?.Length > 32768 || observation.OperationId?.Length > 256 ||
             observation.OperationFingerprint?.Length > 256 || observation.TurnId?.Length > 256 ||

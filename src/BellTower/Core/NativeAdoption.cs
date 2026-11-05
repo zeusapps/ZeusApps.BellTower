@@ -80,7 +80,7 @@ public static class NativeAdoption
 
     /// <summary>Capture-time decision from the classified mode. Provider facts (can it share a backend) come from the adapter.</summary>
     public static Outcome Apply(Attachment captured, string? sessionId, string mode, bool mayShareBackend, ProcessIdentity? agentParent = null,
-        IReadOnlyList<ProcessIdentity>? agentAncestors = null)
+        IReadOnlyList<ProcessIdentity>? agentAncestors = null, bool agentParentIsAgent = false)
     {
         var lifecycle = AttachmentEvidence.LifecycleFor(captured.Ownership, captured.Process is not null);
         var generation = captured.Process;
@@ -113,6 +113,7 @@ public static class NativeAdoption
                     Provisional = true,
                     AgentParent = agentParent,
                     AgentAncestors = agentAncestors,
+                    AgentParentIsAgent = agentParentIsAgent,
                     Candidate = new DirectCandidate
                     {
                         Id = captured.Id,
@@ -179,7 +180,7 @@ public static class NativeAdoption
         {
             // Proof is the launch record's own process (bell-tower launch), the recorded launching shell of a profile launch, or
             // the runtime record of an owned Codex runtime (below); each must be live with the same creation time and be the
-            // hooked agent's direct parent. A nested
+            // hooked agent's direct parent (the owned runtime's manager may sit a few launcher hops higher). A nested
             // client's parent is another shell, a stale record's shell is dead or reused, and neither proves anything.
             var recordedLaunch = previous is { Ownership: "managed", Process: { } owner } && captured.Process == owner && live(owner);
             var profile = previous is not { Process: { } other } || other == captured.Process;
@@ -187,17 +188,19 @@ public static class NativeAdoption
             // A Bell Tower owned Codex runtime: its own record names the manager that started this backend and the shell it
             // serves. The backend's direct parent must be exactly that live manager (same creation time) and the shell live.
             // The host shell comes from the record, never from the inherited variable, which only located the record.
+            // A hooked agent whose direct parent is itself a same-provider agent (a nested app-server inside the owned backend)
+            // is never the owned backend, whatever sits above it.
             if (profile && !recordedLaunch && !shell && runtime is { } owned && owned.Attachment == captured.Id &&
-                live(owned.Manager) && live(owned.Shell) && ManagerBehindAgent(captured.Process, pending, owned.Manager))
+                !pending.AgentParentIsAgent && live(owned.Manager) && live(owned.Shell) && ManagerBehindAgent(captured.Process, pending, owned.Manager))
             {
                 return captured with
                 {
                     Host = captured.Host with { Shell = owned.Shell, ShellSource = "launch-record" },
-                    Evidence = pending with { Provisional = false }
+                    Evidence = Verified(pending)
                 };
             }
             var verified = recordedLaunch || shell;
-            return verified ? captured with { Evidence = pending with { Provisional = false } } : Shared(captured, sessionId, pending.Mode);
+            return verified ? captured with { Evidence = Verified(pending) } : Shared(captured, sessionId, pending.Mode);
         }
         if (captured.Ownership == "managed" && previous is { Ownership: "managed", Process: { } recorded } &&
             captured.Process is { } agent && recorded != agent && live(recorded))
@@ -221,6 +224,15 @@ public static class NativeAdoption
         return captured;
     }
 
+    /// <summary>The evidence of a proven capture: no longer provisional and without the inputs that proved it.</summary>
+    private static AttachmentEvidence Verified(AttachmentEvidence pending) => pending with
+    {
+        Provisional = false,
+        AgentParent = null,
+        AgentAncestors = null,
+        AgentParentIsAgent = false
+    };
+
     /// <summary>
     /// True when the manager is one of the hooked agent's nearest <see cref="MaxOwnedDepth"/> ancestors and every hop is
     /// consistent in time: an ancestor never starts after its child, which rejects a reused process identifier at any hop. The
@@ -232,6 +244,11 @@ public static class NativeAdoption
         var child = agent;
         foreach (var hop in chain.Take(MaxOwnedDepth))
         {
+            if (hop is null)
+            {
+                // A malformed list ends the chain: fail closed.
+                return false;
+            }
             if (child is { } below && hop.StartedUtcTicks > below.StartedUtcTicks)
             {
                 return false;

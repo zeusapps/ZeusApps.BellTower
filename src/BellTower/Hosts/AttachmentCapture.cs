@@ -17,10 +17,10 @@ public static class AttachmentCapture
     /// <summary>The same decision over a process table the caller already took, so one hook reads the table once.</summary>
     public static NativeAdoption.Outcome Resolve(string provider, string directory, string? sessionId, ProcessTable table)
     {
-        var attachment = Capture(provider, directory, table, out var agent, out var parent, out var lineage);
+        var attachment = Capture(provider, directory, table, out var agent, out var parent, out var lineage, out var parentIsAgent);
         var arguments = agent.Pid > 0 && ProcessProbe.CommandLine(agent.Pid) is { } commandLine ? AgentModeClassifier.Arguments(commandLine) : null;
         var mode = CrossChecked(provider, AgentModeClassifier.Classify(provider, agent.Pid > 0, arguments), attachment.Process, table);
-        var outcome = NativeAdoption.Apply(attachment, sessionId, mode, AgentModeClassifier.MayShareBackend(provider), parent, lineage);
+        var outcome = NativeAdoption.Apply(attachment, sessionId, mode, AgentModeClassifier.MayShareBackend(provider), parent, lineage, parentIsAgent);
         if (outcome.Attachment.Evidence is { Candidate: { } candidate } evidence)
         {
             // The identity text of a provisional launch rides with its candidate, never in the shared-shaped envelope fields.
@@ -59,10 +59,10 @@ public static class AttachmentCapture
                     neighbors.Children.Select(Related).ToList(), neighbors.Complete) : null);
     }
 
-    public static Attachment Capture(string provider, string directory) => Capture(provider, directory, ProcessTable.Take(), out _, out _, out _);
+    public static Attachment Capture(string provider, string directory) => Capture(provider, directory, ProcessTable.Take(), out _, out _, out _, out _);
 
     private static Attachment Capture(string provider, string directory, ProcessTable table, out (int Pid, string Name) agent, out ProcessIdentity? parent,
-        out IReadOnlyList<ProcessIdentity> lineage)
+        out IReadOnlyList<ProcessIdentity> lineage, out bool parentIsAgent)
     {
         var ancestors = table.Ancestors(Environment.ProcessId);
         var found = ancestors.FirstOrDefault(a => a.Name.Equals(provider + ".exe", StringComparison.OrdinalIgnoreCase));
@@ -80,6 +80,9 @@ public static class AttachmentCapture
             chain.Add(identified);
         }
         lineage = chain;
+        // Only ever used to reject the owned-runtime proof: the direct parent is itself an image of this provider.
+        parentIsAgent = agentIndex >= 0 && agentIndex + 1 < ancestors.Count &&
+            ancestors[agentIndex + 1].Name.Equals(provider + ".exe", StringComparison.OrdinalIgnoreCase);
         // The direct parent (the first hop) is the only link that can prove a profile launch from its recorded shell.
         parent = chain.Count > 0 ? chain[0] : null;
         var shell = ancestors.Skip(agentIndex >= 0 ? agentIndex + 1 : 0).FirstOrDefault(ancestor =>

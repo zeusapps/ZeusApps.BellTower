@@ -103,6 +103,47 @@ public sealed class CaptureTests
         Assert.Throws<InvalidDataException>(() => CaptureProtocol.Decode(missing));
     }
 
+    // ANALYSIS-1701: owned-runtime ancestry evidence is validated like the rest of the envelope; an older capture without it decodes.
+    [Theory]
+    [InlineData("absent", true)]
+    [InlineData("valid", true)]
+    [InlineData("cap", true)]
+    [InlineData("null-hop", false)]
+    [InlineData("zero-pid", false)]
+    [InlineData("negative-pid", false)]
+    [InlineData("zero-ticks", false)]
+    [InlineData("over-cap", false)]
+    public void AgentAncestorsEvidenceIsValidatedAndAnOlderCaptureWithoutItStillDecodes(string shape, bool accepted)
+    {
+        var node = JsonNode.Parse(CaptureProtocol.Encode(Envelope("codex")))!;
+        JsonObject Hop(int pid, long ticks) => new() { ["pid"] = pid, ["startedUtcTicks"] = ticks };
+        JsonNode? list = shape switch
+        {
+            "absent" => null,
+            "valid" => new JsonArray(Hop(10, 1), Hop(11, 2)),
+            "cap" => new JsonArray(Enumerable.Range(1, 32).Select(i => (JsonNode?)Hop(i, i)).ToArray()),
+            "null-hop" => new JsonArray(Hop(10, 1), null),
+            "zero-pid" => new JsonArray(Hop(0, 1)),
+            "negative-pid" => new JsonArray(Hop(-4, 1)),
+            "zero-ticks" => new JsonArray(Hop(10, 0)),
+            _ => new JsonArray(Enumerable.Range(1, 33).Select(i => (JsonNode?)Hop(i, i)).ToArray())
+        };
+        if (list is not null)
+        {
+            node["attachment"]!["evidence"] = new JsonObject { ["provisional"] = true, ["agentAncestors"] = list };
+        }
+        using var stream = new MemoryStream(Encoding.UTF8.GetBytes(node.ToJsonString()));
+        if (accepted)
+        {
+            var decoded = CaptureProtocol.Decode(stream);
+            Assert.Equal(shape == "absent" ? null : list!.AsArray().Count, decoded.Attachment.Evidence?.AgentAncestors?.Count);
+        }
+        else
+        {
+            Assert.Equal("envelope-invalid", Assert.Throws<InvalidDataException>(() => CaptureProtocol.Decode(stream)).Message);
+        }
+    }
+
     [Fact]
     public void InputBudgetCountsBytesStripsBomAndRejectsMalformedUtf8()
     {

@@ -92,11 +92,16 @@ public sealed record AttachmentEvidence
     public bool Provisional { get; init; }
     // Wire form only: the direct candidate of a provisional capture. Never persisted after adoption.
     public DirectCandidate? Candidate { get; init; }
+    // Proof inputs of a provisional capture, read by NativeAdoption.Reconcile and cleared when a proof succeeds, so an adopted
+    // attachment never carries them. A capture that stays provisional or falls back to the shared shape may still hold them.
     // The hooked agent's direct parent (creation time included), used to prove a profile launch from its recorded shell.
     public ProcessIdentity? AgentParent { get; init; }
     // The hooked agent's ancestors above the direct parent included, nearest first and bounded by NativeAdoption.MaxOwnedDepth,
-    // so an owned runtime's manager behind a script or npm launcher can be proven. Wire form only.
+    // so an owned runtime's manager behind a script or npm launcher can be proven.
     public IReadOnlyList<ProcessIdentity>? AgentAncestors { get; init; }
+    // True when the direct parent is itself a process of the agent's provider (for example a nested app-server inside an owned
+    // backend). It only ever rejects the owned-runtime proof; it never proves anything.
+    public bool AgentParentIsAgent { get; init; }
     public string ConversationHealth { get; init; } = EvidenceStatus.Unverified;
     public DateTimeOffset? ConversationObservedAt { get; init; }
     public RuntimeEvidence? Runtime { get; init; } = new();

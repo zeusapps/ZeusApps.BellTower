@@ -92,7 +92,7 @@ public sealed class NativeAdoptionReconcileTests
         attachments.Save(Captured(provider, launcher, "launch-attachment", "managed", shell, "launch-env") with { Evidence = AttachmentEvidence.ForManagedLaunch(launcher) });
         var shares = AgentModeClassifier.MayShareBackend(provider);
 
-        var matching = NativeAdoption.Apply(Captured(provider, launcher, "launch-attachment", "managed", shell, "launch-env"), "session-a", AgentModes.Unknown, shares);
+        var matching = NativeAdoption.Apply(Captured(provider, launcher, "launch-attachment", "managed", shell, "launch-env"), "session-a", AgentModes.Unknown, shares, shell, [shell], agentParentIsAgent: false);
         // Codex puts the unproven launch on the wire in the fail-closed shape; Claude keeps its direct classification.
         Assert.Equal(!shares, matching.Dedicated);
         Assert.Equal(shares, matching.Attachment.Evidence!.Provisional);
@@ -102,6 +102,9 @@ public sealed class NativeAdoptionReconcileTests
         Assert.Equal(shell, attachments.Get("launch-attachment")!.Host.Shell);
         Assert.True(attachments.Get("launch-attachment")!.ManagedTitle);
         Assert.False(attachments.Get("launch-attachment")!.Evidence!.Provisional);
+        // ANALYSIS-1700: the proof inputs are not persisted once the recorded launch proved the capture.
+        Assert.Null(attachments.Get("launch-attachment")!.Evidence!.AgentParent);
+        Assert.Null(attachments.Get("launch-attachment")!.Evidence!.AgentAncestors);
 
         // A different hooked agent carrying the same identifier is not the recorded launch generation.
         var foreign = NativeAdoption.Apply(Captured(provider, different, "launch-attachment", "managed", shell, "launch-env"), "session-b", AgentModes.Unknown, shares);
@@ -277,7 +280,7 @@ public sealed class NativeAdoptionReconcileTests
         }
         new LaunchPresentationStore(workspace.Paths).Prepare("profile-launch", recorded);
         var shares = AgentModeClassifier.MayShareBackend(provider);
-        var outcome = NativeAdoption.Apply(Captured(provider, agent, "profile-launch", "managed", launchShell, "launch-env"), "profile-session", AgentModes.Unknown, shares, parent);
+        var outcome = NativeAdoption.Apply(Captured(provider, agent, "profile-launch", "managed", launchShell, "launch-env"), "profile-session", AgentModes.Unknown, shares, parent, [parent], agentParentIsAgent: false);
         if (outcome.Attachment.Evidence?.Candidate is { } candidate)
         {
             // AttachmentCapture.Resolve attaches the launch identity text to the candidate.
@@ -295,6 +298,9 @@ public sealed class NativeAdoptionReconcileTests
             Assert.True(adopted.ManagedTitle);
             Assert.Equal("managed", adopted.Ownership);
             Assert.False(adopted.Evidence!.Provisional);
+            // ANALYSIS-1700: the proof inputs are not persisted once the recorded shell proved the capture.
+            Assert.Null(adopted.Evidence.AgentParent);
+            Assert.Null(adopted.Evidence.AgentAncestors);
             Assert.Equal("Profile task", new IdentityStore(workspace.Paths).Get(session.Key, workspace.Root).Name);
         }
         else

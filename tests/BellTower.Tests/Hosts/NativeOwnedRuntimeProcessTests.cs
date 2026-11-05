@@ -250,4 +250,111 @@ public sealed class NativeOwnedRuntimeProcessTests
             StandIns.KillUnder(workspace.Root);
         }
     }
+
+    // QA-2500: a model-started `codex app-server` inside the owned backend has the manager above it, but its direct parent is a
+    // Codex agent, so it never takes the managed attachment, whichever hook arrives first; the real backend binds in both orders.
+    [Theory]
+    [InlineData(Event, true)]
+    [InlineData(Event, false)]
+    [InlineData(Ingress, true)]
+    [InlineData(Ingress, false)]
+    public async Task ANestedAppServerInsideTheOwnedBackendStaysSharedInEitherHookOrder(string entry, bool nestedFirst)
+    {
+        using var workspace = new TestWorkspace();
+        var fixture = NativeFixture.SessionStart("codex");
+        var backendImage = StandIns.CopyImage(workspace, "codex", "backend");
+        var nestedImage = StandIns.CopyImage(workspace, "codex", "nested");
+        var manager = StandIns.CopyImage(workspace, "bell-tower", "manager");
+        var shellImage = StandIns.CopyImage(workspace, "pwsh", "shell");
+        string Flag(string name) => Path.Combine(workspace.Root, name + ".flag");
+        const string backendSession = "owned-backend-session";
+        const string nestedSession = "nested-app-server-session";
+        string Script(string name, string session, string go)
+        {
+            var payload = Path.Combine(workspace.Root, name + ".json");
+            File.WriteAllText(payload, fixture.PayloadText.Replace(fixture.SessionId, session, StringComparison.Ordinal));
+            var path = Path.Combine(workspace.Root, name + ".cmd");
+            // The backend starts the nested app-server beside itself (a child that keeps running), then both wait for their go flag.
+            var nest = name == "backend"
+                ? $"start \"\" /b \"{nestedImage}\" {StandIns.Under("app-server --listen ws://127.0.0.1:1", $"\"{Path.Combine(workspace.Root, "nested.cmd")}\"")}\r\n"
+                : "";
+            File.WriteAllText(path,
+                "@echo off\r\n" + nest +
+                $"echo started>\"{Flag(name + "-started")}\"\r\n" +
+                ":wait\r\n" +
+                $"if exist \"{go}\" goto go\r\n" +
+                "ping -n 1 127.0.0.1 >nul\r\n" +
+                "goto wait\r\n" +
+                ":go\r\n" +
+                StandIns.Hook(entry, "codex", workspace) + $" < \"{payload}\"\r\n" +
+                $"echo done>\"{Flag(name + "-done")}\"\r\n" +
+                "ping -n 60 127.0.0.1 >nul\r\n");
+            return path;
+        }
+        var backendScript = Script("backend", backendSession, Flag("backend-go"));
+        Script("nested", nestedSession, Flag("nested-go"));
+        var managerScript = Path.Combine(workspace.Root, "manager.cmd");
+        File.WriteAllText(managerScript, "@echo off\r\n" + $"\"{backendImage}\" {StandIns.Under("app-server --listen ws://127.0.0.1:1", $"\"{backendScript}\"")}\r\n");
+
+        using var shell = Process.Start(new ProcessStartInfo(shellImage, "/s /c \"ping -n 120 127.0.0.1 >nul\"") { UseShellExecute = false, CreateNoWindow = true })!;
+        var start = new ProcessStartInfo(manager)
+        {
+            UseShellExecute = false,
+            CreateNoWindow = true,
+            RedirectStandardInput = true,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            Arguments = StandIns.Under("", $"\"{managerScript}\"")
+        };
+        StandIns.ScrubEnvironment(start);
+        start.Environment["BELLTOWER_ATTACHMENT"] = Managed;
+        start.Environment["BELLTOWER_DEDICATED"] = "1";
+        using var process = Process.Start(start)!;
+        try
+        {
+            _ = process.StandardOutput.ReadToEndAsync();
+            _ = process.StandardError.ReadToEndAsync();
+            process.StandardInput.Close();
+            Assert.True(await StandIns.WaitFor(Flag("backend-started")), "The backend stand-in did not start.");
+            Assert.True(await StandIns.WaitFor(Flag("nested-started")), "The nested stand-in did not start.");
+            var backend = Assert.Single(StandIns.Find(backendImage));
+            var nested = Assert.Single(StandIns.Find(nestedImage));
+            var store = new CodexRuntimeStore(workspace.Paths);
+            var runtime = new CodexRuntime(Managed, "ws://127.0.0.1:1", ProcessProbe.Identify(process.Id)!, ProcessProbe.Identify(shell.Id)!);
+            Directory.CreateDirectory(Path.GetDirectoryName(store.RecordPath(Managed))!);
+            AtomicFile.Write(store.RecordPath(Managed), Json.Encode(runtime));
+            File.WriteAllText(store.TokenPath(Managed), "fixture-token");
+
+            foreach (var step in nestedFirst ? new[] { "nested", "backend" } : ["backend", "nested"])
+            {
+                File.WriteAllText(Flag(step + "-go"), "go");
+                Assert.True(await StandIns.WaitFor(Flag(step + "-done")), $"The {step} hook did not finish.");
+            }
+
+            var state = new StateStore(workspace.Paths).Drain();
+            var attachments = new AttachmentStore(workspace.Paths);
+            var real = state.Sessions["codex:" + backendSession];
+            var model = state.Sessions["codex:" + nestedSession];
+            var adopted = attachments.Get(Managed);
+            Assert.Equal(Managed, real.AttachmentId);
+            Assert.NotNull(adopted);
+            Assert.Equal(backend.Pid, adopted.Process!.Pid);
+            Assert.Equal(runtime.Shell, adopted.Host.Shell);
+            Assert.Equal(NativeAdoption.SharedId("codex", nestedSession), model.AttachmentId);
+            var shared = attachments.Get(model.AttachmentId)!;
+            Assert.Null(shared.Process);
+            Assert.Null(shared.Host.Shell);
+            Assert.Equal("shared-runtime", shared.Ownership);
+            Assert.Equal(AgentModes.Unknown, shared.Evidence!.Mode);
+            Assert.DoesNotContain(attachments.List(), item => item.Process is not null && item.Process.Pid == nested.Pid);
+            // ANALYSIS-1700: the adopted attachment keeps none of the proof inputs.
+            Assert.Null(adopted.Evidence!.AgentParent);
+            Assert.Null(adopted.Evidence.AgentAncestors);
+            Assert.False(adopted.Evidence.AgentParentIsAgent);
+        }
+        finally
+        {
+            StandIns.KillUnder(workspace.Root);
+        }
+    }
 }
