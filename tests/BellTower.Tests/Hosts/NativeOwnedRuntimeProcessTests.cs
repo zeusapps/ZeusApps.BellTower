@@ -34,34 +34,46 @@ public sealed class NativeOwnedRuntimeProcessTests
         public void Dispose() { }
     }
 
-    // Record variants: what the runtime record says about the manager and shell, and whether it exists for this attachment.
-    private static readonly string[] Records = ["valid", "none", "wrong-pid", "wrong-time", "dead-manager", "dead-shell", "other-attachment"];
-
-    // (provider, backend arguments, parent image between the manager and the backend or null, record variant, outcome)
-    private static readonly (string Provider, string Arguments, string? Between, string Record, string Outcome)[] Rows =
+    // (provider, backend arguments, images between the manager and the backend joined by '+' or "", record variant, outcome).
+    // The record variant says what the runtime record claims; "independent" starts the backend under a plain shell with no
+    // manager above it while a live decoy manager and shell are recorded.
+    private static readonly (string Provider, string Arguments, string Between, string Record, string Outcome)[] Rows =
     [
         // The owned backend under its manager with a live record is a managed direct attachment (the pre-2.2 result).
-        ("codex", "app-server", null, "valid", Direct),
-        // Every missing or wrong proof fails closed to the shared runtime.
-        ("codex", "app-server", null, "none", SharedUnknown),
-        ("codex", "app-server", null, "wrong-pid", SharedUnknown),
-        ("codex", "app-server", null, "wrong-time", SharedUnknown),
-        ("codex", "app-server", null, "dead-manager", SharedUnknown),
-        ("codex", "app-server", null, "dead-shell", SharedUnknown),
-        ("codex", "app-server", null, "other-attachment", SharedUnknown),
-        // An npm or script-shim launch has another image between the manager and the backend: not the manager's direct child.
-        ("codex", "app-server", "node", "valid", SharedUnknown),
-        ("codex", "app-server", "powershell", "valid", SharedUnknown),
-        // A backend started by a Codex client keeps its shared-backend result even when an unrelated live record exists.
+        ("codex", "app-server", "", "valid", Direct),
+        // QA-2400: an npm launch (manager, node, backend) and a script-shim launch (manager, powershell, backend) are bound
+        // again, and so is the deepest shape CodexRuntimeHost can produce (manager, powershell, node, backend).
+        ("codex", "app-server", "node", "valid", Direct),
+        ("codex", "app-server", "powershell", "valid", Direct),
+        ("codex", "app-server", "powershell+node", "valid", Direct),
+        // Beyond the bound the manager is no longer a launch shape.
+        ("codex", "app-server", "powershell+node+cmd", "valid", SharedUnknown),
+        // Every missing or wrong proof fails closed to the shared runtime, direct child or behind a launcher.
+        ("codex", "app-server", "", "none", SharedUnknown),
+        ("codex", "app-server", "", "wrong-pid", SharedUnknown),
+        ("codex", "app-server", "", "wrong-time", SharedUnknown),
+        ("codex", "app-server", "", "dead-manager", SharedUnknown),
+        ("codex", "app-server", "", "dead-shell", SharedUnknown),
+        ("codex", "app-server", "", "other-attachment", SharedUnknown),
+        ("codex", "app-server", "node", "none", SharedUnknown),
+        ("codex", "app-server", "node", "wrong-pid", SharedUnknown),
+        ("codex", "app-server", "powershell", "wrong-time", SharedUnknown),
+        ("codex", "app-server", "node", "dead-manager", SharedUnknown),
+        ("codex", "app-server", "powershell", "dead-shell", SharedUnknown),
+        ("codex", "app-server", "node", "other-attachment", SharedUnknown),
+        // An independently started shared backend has a live record elsewhere but no manager above it.
+        ("codex", "app-server", "", "independent", SharedUnknown),
+        ("codex", "app-server", "node", "independent", SharedUnknown),
+        // A backend started by a Codex client keeps its shared-backend result even when a live record exists.
         ("codex", "app-server", "codex", "valid", "shared:shared-backend"),
         // Claude managed launches never depend on a runtime record.
-        ("claude", "", null, "valid", Direct),
-        ("claude", "", null, "none", Direct)
+        ("claude", "", "", "valid", Direct),
+        ("claude", "", "", "none", Direct)
     ];
 
-    public static TheoryData<string, string, string, string?, string, string> Data()
+    public static TheoryData<string, string, string, string, string, string> Data()
     {
-        var data = new TheoryData<string, string, string, string?, string, string>();
+        var data = new TheoryData<string, string, string, string, string, string>();
         var index = 0;
         foreach (var (provider, arguments, between, record, outcome) in Rows)
         {
@@ -81,13 +93,13 @@ public sealed class NativeOwnedRuntimeProcessTests
 
     [Theory]
     [MemberData(nameof(Data))]
-    public async Task AnOwnedRuntimeBackendIsBoundOnlyThroughItsLiveRuntimeRecord(string entry, string provider, string arguments, string? between, string record, string outcome)
+    public async Task AnOwnedRuntimeBackendIsBoundOnlyThroughItsLiveRuntimeRecord(string entry, string provider, string arguments, string between, string record, string outcome)
     {
         using var workspace = new TestWorkspace();
         var fixture = NativeFixture.SessionStart(provider);
-        var backendImage = NativeAgentResolveProcessTests.CopyImage(workspace, provider, "backend");
-        var manager = NativeAgentResolveProcessTests.CopyImage(workspace, "bell-tower", "manager");
-        var shellImage = NativeAgentResolveProcessTests.CopyImage(workspace, "pwsh", "shell");
+        var backendImage = StandIns.CopyImage(workspace, provider, "backend");
+        var manager = StandIns.CopyImage(workspace, "bell-tower", "manager");
+        var shellImage = StandIns.CopyImage(workspace, "pwsh", "shell");
         var go = Path.Combine(workspace.Root, "go.flag");
         var started = Path.Combine(workspace.Root, "started.flag");
         var marker = Path.Combine(workspace.Root, "done.flag");
@@ -97,40 +109,38 @@ public sealed class NativeOwnedRuntimeProcessTests
             $"echo started>\"{started}\"\r\n" +
             ":wait\r\n" +
             $"if exist \"{go}\" goto go\r\n" +
-            "ping -n 2 127.0.0.1 >nul\r\n" +
+            "ping -n 1 127.0.0.1 >nul\r\n" +
             "goto wait\r\n" +
             ":go\r\n" +
-            NativeAgentResolveProcessTests.Hook(entry, provider, workspace) + "\r\n" +
+            StandIns.Hook(entry, provider, workspace) + "\r\n" +
             $"echo done>\"{marker}\"\r\n" +
             "ping -n 60 127.0.0.1 >nul\r\n");
-        var backendLine = $"\"{backendImage}\" {NativeAgentResolveProcessTests.Under(arguments + (arguments.Length > 0 ? " --listen ws://127.0.0.1:1" : ""), $"\"{backendScript}\"")}";
+        var line = $"\"{backendImage}\" {StandIns.Under(arguments + (arguments.Length > 0 ? " --listen ws://127.0.0.1:1" : ""), $"\"{backendScript}\"")}";
+        var launchers = between.Length == 0 ? [] : between.Split('+');
+        for (var level = launchers.Length - 1; level >= 0; level--)
+        {
+            // Each launcher image runs a batch that starts the next one, so the images form a chain of direct parents.
+            var image = StandIns.CopyImage(workspace, launchers[level], "between" + level);
+            var script = Path.Combine(workspace.Root, "between" + level + ".cmd");
+            File.WriteAllText(script, "@echo off\r\n" + line + "\r\n");
+            line = $"\"{image}\" {StandIns.Under("", $"\"{script}\"")}";
+        }
         var managerScript = Path.Combine(workspace.Root, "manager.cmd");
-        if (between is null)
-        {
-            File.WriteAllText(managerScript, "@echo off\r\n" + backendLine + "\r\n");
-        }
-        else
-        {
-            var middle = NativeAgentResolveProcessTests.CopyImage(workspace, between, "between");
-            var middleScript = Path.Combine(workspace.Root, "between.cmd");
-            File.WriteAllText(middleScript, "@echo off\r\n" + backendLine + "\r\n");
-            File.WriteAllText(managerScript, $"@echo off\r\n\"{middle}\" {NativeAgentResolveProcessTests.Under("", $"\"{middleScript}\"")}\r\n");
-        }
+        File.WriteAllText(managerScript, "@echo off\r\n" + line + "\r\n");
 
         using var shell = Process.Start(new ProcessStartInfo(shellImage, "/s /c \"ping -n 120 127.0.0.1 >nul\"") { UseShellExecute = false, CreateNoWindow = true })!;
-        var start = new ProcessStartInfo(manager)
+        // An independent backend sits under a plain shell; the manager image only exists as a recorded decoy.
+        var root = record == "independent" ? shellImage : manager;
+        var start = new ProcessStartInfo(root)
         {
             UseShellExecute = false,
             CreateNoWindow = true,
             RedirectStandardInput = true,
             RedirectStandardOutput = true,
             RedirectStandardError = true,
-            Arguments = NativeAgentResolveProcessTests.Under("", $"\"{managerScript}\"")
+            Arguments = StandIns.Under("", $"\"{managerScript}\"")
         };
-        foreach (var key in start.Environment.Keys.Where(key => key.StartsWith("BELLTOWER_", StringComparison.Ordinal) || key is "WT_SESSION" or "TERM_PROGRAM").ToArray())
-        {
-            start.Environment.Remove(key);
-        }
+        StandIns.ScrubEnvironment(start);
         // What the Start-Codex module exports, with a shell that deliberately differs from the runtime record's shell.
         var inherited = ProcessProbe.Identify(Environment.ProcessId)!;
         start.Environment["BELLTOWER_ATTACHMENT"] = Managed;
@@ -141,17 +151,21 @@ public sealed class NativeOwnedRuntimeProcessTests
         {
             var stdout = process.StandardOutput.ReadToEndAsync();
             var stderr = process.StandardError.ReadToEndAsync();
-            var managerIdentity = ProcessProbe.Identify(process.Id)!;
+            using var decoy = record == "independent"
+                ? Process.Start(new ProcessStartInfo(manager, "/s /c \"ping -n 120 127.0.0.1 >nul\"") { UseShellExecute = false, CreateNoWindow = true })
+                : null;
+            var managerIdentity = ProcessProbe.Identify((decoy ?? process).Id)!;
             var shellIdentity = ProcessProbe.Identify(shell.Id)!;
             process.StandardInput.Write(fixture.PayloadText);
             process.StandardInput.Close();
-            await WaitFor(started, "The backend stand-in did not start.");
+            Assert.True(await StandIns.WaitFor(started), "The backend stand-in did not start.");
             var backend = Assert.Single(StandIns.Find(backendImage));
 
             var store = new CodexRuntimeStore(workspace.Paths);
             var runtime = record switch
             {
-                "wrong-pid" => new CodexRuntime(Managed, "ws://127.0.0.1:1", inherited, shellIdentity),
+                // wrong-pid: a live process that is not an ancestor (the stand-in shell).
+                "wrong-pid" => new CodexRuntime(Managed, "ws://127.0.0.1:1", shellIdentity, shellIdentity),
                 "wrong-time" => new CodexRuntime(Managed, "ws://127.0.0.1:1", managerIdentity with { StartedUtcTicks = managerIdentity.StartedUtcTicks + 1 }, shellIdentity),
                 "other-attachment" => new CodexRuntime("another-attachment", "ws://127.0.0.1:1", managerIdentity, shellIdentity),
                 _ => new CodexRuntime(Managed, "ws://127.0.0.1:1", managerIdentity, shellIdentity)
@@ -174,7 +188,7 @@ public sealed class NativeOwnedRuntimeProcessTests
                 process.WaitForExit();
             }
             File.WriteAllText(go, "go");
-            await WaitFor(marker, "The hook did not finish.");
+            Assert.True(await StandIns.WaitFor(marker), "The hook did not finish.");
             var message = $"manager {(process.HasExited ? "exited" : "running")}; record={record}";
             var state = new StateStore(workspace.Paths).Drain();
             var attachments = new AttachmentStore(workspace.Paths);
@@ -235,15 +249,5 @@ public sealed class NativeOwnedRuntimeProcessTests
         {
             StandIns.KillUnder(workspace.Root);
         }
-    }
-
-    private static async Task WaitFor(string path, string failure)
-    {
-        var deadline = DateTime.UtcNow.AddSeconds(25);
-        while (!File.Exists(path) && DateTime.UtcNow < deadline)
-        {
-            await Task.Delay(50);
-        }
-        Assert.True(File.Exists(path), failure);
     }
 }

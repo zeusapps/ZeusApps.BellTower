@@ -94,6 +94,9 @@ public sealed record AttachmentEvidence
     public DirectCandidate? Candidate { get; init; }
     // The hooked agent's direct parent (creation time included), used to prove a profile launch from its recorded shell.
     public ProcessIdentity? AgentParent { get; init; }
+    // The hooked agent's ancestors above the direct parent included, nearest first and bounded by NativeAdoption.MaxOwnedDepth,
+    // so an owned runtime's manager behind a script or npm launcher can be proven. Wire form only.
+    public IReadOnlyList<ProcessIdentity>? AgentAncestors { get; init; }
     public string ConversationHealth { get; init; } = EvidenceStatus.Unverified;
     public DateTimeOffset? ConversationObservedAt { get; init; }
     public RuntimeEvidence? Runtime { get; init; } = new();

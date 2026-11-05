@@ -51,21 +51,6 @@ public sealed class NativeAgentResolveProcessTests
         public string Message => $"exit={ExitCode}; stdout={Output}; stderr={Error}";
     }
 
-    internal static string CopyImage(TestWorkspace workspace, string provider, string folder = "image")
-    {
-        var directory = Directory.CreateDirectory(Path.Combine(workspace.Root, folder)).FullName;
-        var image = Path.Combine(directory, provider + ".exe");
-        File.Copy(Path.Combine(Environment.SystemDirectory, "cmd.exe"), image);
-        return image;
-    }
-
-    internal static string Hook(string entry, string provider, TestWorkspace workspace) => entry == Ingress
-        ? $"\"{BuiltApplication.Ingress}\" --provider {provider} --data-dir \"{workspace.Paths.Root}\""
-        : $"\"{BuiltApplication.Executable}\" event --provider {provider} --data-dir \"{workspace.Paths.Root}\"";
-
-    // cmd.exe strips the outer quotes of a /s /c command, so the whole command is wrapped in one more pair.
-    internal static string Under(string arguments, string command) => $"{arguments} /s /c \"{command}\"";
-
     // Starts the image, pipes the payload in and always kills the whole tree, so a failure never leaves processes that lock
     // the workspace and mask the real assertion; stdout and stderr are returned for the assertion messages.
     internal static async Task<Run> Launch(string image, string arguments, string payload)
@@ -79,10 +64,7 @@ public sealed class NativeAgentResolveProcessTests
             RedirectStandardError = true,
             Arguments = arguments
         };
-        foreach (var key in start.Environment.Keys.Where(key => key.StartsWith("BELLTOWER_", StringComparison.Ordinal) || key is "WT_SESSION" or "TERM_PROGRAM").ToArray())
-        {
-            start.Environment.Remove(key);
-        }
+        StandIns.ScrubEnvironment(start);
         using var process = Process.Start(start)!;
         try
         {
@@ -125,8 +107,8 @@ public sealed class NativeAgentResolveProcessTests
     {
         using var workspace = new TestWorkspace();
         var fixture = NativeFixture.SessionStart(provider);
-        var image = CopyImage(workspace, provider);
-        var run = await Launch(image, Under(arguments, Hook(entry, provider, workspace)), fixture.PayloadText);
+        var image = StandIns.CopyImage(workspace, provider);
+        var run = await Launch(image, StandIns.Under(arguments, StandIns.Hook(entry, provider, workspace)), fixture.PayloadText);
         AssertRan(run);
         if (entry == Ingress)
         {
@@ -171,11 +153,11 @@ public sealed class NativeAgentResolveProcessTests
     {
         using var workspace = new TestWorkspace();
         var fixture = NativeFixture.SessionStart("claude");
-        var outer = CopyImage(workspace, "codex", "outer");
-        var inner = CopyImage(workspace, "claude", "inner");
+        var outer = StandIns.CopyImage(workspace, "codex", "outer");
+        var inner = StandIns.CopyImage(workspace, "claude", "inner");
         var script = Path.Combine(workspace.Root, "inner.cmd");
-        File.WriteAllText(script, $"@echo off\r\n\"{inner}\" {Under("-p", Hook(entry, "claude", workspace))}\r\n");
-        var run = await Launch(outer, Under(outerArguments, $"\"{script}\""), fixture.PayloadText);
+        File.WriteAllText(script, $"@echo off\r\n\"{inner}\" {StandIns.Under("-p", StandIns.Hook(entry, "claude", workspace))}\r\n");
+        var run = await Launch(outer, StandIns.Under(outerArguments, $"\"{script}\""), fixture.PayloadText);
         AssertRan(run);
         if (entry == Ingress)
         {
@@ -200,11 +182,11 @@ public sealed class NativeAgentResolveProcessTests
     {
         using var workspace = new TestWorkspace();
         var fixture = NativeFixture.SessionStart("codex");
-        var outer = CopyImage(workspace, "codex", "outer");
-        var middle = CopyImage(workspace, "claude", "inner");
+        var outer = StandIns.CopyImage(workspace, "codex", "outer");
+        var middle = StandIns.CopyImage(workspace, "claude", "inner");
         var script = Path.Combine(workspace.Root, "inner.cmd");
-        File.WriteAllText(script, $"@echo off\r\n\"{middle}\" {Under("-p", Hook(entry, "codex", workspace))}\r\n");
-        var run = await Launch(outer, Under("", $"\"{script}\""), fixture.PayloadText);
+        File.WriteAllText(script, $"@echo off\r\n\"{middle}\" {StandIns.Under("-p", StandIns.Hook(entry, "codex", workspace))}\r\n");
+        var run = await Launch(outer, StandIns.Under("", $"\"{script}\""), fixture.PayloadText);
         AssertRan(run);
         if (entry == Ingress)
         {

@@ -100,11 +100,11 @@ public sealed class NativeAgentRelationshipProcessTests
     {
         using var workspace = new TestWorkspace();
         var fixture = NativeFixture.SessionStart(provider);
-        var outer = NativeAgentResolveProcessTests.CopyImage(workspace, outerProvider, "outer");
-        var inner = NativeAgentResolveProcessTests.CopyImage(workspace, provider, "inner");
+        var outer = StandIns.CopyImage(workspace, outerProvider, "outer");
+        var inner = StandIns.CopyImage(workspace, provider, "inner");
         var script = Path.Combine(workspace.Root, "inner.cmd");
-        File.WriteAllText(script, $"@echo off\r\n\"{inner}\" {NativeAgentResolveProcessTests.Under(innerArguments, NativeAgentResolveProcessTests.Hook(entry, provider, workspace))}\r\n");
-        var run = await NativeAgentResolveProcessTests.Launch(outer, NativeAgentResolveProcessTests.Under(outerArguments, $"\"{script}\""), fixture.PayloadText);
+        File.WriteAllText(script, $"@echo off\r\n\"{inner}\" {StandIns.Under(innerArguments, StandIns.Hook(entry, provider, workspace))}\r\n");
+        var run = await NativeAgentResolveProcessTests.Launch(outer, StandIns.Under(outerArguments, $"\"{script}\""), fixture.PayloadText);
         NativeAgentResolveProcessTests.AssertRan(run);
         Verify(workspace, entry, provider, fixture, outcome, run.Agent.Pid, run.Message);
     }
@@ -135,11 +135,11 @@ public sealed class NativeAgentRelationshipProcessTests
 
         Task<NativeAgentResolveProcessTests.Run> Nest(string folder, string provider, string outerProvider, string outerArguments, string innerArguments, string payload)
         {
-            var outer = NativeAgentResolveProcessTests.CopyImage(workspace, outerProvider, folder + "-outer");
-            var inner = NativeAgentResolveProcessTests.CopyImage(workspace, provider, folder + "-inner");
+            var outer = StandIns.CopyImage(workspace, outerProvider, folder + "-outer");
+            var inner = StandIns.CopyImage(workspace, provider, folder + "-inner");
             var script = Path.Combine(workspace.Root, folder + ".cmd");
-            File.WriteAllText(script, $"@echo off\r\n\"{inner}\" {NativeAgentResolveProcessTests.Under(innerArguments, NativeAgentResolveProcessTests.Hook(entry, provider, workspace))}\r\n");
-            return NativeAgentResolveProcessTests.Launch(outer, NativeAgentResolveProcessTests.Under(outerArguments, $"\"{script}\""), payload);
+            File.WriteAllText(script, $"@echo off\r\n\"{inner}\" {StandIns.Under(innerArguments, StandIns.Hook(entry, provider, workspace))}\r\n");
+            return NativeAgentResolveProcessTests.Launch(outer, StandIns.Under(outerArguments, $"\"{script}\""), payload);
         }
 
         var runs = await Task.WhenAll(
@@ -210,14 +210,14 @@ public sealed class NativeAgentRelationshipProcessTests
     private static async Task<NativeAgentResolveProcessTests.Run> LaunchWithChild(
         TestWorkspace workspace, string entry, string provider, string agentArguments, string childArguments, string payload, string folder)
     {
-        var agent = NativeAgentResolveProcessTests.CopyImage(workspace, provider, folder + "-agent");
-        var child = NativeAgentResolveProcessTests.CopyImage(workspace, provider, folder + "-child");
+        var agent = StandIns.CopyImage(workspace, provider, folder + "-agent");
+        var child = StandIns.CopyImage(workspace, provider, folder + "-child");
         var marker = Path.Combine(workspace.Root, folder + ".done");
         var script = Path.Combine(workspace.Root, folder + ".cmd");
         File.WriteAllText(script,
             "@echo off\r\n" +
             $"start \"\" /b \"{child}\" {childArguments} /s /c \"ping -n 60 127.0.0.1 >nul\" >nul 2>&1 <nul\r\n" +
-            NativeAgentResolveProcessTests.Hook(entry, provider, workspace) + "\r\n" +
+            StandIns.Hook(entry, provider, workspace) + "\r\n" +
             $"echo done>\"{marker}\"\r\n" +
             "ping -n 60 127.0.0.1 >nul\r\n");
         var start = new ProcessStartInfo(agent)
@@ -227,12 +227,9 @@ public sealed class NativeAgentRelationshipProcessTests
             RedirectStandardInput = true,
             RedirectStandardOutput = true,
             RedirectStandardError = true,
-            Arguments = NativeAgentResolveProcessTests.Under(agentArguments, $"\"{script}\"")
+            Arguments = StandIns.Under(agentArguments, $"\"{script}\"")
         };
-        foreach (var key in start.Environment.Keys.Where(key => key.StartsWith("BELLTOWER_", StringComparison.Ordinal) || key is "WT_SESSION" or "TERM_PROGRAM").ToArray())
-        {
-            start.Environment.Remove(key);
-        }
+        StandIns.ScrubEnvironment(start);
         using var process = Process.Start(start)!;
         try
         {
@@ -241,12 +238,7 @@ public sealed class NativeAgentRelationshipProcessTests
             var identity = ProcessProbe.Identify(process.Id)!;
             process.StandardInput.Write(payload);
             process.StandardInput.Close();
-            var deadline = DateTime.UtcNow.AddSeconds(25);
-            while (!File.Exists(marker) && !process.HasExited && DateTime.UtcNow < deadline)
-            {
-                await Task.Delay(50);
-            }
-            var finished = File.Exists(marker);
+            var finished = await StandIns.WaitFor(marker, process);
             process.Kill(entireProcessTree: true);
             process.WaitForExit();
             var output = (await stdout).Trim();

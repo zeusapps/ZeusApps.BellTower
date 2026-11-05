@@ -9,6 +9,13 @@ namespace BellTower.Core;
 /// </summary>
 public static class NativeAdoption
 {
+    /// <summary>
+    /// How many hops above the hooked backend an owned runtime's manager may sit. <c>CodexRuntimeHost</c> starts the backend as
+    /// a native image (manager, backend: 1), through <c>node codex.js</c> (manager, node, backend: 2) or through a PowerShell
+    /// shim that may itself start node (manager, powershell, node, backend: 3). A deeper chain is not a Bell Tower launch shape.
+    /// </summary>
+    public const int MaxOwnedDepth = 3;
+
     public sealed record Outcome(Attachment Attachment, bool Dedicated);
 
     /// <summary>What an owned Codex runtime record proves: the attachment it serves, its live manager and the shell it belongs to.</summary>
@@ -72,7 +79,8 @@ public static class NativeAdoption
     }
 
     /// <summary>Capture-time decision from the classified mode. Provider facts (can it share a backend) come from the adapter.</summary>
-    public static Outcome Apply(Attachment captured, string? sessionId, string mode, bool mayShareBackend, ProcessIdentity? agentParent = null)
+    public static Outcome Apply(Attachment captured, string? sessionId, string mode, bool mayShareBackend, ProcessIdentity? agentParent = null,
+        IReadOnlyList<ProcessIdentity>? agentAncestors = null)
     {
         var lifecycle = AttachmentEvidence.LifecycleFor(captured.Ownership, captured.Process is not null);
         var generation = captured.Process;
@@ -104,6 +112,7 @@ public static class NativeAdoption
                 {
                     Provisional = true,
                     AgentParent = agentParent,
+                    AgentAncestors = agentAncestors,
                     Candidate = new DirectCandidate
                     {
                         Id = captured.Id,
@@ -179,7 +188,7 @@ public static class NativeAdoption
             // serves. The backend's direct parent must be exactly that live manager (same creation time) and the shell live.
             // The host shell comes from the record, never from the inherited variable, which only located the record.
             if (profile && !recordedLaunch && !shell && runtime is { } owned && owned.Attachment == captured.Id &&
-                pending.AgentParent == owned.Manager && live(owned.Manager) && live(owned.Shell))
+                live(owned.Manager) && live(owned.Shell) && ManagerBehindAgent(captured.Process, pending, owned.Manager))
             {
                 return captured with
                 {
@@ -210,6 +219,30 @@ public static class NativeAdoption
             };
         }
         return captured;
+    }
+
+    /// <summary>
+    /// True when the manager is one of the hooked agent's nearest <see cref="MaxOwnedDepth"/> ancestors and every hop is
+    /// consistent in time: an ancestor never starts after its child, which rejects a reused process identifier at any hop. The
+    /// manager must match by process identifier and creation time. Never decided by an image name.
+    /// </summary>
+    private static bool ManagerBehindAgent(ProcessIdentity? agent, AttachmentEvidence pending, ProcessIdentity manager)
+    {
+        var chain = pending.AgentAncestors ?? (pending.AgentParent is { } parent ? [parent] : []);
+        var child = agent;
+        foreach (var hop in chain.Take(MaxOwnedDepth))
+        {
+            if (child is { } below && hop.StartedUtcTicks > below.StartedUtcTicks)
+            {
+                return false;
+            }
+            if (hop == manager)
+            {
+                return true;
+            }
+            child = hop;
+        }
+        return false;
     }
 
     public static string SharedId(string provider, string sessionId) => provider + "-session-" + ContentHash.Compute(sessionId)[..24];

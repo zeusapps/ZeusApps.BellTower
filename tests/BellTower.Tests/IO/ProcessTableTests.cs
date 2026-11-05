@@ -20,13 +20,7 @@ public sealed class ProcessTableTests : IDisposable
         workspace.Dispose();
     }
 
-    private string Image(string folder, string? imageName = null)
-    {
-        var directory = Directory.CreateDirectory(Path.Combine(workspace.Root, folder)).FullName;
-        var image = Path.Combine(directory, imageName ?? name);
-        File.Copy(Path.Combine(Environment.SystemDirectory, "cmd.exe"), image);
-        return image;
-    }
+    private string Image(string folder, string? imageName = null) => StandIns.CopyImage(workspace, name, folder, imageName ?? name);
 
     // The parent image runs a batch that starts the given number of children of the given image (detached output and input),
     // writes a flag and stays alive. Returns the parent and its children, found by their exact image paths.
@@ -49,12 +43,7 @@ public sealed class ProcessTableTests : IDisposable
             RedirectStandardOutput = true,
             RedirectStandardError = true
         })!;
-        var deadline = DateTime.UtcNow.AddSeconds(25);
-        while (!File.Exists(flag) && DateTime.UtcNow < deadline)
-        {
-            await Task.Delay(50);
-        }
-        Assert.True(File.Exists(flag), "The stand-in parent did not start its children.");
+        Assert.True(await StandIns.WaitFor(flag), "The stand-in parent did not start its children.");
         var parent = ProcessProbe.Identify(process.Id)!;
         var found = new List<ProcessIdentity>();
         for (var attempt = 0; attempt < 100 && (found = StandIns.Find(childImage)).Count < children; attempt++)
