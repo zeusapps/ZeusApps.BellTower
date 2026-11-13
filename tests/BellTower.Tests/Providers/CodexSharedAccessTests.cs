@@ -302,10 +302,12 @@ public sealed class CodexSharedAccessTests : IDisposable
         // A starts in the expired window and stays silent while the others run.
         var a = Task.Run(() => access.OpenAsync(home, CancellationToken.None));
         var deadline = DateTime.UtcNow.AddSeconds(5);
-        while (server.Accepted < 2 && DateTime.UtcNow < deadline)
+        while (server.Received < 2 && DateTime.UtcNow < deadline)
         {
             await Task.Delay(10);
         }
+        // X's and A's initialize were both received while Silent, so switching now cannot answer A.
+        Assert.Equal(2, server.Received);
         Assert.Equal(2, server.Accepted);
         // C succeeds (count 0), then D fails fast (count 1), both while A is still waiting.
         server.BehaviorMode = CodexStandInServer.Behavior.Normal;
@@ -329,10 +331,12 @@ public sealed class CodexSharedAccessTests : IDisposable
         var access = new CodexSharedAccess(new(TimeSpan.Zero, () => now), new(TimeSpan.FromSeconds(2), TimeSpan.FromSeconds(3), TimeSpan.FromSeconds(1)), CodexBackendCheck.Accepting());
         var slow = Task.Run(() => access.OpenAsync(home, CancellationToken.None));
         var deadline = DateTime.UtcNow.AddSeconds(5);
-        while (server.Accepted < 1 && DateTime.UtcNow < deadline)
+        while (server.Received < 1 && DateTime.UtcNow < deadline)
         {
             await Task.Delay(10);
         }
+        // The slow connection's initialize was received while Silent, so it can no longer be answered.
+        Assert.Equal(1, server.Received);
         server.BehaviorMode = CodexStandInServer.Behavior.Normal;
         var (connection, _, _) = await access.OpenAsync(home, CancellationToken.None);
         connection.Dispose();

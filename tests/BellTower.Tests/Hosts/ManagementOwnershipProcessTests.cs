@@ -561,6 +561,10 @@ public sealed class ManagementOwnershipProcessTests : IDisposable
         Directory.CreateDirectory(root);
         var output = new DirectoryInfo(AppContext.BaseDirectory);
         var launcher = Path.Combine(Repository(), "src", "BellTower.Launcher", "bin", output.Parent!.Name, output.Name);
+        if (!File.Exists(Path.Combine(launcher, "bell-tower.exe")))
+        {
+            throw new FileNotFoundException("The launcher build output is missing; the test project must build src/BellTower.Launcher for this configuration.", Path.Combine(launcher, "bell-tower.exe"));
+        }
         CopyDirectory(launcher, root);
         DistributionJson.Write(Path.Combine(root, "installation.json"), new InstallationManifest());
         AddFakePayload(root, original);

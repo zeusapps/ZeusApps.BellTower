@@ -58,6 +58,15 @@ public sealed class CodexStandInServer : IDisposable
     public int Port { get; }
     public string? Authorization { get; private set; }
     public List<string> Methods { get; } = [];
+    /// <summary>Messages read so far across all sessions; counted before the behavior decides whether to answer, so a test can wait until a request has been received.</summary>
+    public int Received
+    {
+        get
+        {
+            lock (gate)
+            { return Methods.Count; }
+        }
+    }
     public int Accepted;
     /// <summary>WebSocket sessions that have ended (closed by the client or dropped).</summary>
     public int Closed;
