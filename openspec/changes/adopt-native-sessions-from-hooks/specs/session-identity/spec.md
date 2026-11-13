@@ -18,7 +18,19 @@ Native adoption, terminal disconnection, runtime reconnection and verified termi
 - **THEN** its wait time, acknowledgment, viewed state and palette remain unchanged and no duplicate alert is created
 
 ### Requirement: Presentation ownership for adopted terminals
-Bell Tower SHALL change an adopted terminal's title or colors only when the user's configured presentation policy allows that surface and its destination, write mechanism and restoration behavior are verified. Without an applicable opt-in, adoption SHALL track the conversation without acquiring terminal presentation ownership. A supported first-hook presentation SHALL be described as occurring after the first accepted event rather than before native startup. Loss of a verified destination SHALL stop further writes; restoration SHALL NOT write to a reused or unrelated shell.
+Bell Tower SHALL change an adopted terminal's title or colors only when the user's configured presentation policy allows that surface and its destination, write mechanism and restoration behavior are verified. The opt-in for adopted sessions SHALL be one global native-presentation setting that is off by default and applies equally to Claude Code and Codex direct sessions. Without an applicable opt-in, adoption SHALL track the conversation without acquiring terminal presentation ownership. A conversation on a Codex shared backend SHALL NOT acquire terminal presentation in this change. A supported first-hook presentation SHALL be described as occurring after the first accepted event rather than before native startup. Loss of a verified destination SHALL stop further writes; restoration SHALL NOT write to a reused or unrelated shell.
+
+#### Scenario: Native presentation is off
+- **WHEN** a plain Claude Code or standalone Codex session is adopted and the native-presentation setting is off
+- **THEN** Bell Tower tracks and alerts for the session and leaves its terminal title and colors untouched
+
+#### Scenario: Native presentation is on
+- **WHEN** the setting is on and an adopted direct session has a verified agent process and shell
+- **THEN** Bell Tower applies the session's title and background after the first accepted hook and restores only what it changed when the session ends
+
+#### Scenario: Shared-backend Codex with native presentation on
+- **WHEN** the setting is on and a conversation runs on a Codex shared backend
+- **THEN** no title or color is written and the limitation is reported separately from tracking
 
 #### Scenario: Hook delivery is delayed until the first prompt
 - **WHEN** the first accepted hook arrives after the native client has already displayed its initial interface
