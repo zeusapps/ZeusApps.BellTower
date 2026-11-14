@@ -86,7 +86,7 @@ public sealed class DiagnosticsReporter(DataPaths paths, IMicrophoneActivitySour
     {
         var enabled = new ConfigStore(paths).Read().NativePresentation;
         const string navigation = "Windows Terminal: window only with the setting off, the session's tab with it on; VS Code: the registered terminal through the bridge";
-        const string presentation = "supported behind the setting (off by default): session title and identity palette background after the first accepted hook, not before startup; exit, switch-off or loss of the verified agent or shell resets the colors with OSC 110/111 and gives back the prior title on the recorded shell only; the reset in Windows Terminal and VS Code is assumed until the 6.1 trial";
+        const string presentation = "supported behind the setting (on by default, switch it off in the tray): session title and identity palette background after the first accepted hook, not before startup; exit, switch-off or loss of the verified agent or shell resets the colors with OSC 110/111 and gives back the prior title on the recorded shell only; the reset in Windows Terminal and VS Code is assumed until the 6.1 trial";
         return new
         {
             Setting = enabled ? "on" : "off",

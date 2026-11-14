@@ -12,6 +12,6 @@ public sealed class AppConfig
     public string? ToneName { get; set; }
     public int AttachmentEvidenceGraceMinutes { get; set; } = 10;
     public ReminderSettings Reminders { get; set; } = new();
-    /// <summary>Opt-in: give plain native direct sessions (Claude Code, standalone Codex) the managed tab title and identity palette background. Off by default.</summary>
-    public bool NativePresentation { get; set; }
+    /// <summary>Give plain native direct sessions (Claude Code, standalone Codex) the managed tab title and identity palette background. On by default; a saved false is kept.</summary>
+    public bool NativePresentation { get; set; } = true;
 }

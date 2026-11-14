@@ -106,7 +106,7 @@ public sealed class TrayApplication : ApplicationContext
         var nativePresentation = new ToolStripMenuItem("Title and color native sessions")
         {
             CheckOnClick = true,
-            ToolTipText = "Off by default. Applies to running sessions without a restart and lets a click select the Windows Terminal tab. Applies to plain claude and codex --no-daemon (not plain default codex): the session title and palette color. Turning it off restores the previous title and resets colors to the terminal default."
+            ToolTipText = "On by default; switch it off here. Applies to running sessions without a restart and lets a click select the Windows Terminal tab. Applies to plain claude and codex --no-daemon (not plain default codex): the session title and palette color. Turning it off restores the previous title and resets colors to the terminal default."
         };
         nativePresentation.Click += (_, _) =>
         {

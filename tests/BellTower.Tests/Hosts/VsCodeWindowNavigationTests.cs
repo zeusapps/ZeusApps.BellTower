@@ -172,6 +172,30 @@ public sealed class VsCodeWindowNavigationTests
         Assert.Equal(shell.Id, request.ShellPid);
     }
 
+    // A nested client in a live launch's shell keeps the shell, marked shared: presentation refuses it, navigation still matches.
+    [Theory]
+    [InlineData("claude")]
+    [InlineData("codex")]
+    public async Task ANestedClientInALaunchShellStillRevealsTheRegisteredTerminal(string provider)
+    {
+        using var fixture = new Fixture();
+        var shell = fixture.Shell();
+        fixture.Register("window-a", [shell.Id], WindowA);
+        var launch = fixture.Attach(provider, shell) with { Ownership = "managed", Process = new(fixture.Self.Pid + 1, fixture.Self.StartedUtcTicks) };
+        var captured = launch with { Process = fixture.Self, Host = launch.Host with { ShellSource = "ancestry" } };
+        // The record is what the reconcile rule produces for a nested client in a live launch's shell.
+        var attachment = NativeAdoption.Reconcile(captured, launch, "session", _ => true);
+        Assert.Equal(HostTarget.LaunchShared, attachment.Host.ShellSource);
+        var navigator = fixture.Navigator();
+        Assert.Equal("exact terminal", navigator.Precision(attachment));
+
+        var result = await navigator.FocusAsync(attachment);
+
+        Assert.True(result.Success, result.Message);
+        Assert.Equal(shell.Id, Assert.Single(fixture.Requests).ShellPid);
+        Assert.Equal(["foreground:" + WindowA], fixture.Desktop.Calls);
+    }
+
     [Fact]
     public async Task MixedClaudeAndCodexSessionsInDifferentWindowsNeverCrossRoutes()
     {

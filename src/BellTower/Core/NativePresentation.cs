@@ -16,7 +16,7 @@ public static class NativePresentation
     /// </summary>
     public static bool IsAdoptedDirect(Attachment attachment) =>
         attachment is { Ownership: "observed", EndedAt: null, Process: { } agent, Host.Shell: { } shell } &&
-        agent.Pid > 0 && shell.Pid > 0 &&
+        agent.Pid > 0 && shell.Pid > 0 && attachment.Host.ShellSource != HostTarget.LaunchShared &&
         attachment.Evidence is { Revision: AttachmentEvidence.CurrentRevision, LifecycleOwner: LifecycleOwners.AgentProcess, Mode: not (AgentModes.SharedBackend or AgentModes.Headless), Provisional: false } stamped &&
         stamped.Generation == agent;
 

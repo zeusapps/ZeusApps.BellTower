@@ -42,12 +42,16 @@ public sealed class NativeAdoptionReconcileTests
         Assert.Equal(LifecycleOwners.AgentProcess, own.Evidence!.LifecycleOwner);
         Assert.False(own.ManagedTitle);
         Assert.False(own.ManagedBackground);
-        // Only a shell proven by this client's own ancestry survives; the inherited variable's shell never does.
+        // The inherited variable's shell never survives. An ancestry shell that is the live launch's own shell is kept for navigation
+        // but marked shared, which fails closed for presentation.
         Assert.Equal(shellSource == "ancestry" && mode != AgentModes.Headless ? shell : null, own.Host.Shell);
+        Assert.Equal(shellSource == "ancestry" && mode != AgentModes.Headless ? HostTarget.LaunchShared : null, own.Host.ShellSource);
         var identity = new IdentityStore(workspace.Paths).Get(session.Key, workspace.Root);
         Assert.NotEqual("Parent task", identity.Name);
         Assert.NotEqual("parent-change", identity.Change);
-        // The presentation writer is never offered the nested session's title or background.
+        // The presentation writer is never offered the nested session's title or background. With the native setting on (the default) a
+        // client in its own verified shell is presented as a native session, never as the managed launch, so this checks the setting off.
+        new ConfigStore(workspace.Paths).Update(c => c.NativePresentation = false);
         Assert.Null(new TerminalPresentationResolver(workspace.Paths).Resolve(session, new GitContext()));
 
         var original = attachments.Get("launch-attachment")!;
@@ -55,6 +59,119 @@ public sealed class NativeAdoptionReconcileTests
         Assert.Equal("managed", original.Ownership);
         Assert.True(original.ManagedTitle);
         Assert.Equal(LifecycleOwners.BellTower, original.Evidence!.LifecycleOwner);
+    }
+
+    // The setting is never saved here: the production default (on) applies. A nested client that shares a live launch's shell, whether
+    // that launch presents or opted out, fails closed and never touches the launch's title, colors or restore record.
+    [Theory]
+    [InlineData("claude", AgentModes.InteractiveClient, true)]
+    [InlineData("claude", AgentModes.InteractiveClient, false)]
+    [InlineData("codex", AgentModes.EmbeddedRuntime, true)]
+    [InlineData("codex", AgentModes.EmbeddedRuntime, false)]
+    public void ANestedClientInTheLiveLaunchShellGetsNoNativePresentationUnderTheDefault(string provider, string mode, bool launchPresents)
+    {
+        using var workspace = new TestWorkspace();
+        using var launcherAgent = DisposableSleeper.Start();
+        using var nestedAgent = DisposableSleeper.Start();
+        var launcher = ProcessProbe.Identify(launcherAgent.Id)!;
+        var nested = ProcessProbe.Identify(nestedAgent.Id)!;
+        var shell = ProcessProbe.Identify(Environment.ProcessId)!;
+        var attachments = new AttachmentStore(workspace.Paths);
+        var launch = Captured(provider, launcher, "launch-attachment", "managed", shell, "launch-env") with
+        {
+            ManagedTitle = launchPresents,
+            ManagedBackground = launchPresents,
+            Evidence = AttachmentEvidence.ForManagedLaunch(launcher)
+        };
+        attachments.Save(launch);
+        var outcome = NativeAdoption.Apply(Captured(provider, nested, "launch-attachment", "managed", shell, "ancestry"), "nested-session", mode, AgentModeClassifier.MayShareBackend(provider));
+        Capture(workspace, provider, Start, outcome);
+        var session = new StateStore(workspace.Paths).Drain().Sessions[provider + ":nested-session"];
+        var own = attachments.Get(session.AttachmentId)!;
+
+        Assert.Equal(NativeAdoption.OwnId(provider, nested), own.Id);
+        // The shell stays for navigation and is marked shared, so presentation refuses it.
+        Assert.Equal(shell, own.Host.Shell);
+        Assert.Equal(HostTarget.LaunchShared, own.Host.ShellSource);
+        Assert.False(NativePresentation.GrantsPresentation(own, enabled: true));
+        Assert.Null(new TerminalPresentationResolver(workspace.Paths).Resolve(session, new GitContext()));
+        // The terminal window is kept for navigation; the launch record is untouched.
+        Assert.Equal("windows-terminal", own.Host.Kind);
+        Assert.Equal(launch.ManagedTitle, attachments.Get("launch-attachment")!.ManagedTitle);
+        Assert.Equal(launch.ManagedBackground, attachments.Get("launch-attachment")!.ManagedBackground);
+        Assert.Equal(shell, attachments.Get("launch-attachment")!.Host.Shell);
+        Assert.Equal(launcher, attachments.Get("launch-attachment")!.Process);
+        Assert.Empty(new TitleRestoreStore(workspace.Paths).List());
+
+        // A later hook while the launch lives keeps the marker and never resets it to ancestry.
+        Capture(workspace, provider, Prompt, outcome);
+        new StateStore(workspace.Paths).Drain();
+        var again = attachments.Get(own.Id)!;
+        Assert.Equal(HostTarget.LaunchShared, again.Host.ShellSource);
+        Assert.Equal(shell, again.Host.Shell);
+        Assert.False(NativePresentation.GrantsPresentation(again, enabled: true));
+    }
+
+    // A nested client in its own, different shell is a plain native session; a standalone session in the launch's shell after the
+    // launch has ended keeps its grant.
+    [Theory]
+    [InlineData("claude", AgentModes.InteractiveClient)]
+    [InlineData("codex", AgentModes.EmbeddedRuntime)]
+    public void ANestedClientInAnotherShellAndAStandaloneSessionAfterTheLaunchEndedKeepTheirGrant(string provider, string mode)
+    {
+        using var workspace = new TestWorkspace();
+        using var launcherAgent = DisposableSleeper.Start();
+        using var nestedAgent = DisposableSleeper.Start();
+        using var otherShell = DisposableSleeper.Start();
+        var launcher = ProcessProbe.Identify(launcherAgent.Id)!;
+        var nested = ProcessProbe.Identify(nestedAgent.Id)!;
+        var other = ProcessProbe.Identify(otherShell.Id)!;
+        var shell = ProcessProbe.Identify(Environment.ProcessId)!;
+        var attachments = new AttachmentStore(workspace.Paths);
+        attachments.Save(Captured(provider, launcher, "launch-attachment", "managed", shell, "launch-env") with { Evidence = AttachmentEvidence.ForManagedLaunch(launcher) });
+        var outcome = NativeAdoption.Apply(Captured(provider, nested, "launch-attachment", "managed", other, "ancestry"), "nested-session", mode, AgentModeClassifier.MayShareBackend(provider));
+        Capture(workspace, provider, Start, outcome);
+        var session = new StateStore(workspace.Paths).Drain().Sessions[provider + ":nested-session"];
+        Assert.Equal(other, attachments.Get(session.AttachmentId)!.Host.Shell);
+        Assert.NotNull(new TerminalPresentationResolver(workspace.Paths).Resolve(session, new GitContext()));
+
+        // A later standalone client in the launch's shell (its own observed identity, no inherited identifier) is granted.
+        using var standalone = DisposableSleeper.Start();
+        var agent = ProcessProbe.Identify(standalone.Id)!;
+        var later = NativeAdoption.Apply(Captured(provider, agent, NativeAdoption.OwnId(provider, agent), "observed", shell, "ancestry"), "later-session", mode, AgentModeClassifier.MayShareBackend(provider));
+        Capture(workspace, provider, Start.Replace("nested-session", "later-session"), later);
+        var laterSession = new StateStore(workspace.Paths).Drain().Sessions[provider + ":later-session"];
+        Assert.Equal(shell, attachments.Get(laterSession.AttachmentId)!.Host.Shell);
+        Assert.NotNull(new TerminalPresentationResolver(workspace.Paths).Resolve(laterSession, new GitContext()));
+    }
+
+    // The nested rule needs a live recorded launch. With the recorded launch process gone, an inherited identifier does not take the
+    // nested branch: the capture is not given a shared-shell marker or its own identity, and the dead launch record is returned unchanged.
+    [Theory]
+    [InlineData("claude", AgentModes.InteractiveClient)]
+    [InlineData("codex", AgentModes.EmbeddedRuntime)]
+    public void AnInheritedIdentifierWhoseRecordedLaunchIsGoneDoesNotTakeTheNestedBranch(string provider, string mode)
+    {
+        using var workspace = new TestWorkspace();
+        using var nestedAgent = DisposableSleeper.Start();
+        var nested = ProcessProbe.Identify(nestedAgent.Id)!;
+        var shell = ProcessProbe.Identify(Environment.ProcessId)!;
+        ProcessIdentity launcher;
+        using (var launcherAgent = DisposableSleeper.Start())
+        {
+            launcher = ProcessProbe.Identify(launcherAgent.Id)!;
+        }
+        var attachments = new AttachmentStore(workspace.Paths);
+        attachments.Save(Captured(provider, launcher, "launch-attachment", "managed", shell, "launch-env") with { Evidence = AttachmentEvidence.ForManagedLaunch(launcher) });
+        var outcome = NativeAdoption.Apply(Captured(provider, nested, "launch-attachment", "managed", shell, "ancestry"), "nested-session", mode, AgentModeClassifier.MayShareBackend(provider));
+        Capture(workspace, provider, Start, outcome);
+        var session = new StateStore(workspace.Paths).Drain().Sessions[provider + ":nested-session"];
+
+        Assert.Equal("launch-attachment", session.AttachmentId);
+        Assert.Null(attachments.Get(NativeAdoption.OwnId(provider, nested)));
+        var record = attachments.Get("launch-attachment")!;
+        Assert.Equal(launcher, record.Process);
+        Assert.Equal("launch-env", record.Host.ShellSource);
     }
 
     [Theory]

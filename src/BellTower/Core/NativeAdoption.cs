@@ -206,6 +206,12 @@ public static class NativeAdoption
         {
             // Only a shell proven by this client's own ancestry survives; one named by an inherited variable belongs to the launcher.
             var host = captured.Host.ShellSource == "ancestry" ? captured.Host : new HostTarget("unknown");
+            // The live launch presents, or opted out of presenting, on its own shell. A nested client in that same shell fails closed:
+            // it keeps the shell for navigation but marks it shared, so it is never granted a title or colors there and its exit resets nothing.
+            if (host.Shell is { } nestedShell && previous.Host.Shell == nestedShell)
+            {
+                host = host with { ShellSource = HostTarget.LaunchShared };
+            }
             return captured with
             {
                 Id = OwnId(captured.Provider, agent),

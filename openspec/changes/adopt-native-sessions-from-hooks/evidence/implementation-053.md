@@ -1,0 +1,11 @@
+# Implementation 053 (fix cycle 2, ANALYSIS-3900)
+
+Rule: in the `Reconcile` nested branch (`NativeAdoption.cs`) a nested client whose ancestry shell is the live recorded launch's shell now keeps `Host.Shell` and gets `ShellSource = "launch-shared"` (`HostTarget.LaunchShared`, documented in `HostTarget.cs`). One clause in `NativePresentation.IsAdoptedDirect` refuses that marker, so `GrantsPresentation` and `Effective` refuse: no title, background or restore record, the launch untouched. The `Adopt` merge keeps `previous.Host` (and the marker) and every hook re-runs Reconcile, so a later capture never resets it to ancestry while the launch lives (tested with a second capture).
+
+Navigation, both providers: VS Code `Match` finds the shell, so `Precision` is exact terminal and `FocusAsync` reveals the registered terminal (VsCodeWindowNavigationTests). Windows Terminal `WindowsTerminalFocusService` returns window only with the normal "tab could not be identified" text, selects and retitles nothing (TerminalTabSelectionTests). Both tests build the record with `NativeAdoption.Reconcile`, not a hand-set marker. Owning-shell exit health applies again because the shell is stored. Doctor, matrix and the docs nested note are accurate as written.
+
+Tests: nested default-setting theory (claude/codex x presenting/opted out) keeps its presentation refusal assertions and now also asserts shell kept, marker and re-capture. ANALYSIS-3801 (c): `AnInheritedIdentifierWhoseRecordedLaunchIsGoneDoesNotTakeTheNestedBranch` kills the launcher process, captures with the inherited identifier and asserts no own attachment, no marker and the launch record unchanged; the standalone-later test no longer sets EndedAt.
+
+Mutants (reverted): (a) ignore the marker in IsAdoptedDirect failed 6 (presentation + WT focus); (b) drop the shell again failed 10 (presentation, nested identity, VS Code and WT navigation).
+
+Results: Release --no-incremental 0 warnings 0 errors; focused filters pass; full suite 1621/1621 (no load-only failures in the final run; the earlier focused run showed `AudioQueueTests.NativeProbeExceptionReturnsUnknownInsteadOfEscapingDoctor` once, load-only, passes alone). Per-file `dotnet format --verify-no-changes` over 11 changed .cs files: exit 0. `./scripts/format.ps1 -Verify`: exit 0. CRLF kept (format run over the files).

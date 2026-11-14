@@ -127,6 +127,7 @@ public sealed class TerminalTabSelectionTests
         var tabs = new Tabs { Read = () => [target] };
         var windows = new Windows();
         var focus = new WindowsTerminalFocusService(workspace.Paths, new(tabs), new(windows), (_, _) => console, _ => true);
+        new ConfigStore(workspace.Paths).Update(c => c.NativePresentation = false);
         var off = focus.Focus("attachment");
         Assert.True(off.Success);
         Assert.Equal("window only", off.Precision);
@@ -136,6 +137,43 @@ public sealed class TerminalTabSelectionTests
         var on = focus.Focus("attachment");
         Assert.Equal("exact tab", on.Precision);
         Assert.Equal(1, target.Selections);
+        Assert.Equal("Duplicate friendly session name", console.Title);
+    }
+
+    // The default setting is on. A nested client in a live launch's shell carries the shared-shell marker: the click brings the window
+    // forward, no tab is selected or retitled, and the result is window only with the normal text, not "no longer registered".
+    [Theory]
+    [InlineData("claude", "interactive-client")]
+    [InlineData("codex", "embedded-runtime")]
+    public void ANestedClientInALaunchShellFocusesTheWindowOnlyUnderTheDefault(string provider, string mode)
+    {
+        using var workspace = new TestWorkspace();
+        var process = ProcessProbe.Identify(Environment.ProcessId)!;
+        // The record is what the reconcile rule produces for a nested client in a live launch's shell, not a hand-built marker.
+        var launcher = new BellTower.Core.ProcessIdentity(process.Pid + 1, process.StartedUtcTicks);
+        var launch = new BellTower.Core.Attachment("attachment", provider, launcher, new("windows-terminal", process, process, 1234, "terminal-session") { ShellSource = "launch-env" },
+            workspace.Root, DateTimeOffset.UtcNow, ManagedTitle: true, ManagedBackground: true)
+        { Ownership = "managed" };
+        var nested = BellTower.Core.NativeAdoption.Apply(launch with
+        {
+            Process = process,
+            Host = launch.Host with { ShellSource = "ancestry" }
+        }, "session", mode, BellTower.Providers.AgentModeClassifier.MayShareBackend(provider)).Attachment;
+        var reconciled = BellTower.Core.NativeAdoption.Reconcile(nested, launch, "session", _ => true);
+        Assert.Equal(BellTower.Core.HostTarget.LaunchShared, reconciled.Host.ShellSource);
+        new AttachmentStore(workspace.Paths).Save(reconciled with { Id = "attachment" });
+        var console = new ConsoleSession();
+        var target = new Tab(() => console.Title);
+        var windows = new Windows();
+        var focus = new WindowsTerminalFocusService(workspace.Paths, new(new Tabs { Read = () => [target] }), new(windows), (_, _) => console, _ => true);
+
+        var result = focus.Focus("attachment");
+
+        Assert.True(result.Success);
+        Assert.Equal("window only", result.Precision);
+        Assert.Contains("tab could not be identified", result.Message);
+        Assert.Equal(0, target.Selections);
+        Assert.Equal(1, windows.Activations);
         Assert.Equal("Duplicate friendly session name", console.Title);
     }
 

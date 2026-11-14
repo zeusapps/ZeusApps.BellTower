@@ -150,12 +150,53 @@ public sealed class NativePresentationTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public void SettingDefaultsOffAndRoundTripsThroughConfiguration(bool enabled)
+    public void SettingDefaultsOnAndRoundTripsAnExplicitValueThroughConfiguration(bool enabled)
     {
         using var workspace = new TestWorkspace();
-        Assert.False(new ConfigStore(workspace.Paths).Read().NativePresentation);
+        Assert.True(new ConfigStore(workspace.Paths).Read().NativePresentation);
         Setting(workspace, enabled);
         Assert.Equal(enabled, new ConfigStore(workspace.Paths).Read().NativePresentation);
+        // Saving an unrelated setting keeps the saved state, including an explicit false.
+        new ConfigStore(workspace.Paths).Update(c => c.Muted = true);
+        Assert.Equal(enabled, new ConfigStore(workspace.Paths).Read().NativePresentation);
+    }
+
+    [Fact]
+    public void AConfigurationWithoutTheValueReadsAsOnAndSavingAnotherSettingKeepsItOn()
+    {
+        using var workspace = new TestWorkspace();
+        File.WriteAllText(workspace.Paths.Config, "{\"voice\":false}");
+        Assert.True(new ConfigStore(workspace.Paths).Read().NativePresentation);
+        new ConfigStore(workspace.Paths).Update(c => c.Muted = true);
+        Assert.True(new ConfigStore(workspace.Paths).Read().NativePresentation);
+        Setting(workspace, false);
+        new ConfigStore(workspace.Paths).Update(c => c.Voice = true);
+        Assert.False(new ConfigStore(workspace.Paths).Read().NativePresentation);
+    }
+
+    [Theory]
+    [InlineData("claude", AgentModes.InteractiveClient)]
+    [InlineData("codex", AgentModes.EmbeddedRuntime)]
+    public void WithNoSavedValueAnAdoptedDirectSessionGetsItsTitleAndBackgroundAndASavedFalseLeavesItAlone(string provider, string mode)
+    {
+        using var workspace = new TestWorkspace();
+        var session = Adopt(workspace, provider, mode);
+        var shared = Adopt(workspace, "codex", AgentModes.SharedBackend, sessionId: "shared");
+        var resolver = new TerminalPresentationResolver(workspace.Paths);
+        var console = new Console();
+        var service = new TerminalTitleService(workspace.Paths, console);
+        var desired = resolver.Resolve(session, new());
+        Assert.NotNull(desired);
+        Assert.NotNull(desired.Background);
+        Assert.True(service.Apply(desired));
+        Assert.Equal(desired.Background, Assert.Single(console.Writes).Background);
+        Assert.Null(resolver.Resolve(shared, new()));
+        Assert.False(service.Apply(shared.Key));
+
+        Setting(workspace, false);
+        Assert.Null(resolver.Resolve(session, new()));
+        Assert.False(service.Apply(desired));
+        Assert.Single(console.Writes);
     }
 
     [Fact]
@@ -168,6 +209,7 @@ public sealed class NativePresentationTests
         var resolver = new TerminalPresentationResolver(workspace.Paths);
         var console = new Console();
         var service = new TerminalTitleService(workspace.Paths, console);
+        Setting(workspace, false);
         Assert.All(new[] { claude, codex, shared }, session => Assert.Null(resolver.Resolve(session, new())));
         Assert.Empty(console.Writes);
         Assert.False(service.Apply(claude.Key));
@@ -591,6 +633,7 @@ public sealed class NativePresentationTests
         var writer = new RecordingPresentation();
         var now = DateTimeOffset.UtcNow;
         using var pump = new TerminalTitlePump(workspace.Paths, new CheckoutCache(_ => new()), writer, () => now);
+        Setting(workspace, false);
         await pump.RefreshAsync([claude, shared]);
         Assert.Empty(writer.Writes);
 
