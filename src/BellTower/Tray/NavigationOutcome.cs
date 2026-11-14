@@ -20,4 +20,12 @@ public static class NavigationOutcome
         store.MarkViewed(key, episode);
         return true;
     }
+
+    /// <summary>
+    /// True when a chip click must also show a visible message: a failure, or a success below an exact destination (window only,
+    /// terminal only). The window may already be in front, so focusing it alone looks like nothing happened. Only an exact tab or
+    /// terminal needs no extra notice. Applies to both providers and both hosts.
+    /// </summary>
+    public static bool NeedsNotice(FocusResult result) =>
+        !result.Success || !result.Precision.StartsWith("exact", StringComparison.Ordinal);
 }

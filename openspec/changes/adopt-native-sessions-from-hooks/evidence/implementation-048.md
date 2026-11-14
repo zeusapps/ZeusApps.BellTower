@@ -1,0 +1,8 @@
+# Implementation evidence DEV-048 (fix cycle 2: ANALYSIS-3300 residual, QA-4100, ANALYSIS-3301 residual)
+
+Baseline `1c80a7d`, on the uncommitted combined target. Awaiting independent verification.
+
+1. ANALYSIS-3300 residual: the comment in `MixedLaunchAndNativeTests` now says native sessions get a title and their own palette background.
+2. QA-4100: `WhenTheRecordOwnerEndsASurvivorInTheSameShellWritesAgainAndTakesTheRestoredTitleAsPrior` (claude survivor with codex `--no-daemon` owner, and the reverse) runs the real title service behind the pump's writer boundary. The owner ends, its restore happens, the survivor writes again and its new record takes the title the shell then shows as `Previous`. Mutant: replacing the pump's same-shell receipt-forgetting condition with `false` failed 2 tests; reverted.
+3. ANALYSIS-3301 residual: the smaller change. `TitleRestoreStore.OwnedBy(attachmentId)` replaces `ForAttachment`; `TerminalTitleService.Restore` restores every record the attachment owns, each independently (a failure keeps only that record and returns false; a dead or reused shell discards only its record); the pump requests one restore per owning attachment (grouped) and forgets receipts of presented sessions in every shell of that group. Test `AResumedAttachmentThatOwnsRecordsInTwoShellsRestoresEachIndependently` (claude, codex) uses a second live disposable process as the other shell. Mutant: restoring only the first owned record failed 2 tests; reverted.
+4. `AFailedRestoreKeepsTheRecordAndALaterSuccessRetriesAndRemovesIt` (claude, codex) executes the failure branch through the pump: the failed restore keeps the record, nothing is attempted inside the 30 second retry delay, and a later success removes the record and resets colors once.

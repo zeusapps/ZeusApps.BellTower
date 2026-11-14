@@ -5,9 +5,14 @@ namespace BellTower.Hosts;
 
 public sealed class TerminalPresentationResolver(DataPaths paths)
 {
+    private readonly ConfigStore configuration = new(paths);
+
     public DesiredTerminalPresentation? Resolve(SessionState session, GitContext git)
     {
-        var attachment = new AttachmentStore(paths).Get(session.AttachmentId);
+        var stored = new AttachmentStore(paths).Get(session.AttachmentId);
+        // The one place that adds the native-presentation setting to the stored consent (title and palette background).
+        var native = stored is not null && NativePresentation.GrantsPresentation(stored, configuration.Read().NativePresentation);
+        var attachment = stored is null ? null : NativePresentation.Effective(stored, native);
         if (session.Ended || session.AttachmentHealth == "unavailable" ||
             attachment is not { ManagedTitle: true, EndedAt: null, Process: { } agent, Host.Shell: { } shell } ||
             attachment.Health == "unavailable" || attachment.Host.Kind is not ("vscode" or "windows-terminal") ||

@@ -12,10 +12,16 @@ internal sealed class SyncTitleCommand : Command
         var session = CommonOptions.Text("--session", "Provider-qualified session ID (legacy helper mode).");
         var desired = new Option<bool>("--desired") { Description = "Read a bounded precomputed title request from stdin." };
         Options.Add(session);
+        var restore = CommonOptions.Text("--restore", "Attachment ID whose recorded native title is restored.");
         Options.Add(desired);
+        Options.Add(restore);
         SetAction(result =>
         {
             var service = new TerminalTitleService(CommonOptions.Paths(result, dataDirectory), new AttachedConsoleTitleWriter());
+            if (result.GetValue(restore) is { } restoreId)
+            {
+                return service.Restore(restoreId) ? 0 : 1;
+            }
             if (!result.GetValue(desired))
             {
                 return result.GetValue(session) is { } key && service.Apply(key) ? 0 : 1;

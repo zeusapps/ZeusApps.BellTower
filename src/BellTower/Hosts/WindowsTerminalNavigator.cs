@@ -9,12 +9,13 @@ public sealed class WindowsTerminalNavigator(DataPaths paths) : ITerminalNavigat
 {
     private readonly WindowActivator activation = new(new NativeWindowActivationApi());
     public string HostKind => "windows-terminal";
-    public string Precision(Attachment attachment) => !IsAvailable(attachment.Host) ? "unavailable" : attachment.ManagedTitle ? "tab or window" : "window only";
+    public string Precision(Attachment attachment) => !IsAvailable(attachment.Host) ? "unavailable" :
+        NativePresentation.Effective(attachment, new ConfigStore(paths).Read().NativePresentation).ManagedTitle ? "tab or window" : "window only";
     public async Task<FocusResult> FocusAsync(Attachment attachment)
     {
         if (!IsAvailable(attachment.Host))
         {
-            return new(false, "unavailable", "The owning Windows Terminal window cannot be verified.");
+            return new(false, "unavailable", UnavailableReason(attachment.Host));
         }
         // Keep foreground activation in the process that received the user's click.
         if (!activation.Activate(new IntPtr(attachment.Host.WindowHandle)))
@@ -92,7 +93,7 @@ public sealed class WindowsTerminalNavigator(DataPaths paths) : ITerminalNavigat
     {
         if (!IsAvailable(host))
         {
-            return new(false, "unavailable", "The owning Windows Terminal window cannot be verified.");
+            return new(false, "unavailable", UnavailableReason(host));
         }
 
         var handle = new IntPtr(host.WindowHandle);
@@ -100,6 +101,15 @@ public sealed class WindowsTerminalNavigator(DataPaths paths) : ITerminalNavigat
             ? new(true, "window only", "Windows Terminal focused; select the session's tab or pane.")
             : new(false, "window only", "Windows declined foreground activation.");
     }
+
+    /// <summary>
+    /// The stated reason a recorded window is not available. A Terminal process that owns several visible windows is named,
+    /// because the recorded window then cannot be told apart by process alone and matching is deliberately not widened.
+    /// </summary>
+    public static string UnavailableReason(HostTarget host, Func<int, int>? visibleWindows = null) =>
+        host.WindowProcess is { } identity && ProcessProbe.Identify(identity.Pid) == identity && (visibleWindows ?? WindowProbe.VisibleWindowCount)(identity.Pid) > 1
+            ? "This Windows Terminal process has several windows open, so Bell Tower cannot tell which one holds the session. Switch to it manually."
+            : "The owning Windows Terminal window cannot be verified.";
 
     public static bool IsAvailable(HostTarget host)
     {

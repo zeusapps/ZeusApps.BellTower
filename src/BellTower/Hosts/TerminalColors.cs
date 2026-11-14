@@ -6,6 +6,9 @@ public static class TerminalColors
 {
     public const string Foreground = "#f1f5f9";
 
+    /// <summary>Resets the foreground (OSC 110) and background (OSC 111) to the terminal's configured colors, as a managed launch does on exit.</summary>
+    public const string Reset = "\u001b]110\u001b\\" + "\u001b]111\u001b\\";
+
     public static string Apply(string background)
     {
         if (!Palette.IsHex(background))

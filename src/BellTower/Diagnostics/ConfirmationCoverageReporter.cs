@@ -58,7 +58,7 @@ public sealed class ConfirmationCoverageReporter(DataPaths paths)
             WithVerifiableRuntime = verifiable,
             UnavailableWithoutRuntime = active.Count - verifiable,
             Status = active.Count - verifiable > 0
-                ? "unavailable for sessions with neither a verified owning runtime nor a verified shared backend (explicit --no-daemon, remote, and shared conversations not yet reached by the task 4.2 binder) or whose status read fails: a request pending 15 seconds shows a visibly unverified \"possibly waiting for approval\" chip with no sound, reminder or escalation, never labelled confirmed"
+                ? "unavailable for sessions with neither a verified owning runtime nor a verified shared backend (explicit --no-daemon, remote, and shared conversations not yet reached, by the 2026-11-13 user scope decision) or whose status read fails: a request pending 15 seconds shows a visibly unverified \"possibly waiting for approval\" chip with no sound, reminder or escalation, never labelled confirmed"
                 : IngressStatus("codex") ?? (observed is null ? "configured, not yet observed" : "observed"),
             IngressImage = IngressImage("codex"),
             VerifiedVersionModes = CapabilityMatrix.CodexConfirmationEvidence,

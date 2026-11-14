@@ -55,6 +55,38 @@ public sealed class NavigationOutcomeTests
         }
     }
 
+    [Theory]
+    [InlineData(true, "exact tab", false)]
+    [InlineData(true, "exact terminal", false)]
+    [InlineData(true, "window only", true)]
+    [InlineData(true, "terminal only", true)]
+    [InlineData(true, "tab or window", true)]
+    [InlineData(false, "window only", true)]
+    [InlineData(false, "unavailable", true)]
+    [InlineData(false, "exact tab", true)]
+    public void OnlyAnExactSuccessIsAllowedToSkipTheVisibleNotice(bool success, string precision, bool notice) =>
+        Assert.Equal(notice, NavigationOutcome.NeedsNotice(new FocusResult(success, precision, "message")));
+
+    [Theory]
+    [InlineData("claude")]
+    [InlineData("codex")]
+    public void AWindowTerminalProcessWithSeveralWindowsStatesItsReasonAndNeedsANotice(string provider)
+    {
+        var process = ProcessProbe.Identify(Environment.ProcessId)!;
+        var host = new HostTarget("windows-terminal", process, process, 1234, "terminal-session");
+        var several = BellTower.Hosts.WindowsTerminalNavigator.UnavailableReason(host, _ => 2);
+        var single = BellTower.Hosts.WindowsTerminalNavigator.UnavailableReason(host, _ => 1);
+        Assert.Contains("several windows", several, StringComparison.Ordinal);
+        Assert.DoesNotContain("several windows", single, StringComparison.Ordinal);
+        // Whatever host reports the failure, the click ends in a visible message for either client.
+        using var workspace = new TestWorkspace();
+        var attachment = new Attachment(provider, provider, process, host, workspace.Root, DateTimeOffset.UtcNow);
+        var result = new Navigator(workspace.Paths).Focus(attachment);
+        Assert.False(result.Success);
+        Assert.False(string.IsNullOrWhiteSpace(result.Message));
+        Assert.True(NavigationOutcome.NeedsNotice(result));
+    }
+
     [Fact]
     public void ALateSuccessForAnOlderEpisodeCannotHideANewerTimer()
     {

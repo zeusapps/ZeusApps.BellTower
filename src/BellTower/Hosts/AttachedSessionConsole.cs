@@ -29,6 +29,24 @@ public sealed class AttachedSessionConsole : ISessionConsole
         return new AttachedSessionConsole();
     }
 
+    /// <summary>Attaches to a shell's console by its own verified identity, for restoring after the agent has exited.</summary>
+    public static ISessionConsole? OpenShell(ProcessIdentity shell)
+    {
+        FreeConsole();
+        if (ProcessProbe.Identify(shell.Pid) != shell || !AttachConsole((uint)shell.Pid))
+        {
+            return null;
+        }
+        var processes = new uint[256];
+        var count = GetConsoleProcessList(processes, (uint)processes.Length);
+        if (count == 0 || count > processes.Length || !processes.Contains((uint)shell.Pid) || ProcessProbe.Identify(shell.Pid) != shell)
+        {
+            FreeConsole();
+            return null;
+        }
+        return new AttachedSessionConsole();
+    }
+
     public string ReadTitle()
     {
         var title = new StringBuilder(32768);

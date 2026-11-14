@@ -31,10 +31,10 @@ public sealed class DiagnosticsReporter(DataPaths paths, IMicrophoneActivitySour
                 HookStatus = Observed("codex") ? "observed; see timestamp" : "not observed; review /hooks",
                 Footer = "native thread-name/git-branch fields; setup --status-line or --desktop configures them reversibly; native styling",
                 NameSynchronization = CapabilityMatrix.CodexNameModes,
-                ApprovalResolution = "PermissionRequest is provisional; verified owning-runtime waitingOnApproval status confirms a human wait (5-second grace from the first report) and a fresh negative status suppresses a stale request; without a verified runtime (or when the status read fails) the request is never confirmed: after 15 seconds it shows a visibly unverified \"possibly waiting for approval\" chip with no sound, reminder or escalation (no timing-based confirmation); denial-only signal unverified",
+                ApprovalResolution = "PermissionRequest is provisional; verified owning-runtime or shared-backend waitingOnApproval status (the shared backend is a human-wait confirmer alongside the owning runtime, read on the observer path) confirms a human wait (5-second grace from the first report) and a fresh negative status suppresses a stale request; without a verified runtime (or when the status read fails) the request is never confirmed: after 15 seconds it shows a visibly unverified \"possibly waiting for approval\" chip with no sound, reminder or escalation (no timing-based confirmation); denial-only signal unverified",
                 Questions = "request_user_input question waits from PreToolUse (no approval hook); owning-runtime waitingOnUserInput status read as confirmation evidence only; Default-mode rejections clear at Stop; request_user_input_async not offered at 0.164.0 (unverified)",
                 TrustStatus = "not independently verified; review /hooks",
-                Attachment = "managed local sessions own one dedicated runtime; fallback --no-daemon retains local attachment; a shared backend is observed without ownership and its conversations carry no terminal binding until task 4.2; remote origin remains unverified"
+                Attachment = "managed local sessions own one dedicated runtime; fallback --no-daemon retains local attachment; a shared backend is observed without ownership and its conversations carry no terminal binding: navigation, title and color are unfinished by user scope decision 2026-11-13, not a provider restriction (supported routes: the Codex profile and codex --no-daemon); remote origin remains unverified"
             },
             WindowsTerminal = new
             {
@@ -72,10 +72,34 @@ public sealed class DiagnosticsReporter(DataPaths paths, IMicrophoneActivitySour
                 Scope = "Current connected Windows interactive session; unavailable or disconnected state disables reminders. GetLastInputInfo reports a 32-bit millisecond uptime tick; elapsed values above half the uint32 range (about 24.8 days) are treated as ambiguous, and future, stale or out-of-range observations are unknown."
             },
             ConfirmationCoverage = new ConfirmationCoverageReporter(paths).Report(),
+            NativeSessions = NativeSessionsReport(),
             CapabilityMatrix = new { Claude = CapabilityMatrix.ClaudeVersion, Codex = CapabilityMatrix.CodexVersion, Rows = CapabilityMatrix.Rows },
             IdentityDocumentation = "docs/session-identity.md",
             CapabilitiesFile = "docs/compatibility.md"
         };
     }
     private bool Observed(string provider) => File.Exists(Path.Combine(paths.Root, provider + "-observed.json"));
+
+    // Per provider state of the adopted direct sessions' navigation, title and color, and of plain default Codex. The setting is read
+    // from the selected data directory's configuration; the texts are the matrix rows' account in short form.
+    private object NativeSessionsReport()
+    {
+        var enabled = new ConfigStore(paths).Read().NativePresentation;
+        const string navigation = "Windows Terminal: window only with the setting off, the session's tab with it on; VS Code: the registered terminal through the bridge";
+        const string presentation = "supported behind the setting (off by default): session title and identity palette background after the first accepted hook, not before startup; exit, switch-off or loss of the verified agent or shell resets the colors with OSC 110/111 and gives back the prior title on the recorded shell only; the reset in Windows Terminal and VS Code is assumed until the 6.1 trial";
+        return new
+        {
+            Setting = enabled ? "on" : "off",
+            SettingName = "Title and color native sessions (tray menu)",
+            ClaudeDirect = new { Navigation = navigation, NavigationNow = enabled ? "tab (Windows Terminal)" : "window only (Windows Terminal)", TitleAndColor = presentation },
+            CodexNoDaemon = new { Navigation = navigation, NavigationNow = enabled ? "tab (Windows Terminal)" : "window only (Windows Terminal)", TitleAndColor = presentation },
+            CodexPlainDefault = new
+            {
+                Supported = "tracking, alerts, name sync and permission status (the shared backend confirms a human wait alongside the owning runtime)",
+                Unfinished = "navigation, title and color: unfinished by user scope decision 2026-11-13, not a provider restriction; the setting does not apply",
+                Routes = "the Codex profile (Start-Codex) or codex --no-daemon"
+            },
+            ClaudeModeCrossCheck = "not applicable: Claude Code has no shared backend, so its mode keeps the command-line classification"
+        };
+    }
 }

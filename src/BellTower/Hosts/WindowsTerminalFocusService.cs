@@ -9,7 +9,9 @@ public sealed class WindowsTerminalFocusService(DataPaths paths, TerminalTabSele
     public FocusResult Focus(string attachmentId)
     {
         using var gate = new DataLock(paths, "presentation");
-        var attachment = new AttachmentStore(paths).Get(attachmentId);
+        var stored = new AttachmentStore(paths).Get(attachmentId);
+        // A native session whose title Bell Tower is allowed to manage is selected by that title like a managed launch.
+        var attachment = stored is null ? null : NativePresentation.Effective(stored, new ConfigStore(paths).Read().NativePresentation);
         if (attachment is not { EndedAt: null, Process: { } agent, Host.Kind: "windows-terminal", Host.Shell: { } shell })
         {
             return new(false, "unavailable", "The Windows Terminal session is no longer registered.");

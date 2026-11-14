@@ -18,7 +18,7 @@ Native adoption, terminal disconnection, runtime reconnection and verified termi
 - **THEN** its wait time, acknowledgment, viewed state and palette remain unchanged and no duplicate alert is created
 
 ### Requirement: Presentation ownership for adopted terminals
-Bell Tower SHALL change an adopted terminal's title or colors only when the user's configured presentation policy allows that surface and its destination, write mechanism and restoration behavior are verified. The opt-in for adopted sessions SHALL be one global native-presentation setting that is off by default and applies equally to Claude Code and Codex direct sessions. Without an applicable opt-in, adoption SHALL track the conversation without acquiring terminal presentation ownership. A conversation on a Codex shared backend SHALL NOT acquire terminal presentation in this change. A supported first-hook presentation SHALL be described as occurring after the first accepted event rather than before native startup. Loss of a verified destination SHALL stop further writes; restoration SHALL NOT write to a reused or unrelated shell.
+Bell Tower SHALL change an adopted terminal's title or colors only when the user's configured presentation policy allows that surface and its destination, write mechanism and restoration behavior are verified. The opt-in for adopted sessions SHALL be one global native-presentation setting that is off by default and applies equally to Claude Code and Codex direct sessions. Without an applicable opt-in, adoption SHALL track the conversation without acquiring terminal presentation ownership. A conversation on a Codex shared backend SHALL NOT acquire terminal presentation in this change. A supported first-hook presentation SHALL be described as occurring after the first accepted event rather than before native startup. Loss of a verified destination SHALL stop further writes; restoration SHALL NOT write to a reused or unrelated shell. For an adopted direct session the title SHALL be restored to its prior value and a background Bell Tower wrote SHALL be reset to the terminal default rather than restored, because its prior value is not recorded.
 
 #### Scenario: Native presentation is off
 - **WHEN** a plain Claude Code or standalone Codex session is adopted and the native-presentation setting is off
@@ -26,7 +26,7 @@ Bell Tower SHALL change an adopted terminal's title or colors only when the user
 
 #### Scenario: Native presentation is on
 - **WHEN** the setting is on and an adopted direct session has a verified agent process and shell
-- **THEN** Bell Tower applies the session's title and background after the first accepted hook and restores only what it changed when the session ends
+- **THEN** Bell Tower applies the session's title and its own identity palette background after the first accepted hook; when the session ends or the setting is switched off it restores the prior title and resets the background it wrote to the terminal default
 
 #### Scenario: Shared-backend Codex with native presentation on
 - **WHEN** the setting is on and a conversation runs on a Codex shared backend
@@ -36,9 +36,13 @@ Bell Tower SHALL change an adopted terminal's title or colors only when the user
 - **WHEN** the first accepted hook arrives after the native client has already displayed its initial interface
 - **THEN** any permitted decoration begins after adoption and diagnostics do not claim pre-launch coloring
 
-#### Scenario: No safe restoration mechanism is available
-- **WHEN** an adopted host can accept a color write but its prior presentation or safe restoration cannot be established
-- **THEN** Bell Tower leaves that surface unchanged and reports the presentation limitation independently of tracking
+#### Scenario: Simultaneous native sessions are told apart
+- **WHEN** the setting is on and two adopted direct sessions of either provider run at the same time
+- **THEN** each tab shows its own session's palette background, matching that session's chip and badge
+
+#### Scenario: Restoration target is gone or reused
+- **WHEN** a session ends after its recorded shell has exited or its PID was reused by another process
+- **THEN** Bell Tower discards the restoration record without writing any title or color
 
 #### Scenario: Existing managed launch has explicit presentation controls
 - **WHEN** an existing Bell Tower launch supplies valid title/background ownership and opt-out controls

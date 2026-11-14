@@ -6,6 +6,14 @@ public static class WindowProbe
 {
     public static long SingleVisibleWindow(int pid)
     {
+        var windows = VisibleWindows(pid);
+        return windows.Count == 1 ? windows[0] : 0;
+    }
+
+    public static int VisibleWindowCount(int pid) => VisibleWindows(pid).Count;
+
+    private static List<long> VisibleWindows(int pid)
+    {
         var windows = new List<long>();
         EnumWindows((handle, _) =>
         {
@@ -17,7 +25,7 @@ public static class WindowProbe
 
             return true;
         }, IntPtr.Zero);
-        return windows.Count == 1 ? windows[0] : 0;
+        return windows;
     }
 
     private delegate bool Callback(IntPtr handle, IntPtr parameter);

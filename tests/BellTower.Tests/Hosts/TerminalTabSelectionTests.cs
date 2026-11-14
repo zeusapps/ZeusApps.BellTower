@@ -106,6 +106,52 @@ public sealed class TerminalTabSelectionTests
         Assert.Equal("Duplicate friendly session name", console.Title);
     }
 
+    private static void SaveNative(TestWorkspace workspace, string provider, string mode)
+    {
+        var process = ProcessProbe.Identify(Environment.ProcessId)!;
+        var outcome = BellTower.Core.NativeAdoption.Apply(new("attachment", provider, process,
+            new("windows-terminal", process, process, 1234, "terminal-session") { ShellSource = "ancestry" }, workspace.Root, DateTimeOffset.UtcNow)
+        { Ownership = "observed" }, "session", mode, BellTower.Providers.AgentModeClassifier.MayShareBackend(provider));
+        new AttachmentStore(workspace.Paths).Save(outcome.Attachment);
+    }
+
+    [Theory]
+    [InlineData("claude", "interactive-client")]
+    [InlineData("codex", "embedded-runtime")]
+    public void AdoptedDirectSessionsSelectTheirTabOnlyWhileTheNativePresentationSettingIsOn(string provider, string mode)
+    {
+        using var workspace = new TestWorkspace();
+        SaveNative(workspace, provider, mode);
+        var console = new ConsoleSession();
+        var target = new Tab(() => console.Title);
+        var tabs = new Tabs { Read = () => [target] };
+        var windows = new Windows();
+        var focus = new WindowsTerminalFocusService(workspace.Paths, new(tabs), new(windows), (_, _) => console, _ => true);
+        var off = focus.Focus("attachment");
+        Assert.True(off.Success);
+        Assert.Equal("window only", off.Precision);
+        Assert.Equal(0, target.Selections);
+
+        new ConfigStore(workspace.Paths).Update(c => c.NativePresentation = true);
+        var on = focus.Focus("attachment");
+        Assert.Equal("exact tab", on.Precision);
+        Assert.Equal(1, target.Selections);
+        Assert.Equal("Duplicate friendly session name", console.Title);
+    }
+
+    [Fact]
+    public void ASharedBackendConversationNeverSelectsATabEvenWithTheSettingOn()
+    {
+        using var workspace = new TestWorkspace();
+        SaveNative(workspace, "codex", "shared-backend");
+        new ConfigStore(workspace.Paths).Update(c => c.NativePresentation = true);
+        var tabs = new Tabs();
+        var result = new WindowsTerminalFocusService(workspace.Paths, new(tabs), new(new Windows()),
+            (_, _) => throw new Exception("Unexpected console access"), _ => true).Focus("attachment");
+        Assert.False(result.Success);
+        Assert.Empty(tabs.Windows);
+    }
+
     [Fact]
     public void ClosedAttachmentsNeverOpenAConsoleOrReadTabs()
     {

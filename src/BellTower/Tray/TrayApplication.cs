@@ -103,6 +103,16 @@ public sealed class TrayApplication : ApplicationContext
             CheckOnClick = true
         };
         voice.Click += (_, _) => configuration.Update(c => c.Voice = voice.Checked);
+        var nativePresentation = new ToolStripMenuItem("Title and color native sessions")
+        {
+            CheckOnClick = true,
+            ToolTipText = "Off by default. Applies to running sessions without a restart and lets a click select the Windows Terminal tab. Applies to plain claude and codex --no-daemon (not plain default codex): the session title and palette color. Turning it off restores the previous title and resets colors to the terminal default."
+        };
+        nativePresentation.Click += (_, _) =>
+        {
+            configuration.Update(c => c.NativePresentation = nativePresentation.Checked);
+            config = configuration.Read();
+        };
         var microphoneAwareVoice = new ToolStripMenuItem("Suppress voice while microphone is active") { CheckOnClick = true };
         microphoneAwareVoice.Click += (_, _) => configuration.Update(c => c.MicrophoneAwareVoice = microphoneAwareVoice.Checked);
         var reminderMenu = new ToolStripMenuItem("Attention reminders");
@@ -120,7 +130,7 @@ public sealed class TrayApplication : ApplicationContext
             config = configuration.Read();
         };
         reminderMenu.DropDownItems.AddRange([remindersEnabled, reminderSettings]);
-        menu.Items.AddRange([mute, voice, microphoneAwareVoice, reminderMenu]);
+        menu.Items.AddRange([mute, voice, microphoneAwareVoice, nativePresentation, reminderMenu]);
         var tones = new ToolStripMenuItem("Notification tone");
         tones.DropDownItems.Add("Default event tones", null, (_, _) => new ToneLibrary(paths).Reset());
         tones.DropDownItems.Add("Classic chime", null, (_, _) => new ToneLibrary(paths).UseClassicChime());
@@ -153,6 +163,7 @@ public sealed class TrayApplication : ApplicationContext
             mute.Checked = config.Muted;
             voice.Checked = config.Voice;
             microphoneAwareVoice.Checked = config.MicrophoneAwareVoice;
+            nativePresentation.Checked = config.NativePresentation;
             remindersEnabled.Checked = config.Reminders.Enabled;
             microphoneAwareVoice.ToolTipText = microphone.GetSnapshot().Reason;
             tones.Text = "Notification tone: " + (config.ToneName ?? "Event tones");
@@ -409,7 +420,7 @@ public sealed class TrayApplication : ApplicationContext
             new LocalLog(paths).Write("viewed-wait-save-failed");
             overview.SetStatus("Session focused; the timer preference could not be saved.");
         }
-        if (!result.Success)
+        if (NavigationOutcome.NeedsNotice(result))
         {
             tray.ShowBalloonTip(3000, "Bell Tower", result.Message, ToolTipIcon.Info);
         }

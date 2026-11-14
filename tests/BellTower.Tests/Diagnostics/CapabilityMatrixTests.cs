@@ -121,6 +121,61 @@ public sealed class CapabilityMatrixTests
 
     private static CapabilityRow Row(string surface) => CapabilityMatrix.Rows.Single(row => row.Surface == surface);
 
+    [Fact]
+    public void AdoptedDirectSessionsAndPlainDefaultCodexAreStatedHonestlyPerProvider()
+    {
+        var navigation = Row("Terminal navigation: adopted direct sessions (plain claude, codex --no-daemon)");
+        var presentation = Row("Title and color: adopted direct sessions (plain claude, codex --no-daemon)");
+        foreach (var provider in new[] { navigation.Claude, navigation.Codex, presentation.Claude, presentation.Codex })
+        {
+            Assert.Equal(CapabilityMatrix.Supported, provider.Status);
+        }
+        Assert.Contains("window only", navigation.Claude.Detail);
+        Assert.Contains("window only", navigation.Codex.Detail);
+        Assert.Contains("Title and color native sessions", navigation.Claude.Detail);
+        Assert.Contains("OSC 110/111", presentation.Claude.Detail);
+        Assert.Contains("assumed until the 6.1 trial", presentation.Claude.Detail);
+        Assert.Contains("assumed", presentation.Codex.Detail);
+        Assert.DoesNotContain("pre-launch coloring for native", presentation.Claude.Detail.Replace("no pre-launch coloring for native sessions", ""));
+
+        var tracking = Row("Plain default codex (shared backend): tracking, alerts, name sync and permission status");
+        Assert.Equal(CapabilityMatrix.NotApplicable, tracking.Claude.Status);
+        Assert.Equal(CapabilityMatrix.Supported, tracking.Codex.Status);
+        var unfinished = Row("Plain default codex (shared backend): navigation, title and color");
+        Assert.Equal(CapabilityMatrix.NotApplicable, unfinished.Claude.Status);
+        Assert.Equal(CapabilityMatrix.Unverified, unfinished.Codex.Status);
+        Assert.Contains("unfinished: user scope decision 2026-11-13, not a provider restriction", unfinished.Codex.Detail);
+        Assert.Contains("Codex profile", unfinished.Codex.Detail);
+        Assert.Contains("codex --no-daemon", unfinished.Codex.Detail);
+        Assert.Null(unfinished.Proof);
+    }
+
+    [Theory]
+    [InlineData(false, "off", "window only (Windows Terminal)")]
+    [InlineData(true, "on", "tab (Windows Terminal)")]
+    public void DoctorReportsTheNativePresentationStateAndBothPrecisionsPerProvider(bool enabled, string state, string now)
+    {
+        using var workspace = new TestWorkspace();
+        new ConfigStore(workspace.Paths).Update(config => config.NativePresentation = enabled);
+        using var report = JsonDocument.Parse(Json.Encode(new DiagnosticsReporter(workspace.Paths).Report()));
+        var native = report.RootElement.GetProperty(Name(report.RootElement, "nativeSessions"));
+        Assert.Equal(state, native.GetProperty(Name(native, "setting")).GetString());
+        foreach (var provider in new[] { "claudeDirect", "codexNoDaemon" })
+        {
+            var item = native.GetProperty(Name(native, provider));
+            Assert.Equal(now, item.GetProperty(Name(item, "navigationNow")).GetString());
+            Assert.Contains("assumed until the 6.1 trial", item.GetProperty(Name(item, "titleAndColor")).GetString());
+        }
+        var plain = native.GetProperty(Name(native, "codexPlainDefault"));
+        Assert.Contains("not a provider restriction", plain.GetProperty(Name(plain, "unfinished")).GetString());
+        Assert.Contains("codex --no-daemon", plain.GetProperty(Name(plain, "routes")).GetString());
+        Assert.Contains("not applicable", native.GetProperty(Name(native, "claudeModeCrossCheck")).GetString());
+        var codex = report.RootElement.GetProperty(Name(report.RootElement, "codex"));
+        var approval = codex.GetProperty(Name(codex, "approvalResolution")).GetString()!;
+        Assert.Contains("shared-backend waitingOnApproval", approval);
+        Assert.Contains("alongside the owning runtime", approval);
+    }
+
     // The per-mode states are the single account of native-name and runtime-status access. Nothing in them may read as a provider
     // restriction or as complete without backing: gaps are unverified (owned by a named task or change), absence of a mode is not
     // applicable, and only the owned and shared observer paths with automated coverage are supported.
@@ -132,7 +187,7 @@ public sealed class CapabilityMatrixTests
         Assert.Equal(CapabilityMatrix.Unverified, Row(ModeSurfaces[2]).Codex.Status);
         Assert.Equal(CapabilityMatrix.Unverified, Row(ModeSurfaces[3]).Codex.Status);
         Assert.Equal(CapabilityMatrix.Unverified, Row(ModeSurfaces[4]).Codex.Status);
-        Assert.Contains("task 4.2", Row(ModeSurfaces[3]).Codex.Detail);
+        Assert.Contains("user scope decision 2026-11-13", Row(ModeSurfaces[3]).Codex.Detail);
         Assert.Contains("task 6.1", Row(ModeSurfaces[4]).Codex.Detail);
         Assert.Contains("elevated", Row(ModeSurfaces[4]).Codex.Detail);
         // Claude is treated as direct: its native-title write stays unfinished and owned by the separate change, never restricted or complete.
@@ -150,7 +205,7 @@ public sealed class CapabilityMatrixTests
         Assert.Contains(CodexAccessStatus.Unverified, CapabilityMatrix.CodexNameModes);
         Assert.Contains(CodexAccessStatus.NoRuntime, Row(ModeSurfaces[2]).Codex.Detail);
         Assert.Contains(CodexAccessStatus.Unverified, Row(ModeSurfaces[4]).Codex.Detail);
-        Assert.Contains("task 4.2", CapabilityMatrix.CodexNameModes);
+        Assert.Contains("user scope decision 2026-11-13", CapabilityMatrix.CodexNameModes);
         Assert.Contains("task 6.1", CapabilityMatrix.CodexNameModes);
         Assert.Contains("read through the tray-home backend, which does not host it", CapabilityMatrix.CodexNameModes);
         Assert.DoesNotContain("is not read through", CapabilityMatrix.CodexNameModes);

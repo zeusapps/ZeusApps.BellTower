@@ -9,12 +9,22 @@ public sealed class IsolatedTerminalPresentationWriter(DataPaths paths, string? 
     public int LaunchCount => runner.LaunchCount;
     public Task<bool> WriteAsync(DesiredTerminalPresentation desired, CancellationToken cancellation)
     {
+        var start = Start("--desired");
+        return runner.RunAsync(start, Json.Encode(desired), TimeSpan.FromSeconds(3), cancellation);
+    }
+
+    public Task<bool> RestoreAsync(string attachmentId, CancellationToken cancellation) =>
+        runner.RunAsync(Start("--restore", attachmentId), "", TimeSpan.FromSeconds(3), cancellation);
+
+    private ProcessStartInfo Start(params string[] mode)
+    {
         var start = new ProcessStartInfo(executable ?? Environment.ProcessPath!) { WorkingDirectory = AppContext.BaseDirectory };
-        foreach (var argument in new[] { "sync-title", "--desired", "--data-dir", paths.Root })
+        start.ArgumentList.Add("sync-title");
+        foreach (var argument in mode.Concat(["--data-dir", paths.Root]))
         {
             start.ArgumentList.Add(argument);
         }
-        return runner.RunAsync(start, Json.Encode(desired), TimeSpan.FromSeconds(3), cancellation);
+        return start;
     }
 
     public void Dispose() => runner.Dispose();
