@@ -14,7 +14,7 @@ The user's testing in this conversation supplies live acceptance evidence; see [
 
 | Component | Observed version | Evidence |
 | --- | --- | --- |
-| .NET SDK | 10.0.114 | dotnet --info; target net10.0-windows; build and tests executed |
+| .NET SDK | 10.0.115 | dotnet --info; target net10.0-windows; build and tests executed |
 | Claude Code | 2.1.311 | Installed CLI version probe in [post-migration acceptance](../openspec/changes/archive/2026-10-28-fix-codex-hook-command-shell/evidence/user-live-acceptance-001.md); pinned native shell probe used 2.1.310 |
 | Codex CLI | 0.164.0 | Direct native executable version probe and [native cmd fallback evidence](../openspec/changes/archive/2026-10-28-fix-codex-hook-command-shell/evidence/native-investigation-009.md) |
 | VS Code | 1.141.1 | code --version |
