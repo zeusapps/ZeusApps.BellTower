@@ -43,3 +43,5 @@ Both current independent light reviews passed with no findings on the unchanged 
 - Evidence gaps / provider restrictions: runtime/live acceptance is outside this prose-only correction and remains required by the retained field acceptance plan.
 - Commit: scope cancellation committed as `6651efc64c14037e8eacebb917e78dd9a90e8eb7` on `remove-remote-notification-plans`; unrelated untracked drafts preserved. No push, merge, installation or publication.
 - OpenSpec task reconciliation: all field acceptance tasks remain unchecked; this cancellation does not satisfy implementation tasks.
+
+- 2026-11-22: Planning revised by the orchestrator after user decisions: published 0.1.9 is the baseline; publisher-signed updates are deferred to a later release with SHA-256 verification kept and stated in the release notes; only adopt-native-sessions-from-hooks must still land; verify-codex-repository-subagents and sync-native-session-titles move to a later release; post-0.1.9 work joins the scope (new tasks 1.4, 2.7, 4.5; 1.1, 1.3, 2.1, 3.3, 4.2, 4.4 adjusted). No implementation.

@@ -2,19 +2,23 @@
 
 ## Purpose
 
-Require installed-package evidence for the full next release so isolated component tests cannot conceal the Windows Claude failures reported in 0.1.8.
+Require installed-package evidence for the full next release so isolated component tests cannot conceal the Windows Claude failures reported in 0.1.8 or regressions in work completed after 0.1.9.
 
 ## ADDED Requirements
 
 ### Requirement: Complete next-release scope
-The release SHALL include the eight retained feature changes in this release plan, the retained numbered field findings, badge identity parity and VS Code foreground activation. The user's 2026-10-29 cancellation removes remote webhook notifications, including Teams, from implementation and acceptance scope; field finding 12 retains local reminders only. Cancellation SHALL NOT be reported as implementation completion. No retained feature SHALL be labeled deferred or complete solely because its proposal or unit fixtures exist.
+The release SHALL include the retained feature changes and the post-0.1.9 work named in this release plan, the retained numbered field findings, badge identity parity and VS Code foreground activation. The user's 2026-10-29 cancellation removes remote webhook notifications, including Teams, from implementation and acceptance scope; field finding 12 retains local reminders only. Cancellation SHALL NOT be reported as implementation completion. No retained feature SHALL be labeled deferred or complete solely because its proposal or unit fixtures exist. The user's 2026-11-22 decision defers publisher-signed updates to a later release: this release SHALL keep SHA-256 update verification, SHALL NOT claim a publisher signature, and its release notes SHALL state that updates are hash-verified only. The deferral SHALL NOT be reported as implementation completion.
 
 #### Scenario: Release candidate review
 - **WHEN** the candidate is assessed for publication
 - **THEN** each scope item maps to implemented tasks, tests and explicit acceptance evidence or a blocking unmet prerequisite
 
+#### Scenario: Deferred update signing
+- **WHEN** the candidate is assessed while publisher signing is deferred
+- **THEN** the release notes state that updates are verified by SHA-256 only, no signing scenario is counted as passed, and the signing change remains open for a later release
+
 ### Requirement: Installed-package acceptance
-Release acceptance SHALL exercise the actual packaged hook command and versioned layout against isolated data, baseline 0.1.8 upgrade and rollback, parallel Claude and Codex sessions sharing a launch directory with distinct working checkouts, matched feature conformance and mixed-provider scenarios. It SHALL include hook latency/durability, metadata recovery, process liveness, foreground navigation, audio/reminders and signature policy.
+Release acceptance SHALL exercise the actual packaged hook command and versioned layout against isolated data, baseline 0.1.9 upgrade and rollback, parallel Claude and Codex sessions sharing a launch directory with distinct working checkouts, matched feature conformance and mixed-provider scenarios. It SHALL include hook latency/durability, metadata recovery, process liveness, foreground navigation, audio/reminders, update hash verification, native session adoption, the hook-started tray with its user-stop suppression, and recovery of oversized monitoring state.
 
 #### Scenario: Representative field scenario
 - **WHEN** five isolated conversations covering each provider and a mixed-provider run share a main launch checkout but have separate ticket worktrees and historical names
@@ -25,10 +29,10 @@ Release acceptance SHALL exercise the actual packaged hook command and versioned
 - **THEN** the recorded end-to-end latency and delivered-event counts satisfy the ingress contract rather than only development-executable timings
 
 ### Requirement: Honest silent acceptance evidence
-Automated acceptance SHALL use isolated data/settings/transcripts, disposable controlled hosts, silent sinks, fake microphone/idle observations and disposable signing keys. User-confirmed historical behavior, retained fixture evidence, desktop probes and new live acceptance SHALL be recorded separately; unavailable authenticated or RDP evidence SHALL NOT be represented as passed.
+Automated acceptance SHALL use isolated data/settings/transcripts, disposable controlled hosts, silent sinks, fake microphone/idle observations and disposable update fixtures. User-confirmed historical behavior, retained fixture evidence, desktop probes and new live acceptance SHALL be recorded separately; unavailable authenticated or RDP evidence SHALL NOT be represented as passed.
 
 #### Scenario: No external test credentials
-- **WHEN** production signing credentials and authenticated provider sessions are unavailable
+- **WHEN** authenticated provider sessions are unavailable
 - **THEN** fixture verification proceeds and the remaining live prerequisites are explicitly recorded without reading production secrets or sending alerts
 
 #### Scenario: Candidate publication readiness
