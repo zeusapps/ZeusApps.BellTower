@@ -4,6 +4,9 @@ namespace BellTower.IO;
 
 public sealed class LaunchPresentationStore(DataPaths paths)
 {
+    // How long a prepared, unconsumed launch palette stays valid for adoption; allocation reserves its color for the same time.
+    public static readonly TimeSpan Validity = TimeSpan.FromHours(24);
+
     private string FilePath(string id) => Path.Combine(paths.Root, "launches", ContentHash.Compute(id) + ".json");
 
     public LaunchPresentation Prepare(string id, ProcessIdentity shell)
@@ -48,7 +51,7 @@ public sealed class LaunchPresentationStore(DataPaths paths)
         return !presentation.PaletteConsumed && presentation.AttachmentId == id && presentation.Shell == shell && shell is not null &&
             (!requireLive || ProcessProbe.Identify(shell.Pid) == shell) &&
             (observedAt ?? DateTimeOffset.UtcNow) >= presentation.CreatedAt &&
-            (observedAt ?? DateTimeOffset.UtcNow) - presentation.CreatedAt < TimeSpan.FromHours(24) &&
+            (observedAt ?? DateTimeOffset.UtcNow) - presentation.CreatedAt < Validity &&
             Palette.IsHex(presentation.Palette.Background) && Palette.IsHex(presentation.Palette.Accent) && Palette.IsHex(presentation.Palette.Foreground)
             ? presentation.Palette : null;
     }

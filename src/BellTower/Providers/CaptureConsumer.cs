@@ -74,9 +74,9 @@ public sealed class CaptureConsumer(DataPaths paths)
                     observation = observation with { AttachmentId = attachment.Id };
                 }
                 var launches = new LaunchPresentationStore(paths);
-                var palette = direct && !inherited ? launches.Consume(attachment.Id, attachment.Host.Shell, envelope.IngressAt, requireLive: false) : null;
+                Func<Palette?>? launchPalette = direct && !inherited ? () => launches.Consume(attachment.Id, attachment.Host.Shell, envelope.IngressAt, requireLive: false) : null;
                 new IdentityStore(paths).Get(observation.Key, observation.Directory,
-                    inherited ? null : IdentityText.Optional(promoted?.Name ?? envelope.Name), inherited ? null : IdentityText.Optional(promoted?.Change ?? envelope.Change), palette);
+                    inherited ? null : IdentityText.Optional(promoted?.Name ?? envelope.Name), inherited ? null : IdentityText.Optional(promoted?.Change ?? envelope.Change), launchPalette: launchPalette);
                 var transcript = envelope.TranscriptPath is { } candidate && Path.IsPathFullyQualified(candidate) ? candidate : null;
                 new IdentityStore(paths).Update(observation.Key, observation.Directory, value =>
                 {

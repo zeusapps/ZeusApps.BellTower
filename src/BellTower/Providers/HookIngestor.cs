@@ -27,10 +27,11 @@ public sealed class HookIngestor(DataPaths paths, Func<string, string, string?, 
             return;
         }
 
-        var initialPalette = dedicated ? new LaunchPresentationStore(paths).Consume(attachment.Id, attachment.Host.Shell) : null;
+        // The launch is consumed inside the identity step, under the identity lock, only when this call creates the identity.
+        Func<Palette?>? launchPalette = dedicated ? () => new LaunchPresentationStore(paths).Consume(attachment.Id, attachment.Host.Shell) : null;
         new IdentityStore(paths).Get(observation.Key, observation.Directory,
             dedicated ? IdentityText.Optional(Environment.GetEnvironmentVariable("BELLTOWER_NAME")) : null,
-            dedicated ? IdentityText.Optional(Environment.GetEnvironmentVariable("BELLTOWER_CHANGE")) : null, initialPalette);
+            dedicated ? IdentityText.Optional(Environment.GetEnvironmentVariable("BELLTOWER_CHANGE")) : null, launchPalette: launchPalette);
         try
         {
             var transcript = HookInput.Text(input, "transcript_path") is { } path && Path.IsPathFullyQualified(path) ? path : null;
