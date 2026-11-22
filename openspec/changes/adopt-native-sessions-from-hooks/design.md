@@ -132,10 +132,57 @@ Trial observation T-2: after a Windows restart no tray was running, so plain `cl
 - Suppression: choosing Exit in the tray, or an equivalent user stop command, records a user stop for the current Windows sign-in session (for example the token's logon session ID). Hooks do not start the tray while that record matches the current sign-in; starting the tray by hand clears it; a sign-out or restart makes it stale. A crash, an update or dev-build switch, or a management stop that restarts the tray is not a user stop. No start while an update or switch transaction is pending; the tray's own start gate remains authoritative.
 - Burst control: concurrent hooks from several sessions make at most one start attempt per bounded interval, through an exclusive-create attempt record in the data directory; the tray-instance mutex still guarantees one tray.
 - Launcher location: the ingress does not search for executables. Setup and the tray record the stable launcher path in the data directory; the ingress accepts only an absolute path to an existing regular file with the expected name and no reparse points. With no valid record it does not start anything, and doctor says so.
-- Process creation: the stable launcher with the normal tray arguments, quiet start, detached, with no inherited handles (a provider waits for the hook's output pipe to close), no console window, outside a provider job object that would end it with the hook, the launcher's directory as working directory, and the user's default environment rather than the provider's (no `CLAUDECODE`, `CODEX_*` or `BELLTOWER_*` leakage into the tray and the launches it starts).
+- Process creation: the stable launcher with the normal tray arguments, quiet start, detached, with no inherited handles (a provider waits for the hook's output pipe to close), no console window, no worse off than the user's shell (revised 2026-11-22: on Windows build 26300 every process, Explorer included, runs inside one session-wide job that cannot be left, so "outside any job" is unattainable; decision 10 defines the start), the launcher's directory as working directory, and the user's default environment rather than the provider's (no `CLAUDECODE`, `CODEX_*` or `BELLTOWER_*` leakage into the tray and the launches it starts).
 - Diagnostics report whether hook-start is available (launcher recorded), the latest attempt and its result, and whether a user stop suppresses it in this sign-in session.
 
 Alternatives: a sign-in Run entry is simpler and has no hook-path cost but does not cover a tray that crashed or was stopped by an update failure; a warning only leaves the session missing. Both rejected by the user; a sign-in entry can still be added later.
+
+### 10. The hook starts the tray as a child of the user's shell (user decision, 2026-11-22)
+
+Trial T-12: after a restart the first plain `claude` hook's start was refused with `provider-job-breakaway-incomplete`. DEV-058 found the cause. Every process in the sign-in session runs inside one session-wide job (flags BREAKAWAY_OK and SILENT_BREAKAWAY_OK, no kill-on-close) that breakaway, parent attributes and job lists cannot leave. Claude Code 2.1.330 adds no job; Codex 0.171.0 adds a kill-on-close job that breakaway does leave. The DEV-056 check that the child is in no job at all can therefore never pass, and it is removed.
+
+- Primary start: create the tray with `PROC_THREAD_ATTRIBUTE_PARENT_PROCESS` set to the desktop shell, so it inherits the shell's jobs, token and environment and never the provider's.
+  - Find the shell through `GetShellWindow` and its process, and verify its image, session, owner and creation time. If no shell can be verified, start nothing and keep the capture queued.
+  - `bInheritHandles = FALSE`, so no handle from the shell or the hook is inherited.
+  - The shell's token decides elevation, so an elevated hook still yields a non-elevated tray. This is verified in the trial.
+- Child-side self-check: on start, the tray queries its immediate job. If it has KILL_ON_JOB_CLOSE, the tray records a log code and a doctor field and exits. This is diagnostic first, so a false trigger is visible rather than silently keeping the tray down.
+- Fallback: when the shell start fails, a per-user scheduled task with no trigger, started on demand.
+  - It runs with the limited interactive principal, no execution time limit, no battery conditions, and the ignore-new instance policy.
+  - Setup creates it, doctor reports it and setup removal deletes it. It is not a sign-in entry: it never runs on its own.
+- Unchanged: the user-stop suppression, the one-attempt-per-interval burst control, the launcher record checks, no start during an update or switch, and the hook never waiting.
+- Risk: some security products flag a changed parent process. Diagnostics record which route started the tray, so the fallback can be chosen if that becomes an issue.
+
+### 11. Terminal titles for native sessions are opt-in (user decision, 2026-11-22)
+
+Trial T-5: the providers overwrite the terminal title. Codex rewrites it about 20 times a second during a turn, and Claude Code writes its own conversation title. Writing after the provider cannot win.
+
+- Setup offers an opt-in step that disables the provider's own terminal title:
+  - Claude Code: `CLAUDE_CODE_DISABLE_TERMINAL_TITLE=1` in the settings `env` block.
+  - Codex: the `[tui] terminal_title` setting, but only after a probe shows that this value actually stops Codex's title writes.
+  - The step follows the existing ownership, backup, repeat and removal rules, and its consent text says the setting applies to the whole provider profile.
+- With the step applied, adopted direct sessions get Bell Tower's title as decision 5 describes, and Windows Terminal tab navigation works through it.
+- Without it, native sessions get color and badge only. Bell Tower writes no title, Windows Terminal navigation is reported as window only with the stated reason, and the capability matrix and doctor say which state applies, per provider.
+
+### 12. Confirmed waits from provider evidence, not timing (user decision, 2026-11-22)
+
+Trials T-9 and T-10. A real `codex --no-daemon` approval stays provisional, because the embedded runtime exposes no status endpoint. A declined Claude Code permission prompt fires no hook, so the wait clears only at the next prompt.
+
+- First, a probe captures the real Codex `PermissionRequest` payload and the related transcript records for a held approval, an automatic review and a decline, with isolated provider homes.
+- Then one shared reducer rule for both providers:
+  - A provisional wait becomes confirmed when the session's evidence shows that a human must decide, from the Codex approval reviewer setting or an approval record in its transcript.
+  - A wait clears when the evidence shows the decision was made, including a decline.
+  - Timing never confirms a wait.
+- Thin adapters:
+  - Codex: the approval reviewer setting, or the transcript approval record, whichever the probe shows is reliable.
+  - Claude Code: a bounded read of the end of the transcript for the rejected tool result and the interrupted-request record.
+- Reads are bounded, path-free in diagnostics, and never block the hook.
+
+### 13. Every click result is shown in Bell Tower's own notice (2026-11-22)
+
+ANALYSIS-4600 found that balloon visibility depends on Windows Focus and notification settings that applications cannot detect. Every click result that needs a reason is therefore shown in Bell Tower's own notice, with a balloon as an optional extra.
+
+- The notice is topmost from creation and is never activated (ANALYSIS-4601), so the terminal the click focused keeps the keyboard.
+- Stale-key and navigator-failure clicks are logged and explained too (ANALYSIS-4602).
 
 ## Risks / Trade-offs
 

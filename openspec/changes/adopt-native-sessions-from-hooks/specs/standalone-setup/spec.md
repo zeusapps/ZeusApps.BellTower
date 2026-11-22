@@ -39,3 +39,14 @@ Bell Tower SHALL report native adoption capabilities separately for conversation
 #### Scenario: Both providers share an adoption policy
 - **WHEN** equivalent native adoption scenarios occur in Claude Code, Codex or mixed simultaneous sessions
 - **THEN** the same user controls and evidence rules apply, with adapter-specific mechanisms, and the only parity gap is the documented shared-Codex terminal gap
+
+### Requirement: Opt-in provider title control
+Setup SHALL offer, for each provider, an opt-in step that disables the provider's own terminal title: `CLAUDE_CODE_DISABLE_TERMINAL_TITLE=1` in the Claude Code settings `env` block, and the Codex title setting once a probe has verified that it stops Codex's title writes. The step SHALL require explicit consent, state that it applies to the whole provider profile, preview before applying, back up the changed file, be idempotent, and be removable without touching unrelated settings.
+
+#### Scenario: Apply and remove
+- **WHEN** the user previews, applies, repeats and removes the title step for one provider
+- **THEN** the preview shows the exact change, the repeat changes nothing, and removal restores the previous value while other settings and the other provider stay unchanged
+
+#### Scenario: Unverified provider setting
+- **WHEN** the provider setting has not been verified to stop the provider's title writes
+- **THEN** setup does not offer the step for that provider and doctor states the limitation

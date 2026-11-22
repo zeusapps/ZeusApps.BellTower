@@ -30,6 +30,36 @@ Scope was reduced on 2026-11-13 (design decision 8). Completed tasks are unchang
 - [ ] 4.5 Start a stopped tray from the hook (design decision 9, user decision 2026-11-15, trial observation T-2), the same for both providers. After persisting the capture the ingress checks the tray-instance mutex and, when no tray runs, starts the recorded stable launcher detached: no inherited handles, no console window, outside the provider's job, the user's default environment, never waiting. Setup and the tray record the launcher path; the ingress validates it. Tray Exit (and an equivalent user stop command) records a user stop for the current sign-in session that suppresses hook starts until the tray is started by hand or the user signs in again; crash, update, dev switch and restarting management stops do not. At most one attempt per bounded interval; nothing starts while an update or switch is pending. Doctor reports availability, the last attempt and suppression. Verify for both providers: hook with no tray starts exactly one tray that consumes the queue; tray running costs only the mutex check (measure hook latency both ways); user Exit then hook starts nothing; stale sign-in record is ignored; concurrent hooks start one tray; missing or invalid launcher record starts nothing; the hook returns while the started tray keeps running and its output pipe is closed; the tray does not see `CLAUDECODE`, `CODEX_*` or `BELLTOWER_*` from the hook; no test starts a real tray.
 - [ ] 4.4 Keep managed launches unchanged: pre-launch coloring, native-name controls and final shell restoration. Verify a mixed managed and native run of both providers does not inherit stale launch metadata, replay sounds or reset waiting episodes.
 
+- [ ] 4.6 Rework the hook tray start (design decision 10, user decision 2026-11-22).
+  - Create the tray as a child of the verified desktop shell with no inherited handles, and remove the DEV-056 any-job check.
+  - Add the tray's own kill-on-close self-check as a diagnostic.
+  - Add the on-demand per-user scheduled-task fallback, created and removed by setup and reported by doctor.
+  - Verify with tests for both providers:
+    - the shell lookup and its verification fail closed;
+    - no handles are inherited;
+    - the provider's environment does not reach the tray;
+    - the self-check records and exits on a kill-on-close job;
+    - the fallback is chosen only when the shell start fails;
+    - user-stop suppression, burst control and the update gate are unchanged.
+  - The previously failing `HookTrayStartTests` pass or are replaced by tests of the new contract.
+- [ ] 4.7 Add the opt-in provider title step (design decision 11).
+  - First probe that the Codex `[tui] terminal_title` value stops Codex's title writes. If it does not, offer the step for Claude Code only and record the Codex limitation.
+  - Bell Tower writes its native title only when the step is applied for that provider; otherwise color and badge only, with window-only navigation stated.
+  - Verify the preview, apply, repeat and remove behavior, backups, and untouched unrelated settings for each provider with disposable settings. Cover doctor and the capability matrix.
+- [ ] 4.8 Capture the real Codex approval evidence (design decision 12).
+  - With isolated provider homes, record the `PermissionRequest` payload and the transcript records for a held approval, an automatic review and a decline from `codex --no-daemon`.
+  - Store redacted fixtures and choose the reliable signal. Record the evidence.
+- [ ] 4.9 Implement the shared wait rule with thin adapters (design decision 12).
+  - Codex: a held approval becomes a confirmed wait from the chosen signal.
+  - Claude Code: a declined prompt clears the wait from a bounded read of the end of the transcript.
+  - Timing never confirms a wait.
+  - Verify with fixture tests for both providers and a mixed case. Automatic review never alerts.
+- [ ] 4.10 Make every click result visible (design decision 13).
+  - The notice is always shown for a click that needs a reason; it is topmost from creation without activation (ANALYSIS-4600, ANALYSIS-4601).
+  - Stale-key and navigator-failure clicks are logged and explained (ANALYSIS-4602).
+  - Deserialized focus results are normalized (QA-5304), and the Codex matrix wording is aligned (ANALYSIS-4603).
+  - Add tests for the log codes and the notice's no-activate and close behavior (QA-5300), for both providers and both hosts.
+
 ## 5. Setup, diagnostics and documentation
 
 - [ ] 5.1 Confirm the committed native setup (`setup --host-bridge`, commit 2f1de7f, QA-003 and ANALYSIS-003) on the real installation during the 6.1 trial: preview, apply, repeat and remove for each provider, with profiles, aliases, unrelated settings and native hook trust preserved. Fix only what the trial shows broken.
@@ -38,7 +68,7 @@ Scope was reduced on 2026-11-13 (design decision 8). Completed tasks are unchang
 
 ## 6. Verify and close
 
-- [ ] 6.1 User-operated trial on an installed dev build, after `setup --host-bridge --apply` so the hooks call the current capture binary (Codex may ask to trust the changed hooks through `/hooks`). In Windows Terminal and VS Code, for plain `claude`, plain `codex --no-daemon` and plain default `codex`: session appears, alert on completion and on a real permission wait, click result, title and color with the setting off and on, exit restoration, two sessions in the same directory, one managed session alongside, and for task 4.5: with no tray after a restart the first hook starts it and the session appears; after tray Exit a hook does not restart it. Record passed, failed and not performed per provider and host with the provider versions. This trial is the acceptance evidence for tasks 4.1, 4.3, 4.4, 4.5 and 5.1.
+- [ ] 6.1 User-operated trial (repeated after tasks 4.6-4.10, user decision 2026-11-22) on an installed dev build, after `setup --host-bridge --apply` so the hooks call the current capture binary (Codex may ask to trust the changed hooks through `/hooks`). In Windows Terminal and VS Code, for plain `claude`, plain `codex --no-daemon` and plain default `codex`: session appears, alert on completion and on a real permission wait, click result, title and color with the setting off and on, exit restoration, two sessions in the same directory, one managed session alongside, and for task 4.5: with no tray after a restart the first hook starts it and the session appears; after tray Exit a hook does not restart it. Record passed, failed and not performed per provider and host with the provider versions. This trial is the acceptance evidence for tasks 4.1, 4.3, 4.4, 4.5 and 5.1.
 - [ ] 6.4 One QA review and one code-analyzer review on the final stable target of tasks 4.1 to 5.3 (including 4.5) (design decision 8); resolve blocking findings and record suggestions as deferred.
 - [ ] 6.5 Run the applicable .NET and bridge checks and strict OpenSpec validation; confirm the capability matrix, doctor and documentation agree with the trial record before marking the change complete.
 

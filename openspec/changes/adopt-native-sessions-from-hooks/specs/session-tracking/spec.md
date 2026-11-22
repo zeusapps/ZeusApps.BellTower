@@ -44,6 +44,36 @@ Bell Tower SHALL distinguish access to an existing provider runtime from ownersh
 - **WHEN** Bell Tower stops while native provider work remains active
 - **THEN** only Bell Tower owned observer connections and helpers are closed and the provider work continues
 
+### Requirement: Hook tray start from the user's shell
+When a hook starts a stopped tray, Bell Tower SHALL create it as a child of the verified desktop shell of the same sign-in session, with no inherited handles, so the tray receives the shell's jobs, token and environment and never the provider's. If no shell can be verified, it SHALL start nothing and keep the capture queued. On start, the tray SHALL check its immediate job and, if that job would end it when the job closes, record a diagnostic and exit. When the shell start fails, Bell Tower SHALL use a per-user scheduled task with no trigger, started on demand, which setup creates and removes and doctor reports. The behavior SHALL be identical for Claude Code and Codex. The user-stop suppression, burst control and update gate SHALL be unchanged.
+
+#### Scenario: First hook after a restart
+- **WHEN** the first Claude Code or Codex hook after sign-in runs with no tray running and no user stop recorded
+- **THEN** exactly one tray starts as a child of the desktop shell, it consumes the queued captures, and doctor records the route used
+
+#### Scenario: Elevated hook
+- **WHEN** a hook from an elevated terminal starts the tray
+- **THEN** the tray runs with the shell's non-elevated token
+
+#### Scenario: Shell start unavailable
+- **WHEN** no desktop shell can be verified or the shell start fails
+- **THEN** the scheduled-task fallback starts the tray, or nothing starts and doctor states why, and the capture stays queued
+
+### Requirement: Confirmed waits from provider evidence
+A provisional permission wait SHALL become a confirmed human wait only when the session's provider evidence shows that a human must decide: for Codex the approval reviewer setting or an approval record in its transcript, for Claude Code its existing confirmation. A wait SHALL clear when the evidence shows the decision was made, including a declined prompt detected from a bounded read of the end of the transcript. Timing alone SHALL NOT confirm a wait. One shared rule SHALL apply to both providers, with thin provider adapters.
+
+#### Scenario: Real Codex approval
+- **WHEN** a direct `codex --no-daemon` session holds an operation for human approval
+- **THEN** Bell Tower raises a confirmed waiting alert with sound and the Sessions window shows the session as needing permission
+
+#### Scenario: Automatically reviewed Codex operation
+- **WHEN** Codex reviews an operation automatically
+- **THEN** no confirmed wait or sound is raised
+
+#### Scenario: Declined Claude prompt
+- **WHEN** the user declines a Claude Code permission prompt
+- **THEN** the waiting state clears shortly after the decline, without waiting for the next prompt
+
 ## MODIFIED Requirements
 
 ### Requirement: Lifecycle reconciliation and restart

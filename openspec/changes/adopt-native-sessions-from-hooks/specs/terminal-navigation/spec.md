@@ -32,3 +32,14 @@ Bell Tower SHALL attempt to bind adopted Claude Code and Codex conversations to 
 #### Scenario: Mixed simultaneous host sessions
 - **WHEN** Claude Code and Codex conversations run in multiple VS Code windows and Windows Terminal tabs with identical titles and directories
 - **THEN** navigation targets only an independently verified owning destination or reports its actual partial or unavailable capability
+
+### Requirement: Click results are always visible
+Every navigation request that does not reach its exact destination SHALL show its reason in Bell Tower's own notice, independent of Windows notification settings. The notice SHALL be topmost without taking keyboard focus from the window the click focused. Clicks whose session is no longer known, or whose navigator fails, SHALL be logged and explained as well. The rule SHALL apply equally to Claude Code and Codex in Windows Terminal and VS Code.
+
+#### Scenario: Notifications suppressed
+- **WHEN** Windows Focus or Do Not Disturb is on and a click produces a window-only or refused result
+- **THEN** Bell Tower's notice shows the reason and the focused terminal keeps the keyboard
+
+#### Scenario: Stale or failing click
+- **WHEN** a click refers to a session that is no longer tracked, or its navigator fails
+- **THEN** a reason is shown and one log line records the outcome
