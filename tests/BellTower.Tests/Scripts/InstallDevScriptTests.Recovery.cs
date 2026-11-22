@@ -50,6 +50,14 @@ public sealed partial class InstallDevScriptTests
     [InlineData("stopped-tray-prepared-retryable", "can be retried")]
     [InlineData("stopped-tray-leftover-launcher-property", "Monitoring is stopped")]
     [InlineData("recovery-contract-without-candidate-payload", null)]
+    [InlineData("not-ready-over-budget", "did not confirm readiness")]
+    [InlineData("not-ready-small-state", "did not confirm readiness")]
+    [InlineData("owner-unknown-no-presence", "owner is unknown")]
+    [InlineData("owner-unknown-ended-presence", "owner is unknown")]
+    [InlineData("owner-unknown-names-owning-operation", "owner is unknown")]
+    [InlineData("not-ready-save-fails", "did not confirm readiness")]
+    [InlineData("not-ready-incomplete-rollback", "did not confirm readiness")]
+    [InlineData("stopped-tray-readiness-failure-prints-relative-recovery", "did not confirm readiness")]
     public void InstallerFunctionsReleaseEveryResourceAndKeepThePrimaryError(string scenario, string? expectedError)
     {
         var root = Path.Combine(workspace.Root, "harness-" + scenario);
@@ -577,6 +585,8 @@ public sealed partial class InstallDevScriptTests
             output = process.StandardOutput.ReadToEndAsync();
             error = process.StandardError.ReadToEndAsync();
         }
+
+        public int Id => process.Id;
 
         public bool HasExited => process.HasExited;
 

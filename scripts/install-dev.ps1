@@ -8,20 +8,29 @@ Actions (see docs/development.md, "Development builds"):
   Preflight  Verify a dev package and its compatibility; write a private operation record. Changes nothing else.
   Switch     Snapshot selection and monitoring state, add the dev payload, stop only the verified tray, select the payload, restart the tray from the stable launcher.
   Rollback   Restore the recorded previous selection and the monitoring snapshot, restart the tray.
+  Finalize   End an unfinished Rollback whose original selection and monitoring snapshot are restored but whose restarted tray never confirmed readiness.
+             Preconditions (any failure changes nothing): the manifest is a Rollback in state restored-monitoring-snapshot or running-original, the selection is the
+             original one recorded at preflight, both coordination records carry this operation's ID and token, the installer process that owns the records has
+             ended (a live or unverifiable owner refuses and is named), no tray of the installation is running or starting (checked under the update gate and the
+             tray-instance reservation), and the original payload bytes are unchanged. The owner, selection, operation record and records are checked again under
+             the launch gate right before the first write. Effect: marks the manifest finalized-without-tray and removes only the two owned coordination records.
+             Run again on a finalized-without-tray record, it removes any single record the interrupted removal left, only when that path's hash and plan match the
+             operation's. It never stops or starts a process and never changes the selection, payloads, launcher or monitoring state; start the tray afterwards.
+             Needs the maintainer's explicit authorization like Switch and Rollback.
   Retire     Remove a dev payload that is neither selected, the recorded previous version, nor leased.
 
 It never stops agent sessions, never changes the stable launcher or existing payload bytes, and never modifies provider configuration.
 Defaults point at the real per-user installation and data directory: run Preflight there, but only Switch, Rollback or Retire with the maintainer's explicit authorization.
 #>
 param(
-    [ValidateSet('Preflight', 'Switch', 'Rollback', 'Retire')][string]$Action = 'Preflight',
+    [ValidateSet('Preflight', 'Switch', 'Rollback', 'Finalize', 'Retire')][string]$Action = 'Preflight',
     # Dev package zip. Default: the newest bell-tower-*-win-x64.zip under artifacts/dev-builds/.
     [string]$Package,
     [string]$InstallationRoot = (Join-Path $env:LOCALAPPDATA 'Programs\ZeusApps.BellTower'),
     [string]$DataDirectory = (Join-Path $env:LOCALAPPDATA 'ZeusApps.BellTower'),
     # Private workspace for snapshots and operation records (created with a restricted ACL when absent). Default: artifacts/dev-builds/operations.
     [string]$Workspace,
-    # Switch/Rollback: the operation.json that Preflight printed.
+    # Switch/Rollback/Finalize: the operation.json that Preflight printed.
     [string]$OperationManifest,
     # Retire: the payload version to remove.
     [string]$Version,
@@ -86,11 +95,237 @@ function Assert-PrivateWorkspace {
         }
     }
 }
+# The product refuses to read a state.json above this size (AtomicFile.Read); a tray that cannot read it never completes a refresh.
+function Get-StateBudgetBytes { return 16 * 1024 * 1024 }
+function Get-LogTailBytes { return 64 * 1024 }
+function Hide-Paths([string]$Text) {
+    # Diagnostics never print the data directory or the profile.
+    foreach ($secret in @($DataDirectory, $env:USERPROFILE, $env:LOCALAPPDATA)) {
+        if ($secret -and $secret.Length -gt 3) { $Text = $Text.Replace($secret, '<redacted>').Replace($secret.Replace('\', '/'), '<redacted>') }
+    }
+    return $Text
+}
+function Get-SafeFailureReason([string]$Reason) {
+    # Newer trays write a sanitized reason; quote it only when it still looks free of paths.
+    if (!$Reason) { return $null }
+    $clean = -join ($Reason.ToCharArray() | Where-Object { ![char]::IsControl($_) })
+    if ($clean -match '[A-Za-z]:|\\|%|~' -or ($DataDirectory -and $clean.IndexOf($DataDirectory, [StringComparison]::OrdinalIgnoreCase) -ge 0)) { return $null }
+    if ($clean.Length -gt 120) { $clean = $clean.Substring(0, 120) }
+    return $clean
+}
+function Get-RefreshFailureSummary {
+    $summary = [ordered]@{ logPresent = $false; count = 0; first = $null; last = $null; lastReason = $null }
+    try {
+        $log = Join-Path $DataDirectory 'bell-tower.log'
+        if (!(Test-Path -LiteralPath $log -PathType Leaf)) { return $summary }
+        $summary.logPresent = $true
+        $stream = [IO.File]::Open($log, [IO.FileMode]::Open, [IO.FileAccess]::Read, [IO.FileShare]::ReadWrite)
+        try {
+            $length = $stream.Length
+            $start = [Math]::Max([long]0, $length - (Get-LogTailBytes))
+            [void]$stream.Seek($start, [IO.SeekOrigin]::Begin)
+            $buffer = [byte[]]::new([int]($length - $start))
+            $total = 0
+            while ($total -lt $buffer.Length) { $n = $stream.Read($buffer, $total, $buffer.Length - $total); if ($n -le 0) { break }; $total += $n }
+            $text = [Text.Encoding]::UTF8.GetString($buffer, 0, $total)
+        } finally { $stream.Dispose() }
+        $lines = @($text -split "\r?\n")
+        if ($start -gt 0 -and $lines.Count) { $lines = @($lines | Select-Object -Skip 1) }
+        foreach ($line in $lines) {
+            if ($line -notmatch '^(?<at>\S+) tray-refresh-failed(?:: (?<reason>.*))?$') { continue }
+            $summary.count++
+            $reason = $Matches['reason']
+            $at = [DateTimeOffset]::MinValue
+            if ([DateTimeOffset]::TryParse($Matches['at'], [Globalization.CultureInfo]::InvariantCulture, [Globalization.DateTimeStyles]::None, [ref]$at)) {
+                if ($null -eq $summary.first) { $summary.first = $at.ToUniversalTime().ToString('o') }
+                $summary.last = $at.ToUniversalTime().ToString('o')
+            }
+            $summary.lastReason = Get-SafeFailureReason $reason
+        }
+    } catch { }
+    return $summary
+}
+function Get-NotReadyFacts {
+    # Observed facts only. Nothing here depends on, writes or prints any path.
+    $facts = [ordered]@{ observedAt = [DateTime]::UtcNow.ToString('o'); launcherAlive = $null; trayProcesses = @(); processScanAvailable = $true; presence = 'missing'
+        stateBytes = $null; stateBudgetBytes = (Get-StateBudgetBytes); refreshFailures = $null }
+    try {
+        if ($script:manifest -and $script:manifest.PSObject.Properties.Name -contains 'restartLauncher') {
+            $launcher = [BellTower.Core.ProcessIdentity]::new([int]$script:manifest.restartLauncher.pid, [long]$script:manifest.restartLauncher.ticks)
+            $facts.launcherAlive = ([BellTower.IO.ProcessProbe]::Inspect($launcher) -ne [BellTower.IO.ProcessLiveness]::Ended)
+        }
+    } catch { }
+    try {
+        $scan = Get-InstallationTrayScan
+        $facts.trayProcesses = @(@($scan.starts | ForEach-Object { [int]$_.pid }) + @($scan.unclassified | ForEach-Object { [int]$_.pid }) | Sort-Object -Unique)
+    } catch { $facts.processScanAvailable = $false }
+    try {
+        $presencePath = [BellTower.Updates.UpdateTransaction]::Presence($paths)
+        if (Test-Path -LiteralPath $presencePath -PathType Leaf) {
+            try {
+                $presence = [BellTower.Distribution.DistributionJson]::Read[BellTower.Updates.TrayPresence]($presencePath, 4096)
+                $facts.presence = if ([BellTower.IO.ProcessProbe]::Inspect($presence.Process) -eq [BellTower.IO.ProcessLiveness]::Ended) { 'ended' } else { 'present' }
+            } catch { $facts.presence = 'unreadable' }
+        }
+    } catch { }
+    try { if (Test-Path -LiteralPath $paths.State -PathType Leaf) { $facts.stateBytes = [long](Get-Item -LiteralPath $paths.State).Length } } catch { }
+    $facts.refreshFailures = Get-RefreshFailureSummary
+    return $facts
+}
+function Format-NotReadyFacts($Facts) {
+    $parts = [Collections.Generic.List[string]]::new()
+    $processes = @($Facts.trayProcesses)
+    if ($processes.Count) { $parts.Add('tray process alive (PID ' + ($processes -join ', ') + ')') }
+    elseif ($Facts.launcherAlive -eq $true) { $parts.Add('operation launcher still alive, no tray process identified') }
+    elseif ($Facts.processScanAvailable -eq $false) { $parts.Add('tray process state could not be determined') }
+    else { $parts.Add('no tray process found') }
+    $presenceText = switch ([string]$Facts.presence) { 'missing' { 'presence missing' } 'ended' { 'presence record of an ended process' } 'unreadable' { 'presence unreadable' } default { 'presence written' } }
+    $parts.Add($presenceText)
+    if ($null -eq $Facts.stateBytes) { $parts.Add('state.json absent') }
+    else {
+        $budget = [long]$Facts.stateBudgetBytes
+        $note = if ([long]$Facts.stateBytes -ge $budget) { ', at or over the budget' } else { ', within the budget' }
+        $parts.Add('state.json ' + $Facts.stateBytes + ' of ' + $budget + ' bytes' + $note)
+    }
+    $failures = $Facts.refreshFailures
+    $tail = [string]((Get-LogTailBytes) / 1024)
+    if (!$failures -or !$failures.logPresent) { $parts.Add('no log found, so no refresh failures could be counted') }
+    elseif ([int]$failures.count -eq 0) { $parts.Add('no tray-refresh-failed lines in the last ' + $tail + ' KiB of the log') }
+    else {
+        $span = if ($failures.first -and $failures.last) { ' between ' + $failures.first + ' and ' + $failures.last } else { '' }
+        $last = if ($failures.lastReason) { ' (last reason: ' + $failures.lastReason + ')' } else { '' }
+        $parts.Add([string]$failures.count + ' tray-refresh-failed lines in the last ' + $tail + ' KiB of the log' + $span + $last)
+    }
+    return ($parts -join '; ')
+}
+function Describe-NotReadyTray {
+    $facts = Get-NotReadyFacts
+    return [ordered]@{ facts = $facts; text = (Format-NotReadyFacts $facts) }
+}
+function Format-RecordPath([string]$Path) {
+    # Messages print the operation record relative to the repository when it lies inside it (the default workspace does), so no
+    # profile or workspace prefix appears and the command runs from the repository root as the skill requires. A record in a
+    # workspace outside the repository is printed absolute; that is the one documented exception.
+    if ($Path -and $repo -and (Within $repo $Path)) { return [IO.Path]::GetRelativePath($repo, (Full $Path)).Replace('\', '/') }
+    return $Path
+}
+function Get-MissingOwnershipFields($Manifest) {
+    $names = @($Manifest.PSObject.Properties.Name)
+    return @(@('coordinationId', 'coordinationToken', 'coordinationPlan', 'coordinationPendingHash', 'coordinationRestartHash') | Where-Object { $_ -notin $names })
+}
+function Get-OperationDisposition($Manifest, [string]$ManifestPath) {
+    # The one rule that says what can still be done with an operation record. Finalize, the Switch and Rollback entry checks and the
+    # readiness failure all take their next step from here, so no two messages disagree. Read-only.
+    #   finalizable  a Rollback that restored the original selection and monitoring snapshot            -> Finalize
+    #   rollback     an incomplete or switched operation that Rollback can still finish or revert       -> Rollback
+    #   terminal     the original tray was restarted after a failed Switch; nothing is left             -> Preflight again
+    #   finalized    already finalized (a record may be left behind by an interrupted Finalize)         -> Finalize again or Preflight
+    #   completed    a Rollback that finished (running-original, no coordination record left)           -> Preflight again
+    #   foreign      the operation cannot prove ownership of coordination records                       -> inspect under docs/releases.md
+    $names = @($Manifest.PSObject.Properties.Name)
+    $state = [string]$Manifest.state
+    $arguments = "-OperationManifest '$(Format-RecordPath $ManifestPath)'"
+    $rollback = "-Action Rollback $arguments"
+    $finalize = "-Action Finalize $arguments"
+    if ($state -eq 'finalized-without-tray') {
+        $left = (Test-Path -LiteralPath $script:pendingPath) -or (Test-Path -LiteralPath $script:restartPath)
+        $next = if ($left) { "A coordination record is still present: run $finalize again to remove it, then run Preflight again for a new operation." } else { 'Run Preflight again for a new operation.' }
+        return [ordered]@{ kind = 'finalized'; next = $next
+            message = 'This operation was finalized without a tray (state finalized-without-tray); the original selection stays and Finalize removed its coordination records.' }
+    }
+    if ($names -contains 'trayRestartedAfterFailure' -and $state -in @('prepared', 'original-stopped', 'ready-to-select') -and
+        (Test-Path -LiteralPath $installation.SelectionPath -PathType Leaf) -and (Hash $installation.SelectionPath) -eq [string]$Manifest.originalSelectionSha256) {
+        return [ordered]@{ kind = 'terminal'; next = 'Nothing to roll back or finalize; run Preflight again.'
+            message = "This operation already ended: the original tray was restarted after a failed Switch and the selection and monitoring state were never changed (state $state)." }
+    }
+    if ($names -contains 'coordinationTransition' -or $names -contains 'rollbackPointerTransition') {
+        return [ordered]@{ kind = 'rollback'; message = 'The operation has an incomplete record or pointer step.'; next = "Run $rollback to finish it." }
+    }
+    $phase = if ($names -contains 'coordinationPhase') { [string]$Manifest.coordinationPhase } else { '' }
+    if ($phase -ne 'Rollback' -or $state -notin @('restored-monitoring-snapshot', 'running-original')) {
+        $kind = if ($phase -eq 'Rollback') { 'a Rollback whose monitoring or pointer step is incomplete' } else { 'a Switch or an operation that never reached a restored original' }
+        return [ordered]@{ kind = 'rollback'; next = "Recover with $rollback."
+            message = "This operation is $kind (state $state). Finalize ends only a Rollback that restored the original selection and monitoring snapshot." }
+    }
+    if ($state -eq 'running-original' -and !(Test-Path -LiteralPath $script:pendingPath) -and !(Test-Path -LiteralPath $script:restartPath)) {
+        # A finished Rollback removed its records: nothing is left to finalize, and no tray needs to be quit.
+        return [ordered]@{ kind = 'completed'; next = 'Run Preflight again for a new operation.'
+            message = 'This operation already ended: its Rollback restored the original selection and monitoring snapshot and removed its coordination records.' }
+    }
+    $missing = @(Get-MissingOwnershipFields $Manifest)
+    if ($missing.Count) {
+        return [ordered]@{ kind = 'foreign'; next = 'Inspect the coordination records under docs/releases.md (interrupted update); do not remove them by hand.'
+            message = "The operation record has no $($missing -join ', '), so it cannot prove ownership of the coordination records." }
+    }
+    return [ordered]@{ kind = 'finalizable'; message = "This operation is a Rollback that restored the original selection and monitoring snapshot (state $state)."
+        next = "Quit any tray from its tray menu, then run $finalize." }
+}
+function Find-OwningOperation {
+    # Read-only. The workspace operation record whose coordination ID and token both equal the coordination records', else $null.
+    try {
+        if (!(Test-Path -LiteralPath $script:pendingPath -PathType Leaf) -or !(Test-Path -LiteralPath $script:restartPath -PathType Leaf)) { return $null }
+        $pending = [BellTower.Distribution.DistributionJson]::Read[BellTower.Updates.UpdatePlan]($script:pendingPath, 16384)
+        $restart = [BellTower.Distribution.DistributionJson]::Read[BellTower.Updates.UpdatePlan]($script:restartPath, 16384)
+        if ($pending.Id -ne $restart.Id -or $pending.Token -ne $restart.Token) { return $null }
+        foreach ($directory in @(Get-ChildItem -LiteralPath $Workspace -Directory -ErrorAction Stop)) {
+            $candidate = Join-Path $directory.FullName 'operation.json'
+            if (!(Test-Path -LiteralPath $candidate -PathType Leaf)) { continue }
+            try { $found = Get-Content -LiteralPath $candidate -Raw | ConvertFrom-Json } catch { continue }
+            $names = @($found.PSObject.Properties.Name)
+            if ('coordinationId' -in $names -and 'coordinationToken' -in $names -and [string]$found.coordinationId -eq $pending.Id -and [string]$found.coordinationToken -eq $pending.Token) {
+                return [ordered]@{ path = $candidate; manifest = $found }
+            }
+        }
+    } catch { }
+    return $null
+}
+function Get-OwningOperationHint {
+    $owner = Find-OwningOperation
+    if ($null -eq $owner) { return '' }
+    $disposition = Get-OperationDisposition $owner.manifest $owner.path
+    return "The coordination records belong to the operation record '$(Format-RecordPath $owner.path)'. $($disposition.message) $($disposition.next)"
+}
+function Assert-NoCoordinator {
+    # The product's refusal for an active or interrupted update, plus the operation record that owns the leftover records when one exists.
+    try { [BellTower.Updates.UpdateTransaction]::EnsureNoCoordinator($installation) }
+    catch {
+        $hint = Get-OwningOperationHint
+        if ($hint) { throw ($_.Exception.Message + ' ' + $hint) }
+        throw
+    }
+}
+function Add-NotReadyDiagnostics([string]$Message) {
+    # Appended to the unknown-owner refusals; the readiness poll sets briefOwnerErrors to keep its loop cheap.
+    if ($script:briefOwnerErrors) { return $Message }
+    try { $text = (Describe-NotReadyTray).text } catch { return $Message }
+    $owning = Get-OwningOperationHint
+    $record = if ($owning) { ' ' + $owning } elseif ($OperationManifest) { " The operation record is '$(Format-RecordPath $OperationManifest)'." } else { '' }
+    return $Message + ' Observed: ' + $text + '. Quit the tray from its tray menu (or wait if it is still starting), then run again.' + $record
+}
+function New-NotReadyFailure([string]$Version) {
+    # The readiness deadline passed: keep everything as it is, store the observed facts and name the supported next step.
+    $described = Describe-NotReadyTray
+    $stored = $true
+    try { $script:manifest | Add-Member -NotePropertyName trayNotReady -NotePropertyValue $described.facts -Force; Save-Json $OperationManifest $script:manifest } catch { $stored = $false }
+    $arguments = "-OperationManifest '$(Format-RecordPath $OperationManifest)'"
+    $quit = 'Quit the tray from its tray menu, then run'
+    $disposition = Get-OperationDisposition $script:manifest $OperationManifest
+    $next = switch ($disposition.kind) {
+        'finalizable' { "$quit -Action Finalize $arguments (or -Action Rollback $arguments again)." }
+        'rollback' {
+            if ($Action -eq 'Switch') { "$quit -Action Rollback $arguments; if the restored tray cannot become ready either, run -Action Finalize $arguments afterwards." }
+            else { "$quit -Action Rollback $arguments." }
+        }
+        default { $disposition.next }
+    }
+    $storedText = if ($stored) { 'the facts are stored in the operation record as trayNotReady' } else { 'the facts could not be stored in the operation record' }
+    return "The selected tray (version $Version) did not confirm readiness within the deadline. Observed: $($described.text). The selection, monitoring state and coordination records were left as they were, and $storedText. $next"
+}
 function Read-Owner {
     $presencePath = [BellTower.Updates.UpdateTransaction]::Presence($paths)
     $mutexExists = $controller.IsRunning()
     if (!(Test-Path -LiteralPath $presencePath -PathType Leaf)) {
-        if (!$script:trayReservation -and $mutexExists) { throw 'Tray-instance object exists without verifiable presence; owner is unknown.' }
+        if (!$script:trayReservation -and $mutexExists) { throw (Add-NotReadyDiagnostics 'Tray-instance object exists without verifiable presence; owner is unknown.') }
         return $null
     }
     $presence = [BellTower.Distribution.DistributionJson]::Read[BellTower.Updates.TrayPresence]($presencePath, 4096)
@@ -100,7 +335,7 @@ function Read-Owner {
         # A stale record is harmless only when no tray object remains. During our reservation,
         # object existence is our own fence and the process drain checks for other starters.
         if (!$script:trayReservation -and $mutexExists) {
-            throw 'Recorded tray identity ended or its PID was reused while a tray-instance object exists; owner is unknown.'
+            throw (Add-NotReadyDiagnostics 'Recorded tray identity ended or its PID was reused while a tray-instance object exists; owner is unknown.')
         }
         return $null
     }
@@ -473,10 +708,8 @@ function Remove-OwnedCoordinationRecords {
 function Invoke-DisposableFailure([string]$Name) {
     if ($Disposable -and $TestBarrierDirectory -and (Test-Path -LiteralPath (Join-Path $TestBarrierDirectory ('fail-' + $Name)))) { throw "Disposable test injection: '$Name' refused after the tray stop." }
 }
-function Start-SelectedTray([string]$Version) {
-    if ($TestBarrierDirectory -and (Test-Path -LiteralPath (Join-Path $TestBarrierDirectory ('fail-start-' + $Version)))) {
-        throw "Disposable test injection: restart of version $Version refused before launch."
-    }
+function Start-TrayLauncher {
+    # Seam: the only place that launches the stable launcher. Returns the launched process.
     # Shell-execute semantics (as the product's own TrayController uses) start the launcher without inheriting this
     # installer's stdin/stdout/stderr or other inheritable handles, so a captured pipe closes when the installer ends.
     # ShellExecute cannot take a per-start environment, so the activation is set in this process for the launch only.
@@ -490,6 +723,13 @@ function Start-SelectedTray([string]$Version) {
     $env:BELLTOWER_UPDATE_ACTIVATION = $script:coordinationPlan.Id
     try { $child = [Diagnostics.Process]::Start($start); $script:restartLaunched = $true }
     finally { if ($null -eq $previousActivation) { Remove-Item Env:BELLTOWER_UPDATE_ACTIVATION -ErrorAction SilentlyContinue } else { $env:BELLTOWER_UPDATE_ACTIVATION = $previousActivation } }
+    return $child
+}
+function Start-SelectedTray([string]$Version) {
+    if ($TestBarrierDirectory -and (Test-Path -LiteralPath (Join-Path $TestBarrierDirectory ('fail-start-' + $Version)))) {
+        throw "Disposable test injection: restart of version $Version refused before launch."
+    }
+    $child = Start-TrayLauncher
     $identity = [BellTower.IO.ProcessProbe]::Identify($child.Id)
     if ($null -eq $identity) { throw 'Could not verify the operation-owned launcher process identity.' }
     $manifest | Add-Member -NotePropertyName restartLauncher -NotePropertyValue ([ordered]@{ pid = $identity.Pid; ticks = $identity.StartedUtcTicks; version = $Version; activation = $script:coordinationPlan.Id }) -Force
@@ -498,7 +738,17 @@ function Start-SelectedTray([string]$Version) {
     if ($TestBarrierDirectory -and (Test-Path -LiteralPath (Join-Path $TestBarrierDirectory ('fail-after-launch-' + $Version)))) {
         throw "Disposable test injection: restart of version $Version refused after launch."
     }
-    Wait-Until { try { $owner = Read-Owner; return ($null -ne $owner -and $owner.version -eq $Version) } catch { return $false } } 'Selected tray did not confirm ownership; the selection and data were left intact. Inspect the operation record.'
+    $seconds = if ($script:trayReadySeconds) { [int]$script:trayReadySeconds } else { 30 }
+    $deadline = [DateTime]::UtcNow.AddSeconds($seconds)
+    $ready = $false
+    $script:briefOwnerErrors = $true
+    try {
+        while ([DateTime]::UtcNow -lt $deadline) {
+            try { $current = Read-Owner; if ($null -ne $current -and $current.version -eq $Version) { $ready = $true; break } } catch { }
+            Start-Sleep -Milliseconds 100
+        }
+    } finally { $script:briefOwnerErrors = $false }
+    if (!$ready) { throw (New-NotReadyFailure $Version) }
     $owner = Read-Owner
     Assert-OwnedRestart $owner $Version
     return $owner
@@ -516,6 +766,145 @@ function Assert-OwnedRestart($Owner, [string]$Version) {
     $parentPids = @($parents | ForEach-Object { $_.Item1 })
     if ($launcherIdentity.Pid -notin $parentPids) { throw ('The restarted tray is not descended from this operation-owned launcher; launcher PID ' + $launcherIdentity.Pid + ', observed ancestor PIDs ' + ($parentPids -join ',') + '.') }
     if ([BellTower.IO.ProcessProbe]::Identify($Owner.pid) -ne [BellTower.Core.ProcessIdentity]::new([int]$Owner.pid, [long]$Owner.ticks)) { throw 'The restarted tray process identity changed during verification.' }
+}
+function Get-TrayHolderPids {
+    # PIDs that explain a refusal; never raises.
+    $found = [Collections.Generic.List[int]]::new()
+    try {
+        $presencePath = [BellTower.Updates.UpdateTransaction]::Presence($paths)
+        if (Test-Path -LiteralPath $presencePath -PathType Leaf) {
+            $presence = [BellTower.Distribution.DistributionJson]::Read[BellTower.Updates.TrayPresence]($presencePath, 4096)
+            if ([BellTower.IO.ProcessProbe]::Inspect($presence.Process) -ne [BellTower.IO.ProcessLiveness]::Ended) { $found.Add([int]$presence.Process.Pid) }
+        }
+    } catch { }
+    try {
+        $scan = Get-InstallationTrayScan
+        foreach ($item in @($scan.starts) + @($scan.unclassified)) { if ($null -ne $item -and [int]$item.pid -notin $found) { $found.Add([int]$item.pid) } }
+    } catch { }
+    return , $found.ToArray()
+}
+function Get-FinalizeTrayRefusal([string]$Detail, [string]$DrainMessage) {
+    # Called after every gate is released, so the process scans never run while a hook could be waiting on the launch gate.
+    $found = Get-TrayHolderPids
+    $who = if ($found.Count) { 'PID ' + ($found -join ', ') } else { 'its process could not be identified' }
+    $suffix = if ($Detail) { $Detail } elseif (!$found.Count -and $DrainMessage) { " ($DrainMessage)" } else { '' }
+    return "Finalize refused: a tray of this installation is running or starting ($who)$suffix. Quit it from its tray menu, then run Finalize again. No process was stopped and nothing was changed."
+}
+function Assert-FinalizeOwnerEnded {
+    # The installer that created or renewed the records may still be waiting for its restarted tray; it then owns them.
+    $owner = $script:coordinationPlan.Owner
+    $liveness = [BellTower.IO.ProcessProbe]::Inspect($owner)
+    if ($liveness -eq [BellTower.IO.ProcessLiveness]::Ended) { return }
+    $what = if ($liveness -eq [BellTower.IO.ProcessLiveness]::Unverified) { 'is live or inaccessible and cannot be verified' } else { 'is still running' }
+    throw "Finalize refused: the installer (PID $($owner.Pid)) that owns the coordination records $what. Wait for it to finish (a restart waits up to about 30 seconds), then run Finalize again. No process was stopped and nothing was changed."
+}
+function Assert-PresentOwnedRecords {
+    # Each record that exists must carry the exact bytes and tuple the operation recorded for that path. Used where one record may
+    # already be gone (the retry after an interrupted removal); a record that is absent is simply not there to verify.
+    if (!$script:coordinationPlan) { throw 'An operation coordination record cannot be verified without its recorded plan; preserving it.' }
+    foreach ($item in @(@($script:pendingPath, $script:pendingHash), @($script:restartPath, $script:restartHash))) {
+        if (!(Test-Path -LiteralPath $item[0] -PathType Leaf)) { continue }
+        if ((Hash $item[0]) -ne $item[1]) { throw 'An operation coordination record changed bytes; preserving it.' }
+        $current = [BellTower.Distribution.DistributionJson]::Read[BellTower.Updates.UpdatePlan]($item[0], 16384)
+        if (!$current.Equals($script:coordinationPlan)) { throw 'An operation coordination record changed its owner or operation tuple; preserving it.' }
+    }
+}
+function Remove-PresentOwnedRecords {
+    Assert-PresentOwnedRecords
+    $removed = 0
+    foreach ($path in @($script:pendingPath, $script:restartPath)) {
+        if (Test-Path -LiteralPath $path -PathType Leaf) { Remove-Item -LiteralPath $path; $removed++ }
+    }
+    return $removed
+}
+function Assert-FinalizePreconditionsHold([bool]$Retry) {
+    # Repeated under the gates, immediately before the first write: nothing the earlier checks relied on may have changed.
+    Assert-FinalizeOwnerEnded
+    $selectionHash = Hash $installation.SelectionPath
+    if ($selectionHash -ne [string]$manifest.originalSelectionSha256) {
+        throw ('Finalize refused: the selection changed while Finalize waited (current.json). Expected sha256 ' + $manifest.originalSelectionSha256 + ', actual ' + $selectionHash + '. Nothing was changed.')
+    }
+    if ((Hash $OperationManifest) -ne $script:manifestReadSha256) { throw 'Finalize refused: the operation record changed while Finalize waited. Nothing was changed; run Finalize again.' }
+    if ($Retry) { Assert-PresentOwnedRecords } else { Assert-OwnedRecordPair }
+    Assert-OriginalBytes $manifest
+}
+function Invoke-Finalize {
+    $has = { param([string]$Name) $manifest.PSObject.Properties.Name -contains $Name }
+    $state = [string]$manifest.state
+    $retry = $state -eq 'finalized-without-tray'
+    $pendingExists = Test-Path -LiteralPath $script:pendingPath -PathType Leaf
+    $restartExists = Test-Path -LiteralPath $script:restartPath -PathType Leaf
+    if ($retry -and !$pendingExists -and !$restartExists) {
+        [ordered]@{ status = 'already-finalized'; operationManifest = $OperationManifest; selectedVersion = $installation.Selection().Version; trayStarted = $false; changed = 'nothing' } | ConvertTo-Json
+        return
+    }
+    # 1. Operation kind, state and selection. An interrupted Finalize (state finalized-without-tray) skips the kind check.
+    if (!$retry) {
+        $disposition = Get-OperationDisposition $manifest $OperationManifest
+        if ($disposition.kind -ne 'finalizable') { throw ('Finalize refused: ' + $disposition.message + ' ' + $disposition.next) }
+    }
+    $selectionHash = Hash $installation.SelectionPath
+    if ($selectionHash -ne [string]$manifest.originalSelectionSha256) {
+        throw ('Finalize refused: the selection differs from the operation''s recorded destination (current.json). Expected sha256 ' + $manifest.originalSelectionSha256 + ', actual ' + $selectionHash + '. Nothing was changed; inspect the selection under docs/releases.md before any recovery.')
+    }
+    # 2. The coordination records belong to this operation: both for a first run, any single remaining one for the retry.
+    $foreign = 'If they belong to another operation or to a product update, inspect them under docs/releases.md (interrupted update); do not remove them by hand.'
+    $missing = @(Get-MissingOwnershipFields $manifest)
+    if ($missing.Count) { throw "Finalize refused: the operation record has no $($missing -join ', '), so it cannot prove ownership of the coordination records. Nothing was changed. $foreign" }
+    if (!$retry -and (!$pendingExists -or !$restartExists)) { throw "Finalize refused: an operation coordination record is missing; preserving any remaining record. $foreign" }
+    try {
+        $script:coordinationPlan = ConvertTo-UpdatePlan $manifest.coordinationPlan
+        $script:pendingHash = [string]$manifest.coordinationPendingHash
+        $script:restartHash = [string]$manifest.coordinationRestartHash
+        if ($script:coordinationPlan.Id -ne [string]$manifest.coordinationId -or $script:coordinationPlan.Token -ne [string]$manifest.coordinationToken) { throw 'The recorded plan carries another ID or token.' }
+        if ($retry) { Assert-PresentOwnedRecords } else { Assert-OwnedRecordPair }
+    } catch { throw ('Finalize refused: the coordination records are not this operation''s exact records (' + (Hide-Paths $_.Exception.Message) + ') They were not changed. ' + $foreign) }
+    Assert-FinalizeOwnerEnded
+    # 3. Under the update gate and the tray-instance reservation no tray may run or start. The drain (CIM scans) runs there
+    # without the launch gate, which only the short record check, manifest write and deletes below hold.
+    $updateGate = $null
+    $launchGate = $null
+    $primary = $null
+    $failures = @()
+    $refused = $false
+    $refusalDetail = ''
+    $drainMessage = ''
+    $removed = 0
+    try {
+        $updateGate = [BellTower.Distribution.InstallationGate]::new($InstallationRoot, 'update')
+        $createdNew = $false
+        $script:trayReservation = [Threading.Mutex]::new($false, $paths.LockName('tray-instance'), [ref]$createdNew)
+        if (!$createdNew) { $refused = $true; $refusalDetail = ' and holds the tray-instance object' }
+        else {
+            $script:trayDrainSeconds = 5
+            try { Wait-InstallationTrayStartsDrained } catch { $refused = $true; $drainMessage = Hide-Paths $_.Exception.Message }
+        }
+        if (!$refused) {
+            $launchGate = Open-LaunchGate
+            Assert-FinalizePreconditionsHold $retry
+            # Effect: the manifest first, so an interruption leaves a state a retry recognizes; then the owned records only.
+            if (!$retry) {
+                $reason = if (& $has 'trayNotReady') { 'tray-not-ready: ' + (Format-NotReadyFacts $manifest.trayNotReady) } else { 'operator-finalize' }
+                $manifest.state = 'finalized-without-tray'
+                $manifest | Add-Member -NotePropertyName finalizedAt -NotePropertyValue ([DateTime]::UtcNow.ToString('o')) -Force
+                $manifest | Add-Member -NotePropertyName finalizeReason -NotePropertyValue $reason -Force
+                Save-Json $OperationManifest $manifest
+            }
+            $removed = Remove-PresentOwnedRecords
+        }
+    } catch { $primary = $_ }
+    finally {
+        $failures = Close-Resources -Guards @() -Locks @($updateGate, $script:trayReservation, $launchGate)
+        $script:trayReservation = $null
+    }
+    Complete-ResourceScope $failures $primary
+    if ($refused) { throw (Get-FinalizeTrayRefusal $refusalDetail $drainMessage) }
+    [ordered]@{
+        status = 'finalized-without-tray'; operationManifest = $OperationManifest; selectedVersion = $installation.Selection().Version
+        finalizeReason = [string]$manifest.finalizeReason; removedRecords = $removed; trayStarted = $false; originalBytesPreserved = $true
+        changed = 'the owned coordination records were removed and the operation record was marked finalized; selection, payloads, launcher and monitoring state are untouched'
+        next = 'No tray was started or stopped. Start the tray (bell-tower start) or Switch to a build that recovers the state; that Switch records no tray to restart, so start the tray afterwards.'
+    } | ConvertTo-Json
 }
 function Get-ExpectedCandidateActivation {
     # Switch records the activation it launches the candidate with; Rollback may later mint its own coordination ID.
@@ -727,7 +1116,7 @@ function Restore-StoppedTrayAfterFailure($Failure) {
     # The selection and monitoring state are untouched here, so the only damage is the tray this operation stopped.
     $stopped = $script:stoppedTray
     $version = [string]$stopped.version
-    $recovery = "-Action Rollback -OperationManifest '$OperationManifest'"
+    $recovery = "-Action Rollback -OperationManifest '$(Format-RecordPath $OperationManifest)'"
     $reason = $Failure.Exception.Message
     $restarted = $null
     $failure = $null
@@ -882,7 +1271,11 @@ if ($Action -eq 'Preflight') {
 # ---- Switch / Rollback ----------------------------------------------------------------------------------------------------------------
 if (!$OperationManifest -or !(Within $Workspace $OperationManifest)) { throw 'Use the operation.json that Preflight wrote inside the private workspace (-OperationManifest).' }
 $OperationManifest = Full $OperationManifest
-$manifest = Get-Content -LiteralPath $OperationManifest -Raw | ConvertFrom-Json
+# One read gives both the parsed record and the hash of exactly those bytes, which Finalize re-checks under its gates.
+$manifestBytes = [IO.File]::ReadAllBytes($OperationManifest)
+$script:manifestReadSha256 = [Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($manifestBytes)).ToLowerInvariant()
+$manifestReader = [IO.StreamReader]::new([IO.MemoryStream]::new($manifestBytes), $true)
+try { $manifest = $manifestReader.ReadToEnd() | ConvertFrom-Json } finally { $manifestReader.Dispose() }
 $script:manifest = $manifest
 foreach ($pair in @(@($manifest.installationRoot, $InstallationRoot), @($manifest.dataDirectory, $DataDirectory), @($manifest.workspace, $Workspace))) { if (!(Same $pair[0] $pair[1])) { throw 'Operation paths differ from preflight.' } }
 if (!(Within $Workspace $manifest.operationDirectory) -or !(Within $manifest.operationDirectory $manifest.preparedPayload)) { throw 'Operation record points outside the private workspace.' }
@@ -894,12 +1287,16 @@ if ($candidate.Version -ne $manifest.candidateVersion -or $offer.ArchiveHash.ToL
 [BellTower.Distribution.Installation]::EnsurePlainPath($manifest.preparedPayload)
 Assert-OriginalBytes $manifest
 $original = $installation.Contract($manifest.originalVersion)
-if ($Action -eq 'Rollback' -and $manifest.PSObject.Properties.Name -contains 'trayRestartedAfterFailure' -and [string]$manifest.state -in @('prepared', 'original-stopped', 'ready-to-select') -and
-    (Test-Path -LiteralPath $installation.SelectionPath -PathType Leaf) -and (Hash $installation.SelectionPath) -eq $manifest.originalSelectionSha256) {
-    throw ('This operation already ended: the original tray was restarted after a failed Switch and the selection and monitoring state were never changed. Nothing to roll back; run Preflight again (state ' + $manifest.state + ').')
-}
+if ($Action -eq 'Finalize') { Invoke-Finalize; return }
+# Switch and Rollback take their entry refusals from the same disposition rule as Finalize and the readiness failure.
+$disposition = Get-OperationDisposition $manifest $OperationManifest
+if ($disposition.kind -in @('terminal', 'finalized')) { throw ($disposition.message + ' ' + $disposition.next) }
 if ($Action -eq 'Switch' -and [string]$manifest.state -ne 'prepared') {
-    $hint = if ($manifest.PSObject.Properties.Name -contains 'trayRestartedAfterFailure') { ' The original tray was restarted after the failure and nothing is left to recover; run Preflight again.' } elseif ([string]$manifest.state -in @('original-stopped', 'ready-to-select')) { ' It stopped the original tray and did not finish; recover with -Action Rollback -OperationManifest ' + "'$OperationManifest'" + ', or run Preflight again after recovery.' } else { ' Run Preflight again for a new operation, or Rollback to revert it.' }
+    $recordPath = Format-RecordPath $OperationManifest
+    $hint = if ($disposition.kind -eq 'completed') { ' ' + $disposition.next }
+        elseif ($disposition.kind -eq 'finalizable') { ' ' + $disposition.next + ' Or run Preflight again for a new operation.' }
+        elseif ([string]$manifest.state -in @('original-stopped', 'ready-to-select')) { ' It stopped the original tray and did not finish; recover with -Action Rollback -OperationManifest ' + "'$recordPath'" + ', or run Preflight again after recovery.' }
+        else { ' Run Preflight again for a new operation, or Rollback to revert it.' }
     throw ('This Switch operation is not in the prepared state (state ' + $manifest.state + ').' + $hint)
 }
 $gate = [BellTower.Distribution.InstallationGate]::new($InstallationRoot, 'update')
@@ -928,7 +1325,7 @@ try {
     if (Test-Path -LiteralPath $script:pendingPath) {
         if ($Action -ne 'Rollback' -or $manifest.PSObject.Properties.Name -notcontains 'coordinationId' -or
             $manifest.PSObject.Properties.Name -notcontains 'coordinationToken' -or !(Test-Path -LiteralPath $script:restartPath)) {
-            [BellTower.Updates.UpdateTransaction]::EnsureNoCoordinator($installation)
+            Assert-NoCoordinator
             throw 'A pending operation is missing its matching restart record; preserving it.'
         }
         $existingPlan = [BellTower.Distribution.DistributionJson]::Read[BellTower.Updates.UpdatePlan]($script:pendingPath, 16384)
@@ -981,7 +1378,7 @@ try {
         [BellTower.Updates.UpdateTransaction]::EnsureNoCoordinator($installation, $existingPlan)
         $recovering = $true
     } else {
-        [BellTower.Updates.UpdateTransaction]::EnsureNoCoordinator($installation)
+        Assert-NoCoordinator
         if (Test-Path -LiteralPath $script:restartPath) { throw 'A restart coordination record already exists; inspect it before starting another operation.' }
     }
     $expectedAtStart = $manifest.originalTray
@@ -1170,6 +1567,8 @@ if ($operationFailure) {
     if ($restartStoppedTray) { Restore-StoppedTrayAfterFailure $operationFailure }
     throw $operationFailure
 }
+# Disposable-only hold: the reservation and gates are released, the records are still owned by this live installer.
+Wait-OptionalTestBarrier ($Action.ToLowerInvariant() + '-before-tray-restart')
 $owner = $null
 if ($Action -eq 'Switch') {
     if ($null -ne $manifest.originalTray -and !$NoTray) {
@@ -1195,5 +1594,6 @@ Remove-OwnedCoordinationRecords
 [ordered]@{
     status = $manifest.state; operationManifest = $OperationManifest; selectedVersion = $installation.Selection().Version
     trayPid = if ($owner) { $owner.pid } else { $null }; trayRestarted = [bool]$owner; originalBytesPreserved = $true
+    trayRestartNote = if ($owner) { 'the tray was restarted and confirmed' } elseif ($NoTray) { 'no tray was restarted (-NoTray)' } elseif ($null -eq $manifest.originalTray) { 'no tray was restarted because none was running; start it with bell-tower start' } else { 'no tray was restarted' }
     restoredFiles = if ($Action -eq 'Rollback') { 'state.json, state.json.bak, current.json only' } else { 'none' }; configurationAndRuntimeFiles = 'untouched'
 } | ConvertTo-Json

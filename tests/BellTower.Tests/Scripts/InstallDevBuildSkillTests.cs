@@ -48,7 +48,7 @@ public sealed class InstallDevBuildSkillTests
         Assert.Contains("description:", text);
         foreach (var required in new[]
         {
-            "package.ps1 -Dev", "-Action Preflight", "-Action Switch", "-Action Rollback", "-Action Retire", "update --status", "doctor",
+            "package.ps1 -Dev", "-Action Preflight", "-Action Switch", "-Action Rollback", "-Action Finalize", "-Action Retire", "update --status", "doctor",
             "Explicit authorization", "Never stop agent sessions", "--apply", "setup --desktop"
         })
         {

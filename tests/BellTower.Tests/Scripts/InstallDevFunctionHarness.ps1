@@ -37,18 +37,27 @@ $paths = [BellTower.IO.DataPaths]::new($DataDirectory)
 $script:pendingPath = Join-Path $InstallationRoot 'updates/pending.json'
 $script:restartPath = [BellTower.Updates.UpdateTransaction]::Marker($paths)
 $OperationManifest = Join-Path $Root 'operation.json'
+# The installer's top-level variables the extracted functions read: the repository (record paths print relative to it) and the workspace.
+$repo = (Resolve-Path (Join-Path (Split-Path -Parent $Installer) '..')).Path
+$Workspace = $Root
 $script:selectionMutated = $false
 $script:stoppedTray = $null
 $script:monitoringMutationStarted = $false
 $script:warnings = [Collections.Generic.List[string]]::new()
 function Write-Warning([string]$Message) { $script:warnings.Add($Message) }
 
+function Test-SerializedPath([string]$Json, [string]$Path) {
+    # JSON text carries each backslash of a Windows path as two; searching the raw path would never match.
+    return ($Json.IndexOf($Path.Replace('\', '\\'), [StringComparison]::OrdinalIgnoreCase) -ge 0 -or $Json.IndexOf($Path.Replace('\', '/'), [StringComparison]::OrdinalIgnoreCase) -ge 0)
+}
+
 function New-FixtureRecords([TimeSpan]$Age = [TimeSpan]::Zero) {
     $script:coordinationPlan = [BellTower.Updates.UpdatePlan]::new([Guid]::NewGuid().ToString('N'), ('a' * 64), $InstallationRoot, $DataDirectory,
         '0.1.8', '0.1.9001', ('b' * 64), [DateTimeOffset]::UtcNow - $Age, [BellTower.IO.ProcessProbe]::Identify($PID), $false)
     $script:pendingHash = New-ExclusiveRecord $script:pendingPath $script:coordinationPlan
     $script:restartHash = New-ExclusiveRecord $script:restartPath $script:coordinationPlan
-    $script:manifest = [pscustomobject]@{ state = 'restored-monitoring-candidate-pointer'; coordinationPhase = 'Rollback'; coordinationPhaseTarget = '0.1.8'; operationDirectory = (Join-Path $Root 'operation') }
+    $script:manifest = [pscustomobject]@{ state = 'restored-monitoring-candidate-pointer'; coordinationPhase = 'Rollback'; coordinationPhaseTarget = '0.1.8'; operationDirectory = (Join-Path $Root 'operation')
+        coordinationId = $script:coordinationPlan.Id; coordinationToken = $script:coordinationPlan.Token }
     Save-CoordinationExpectation
 }
 function Get-LaunchGateName {
@@ -415,6 +424,138 @@ switch -Regex ($Scenario) {
         $checks.candidatePayloadAbsent = !(Test-Path -LiteralPath (Join-Path $InstallationRoot 'versions/0.1.9001'))
         $checks.switchUsesPreparedPayload = ((Get-RecoveryExpectedContractHash 'Switch' '0.1.9001') -eq (Hash (Join-Path $prepared 'release.json')))
         $checks.unknownPhaseHasNoExpectation = ((Get-RecoveryExpectedContractHash '' '') -eq '')
+    }
+    '^not-ready-(over-budget|small-state)$' {
+        # The readiness deadline passes: the message and the stored facts name what is observable and never print the data directory.
+        $Action = 'Rollback'
+        $script:trayReadySeconds = 1
+        $script:manifest.state = 'restored-monitoring-snapshot'
+        $overBudget = $Matches[1] -eq 'over-budget'
+        if ($overBudget) {
+            $stream = [IO.File]::Create((Join-Path $DataDirectory 'state.json'))
+            try { $stream.SetLength(16 * 1024 * 1024) } finally { $stream.Dispose() }
+            $lines = 1..5 | ForEach-Object { ([DateTime]::UtcNow.AddMinutes(-10 + $_).ToString('o')) + ' tray-refresh-failed: state exceeds the limit' }
+            $lines += ([DateTime]::UtcNow.ToString('o')) + ' tray-refresh-failed: cannot read ' + (Join-Path $DataDirectory 'state.json')
+            $lines += ([DateTime]::UtcNow.ToString('o')) + ' other-event'
+            [IO.File]::WriteAllLines((Join-Path $DataDirectory 'bell-tower.log'), $lines)
+            function Get-InstallationTrayScan { return [ordered]@{ starts = @([ordered]@{ pid = $PID; ticks = 1 }); unclassified = @() } }
+        } else {
+            [IO.File]::WriteAllText((Join-Path $DataDirectory 'state.json'), '{"schemaVersion":1}')
+            function Get-InstallationTrayScan { return [ordered]@{ starts = @(); unclassified = @() } }
+        }
+        function Read-Owner { return $null }
+        function Start-TrayLauncher { return [Diagnostics.Process]::GetCurrentProcess() }
+        try { [void](Start-SelectedTray '0.1.8') } catch { $errorText = $_.ToString() }
+        $saved = Get-Content -LiteralPath $OperationManifest -Raw
+        $facts = ($saved | ConvertFrom-Json).trayNotReady
+        $factsJson = ConvertTo-Json -InputObject $facts -Depth 8 -Compress
+        $checks.namesDeadline = ($errorText -like '*did not confirm readiness*')
+        $relativeRecord = [IO.Path]::GetRelativePath($repo, $OperationManifest).Replace('\', '/')
+        $checks.namesManifestAndNextStep = ($errorText -like ('*-Action Finalize -OperationManifest ''' + $relativeRecord + '''*') -and $errorText -like '*Quit the tray from its tray menu*')
+        # Inside the repository the record prints relative, so neither the repository (profile) prefix nor the workspace appears.
+        $checks.recordPathIsRelative = (!$relativeRecord.StartsWith('..') -and ![IO.Path]::IsPathRooted($relativeRecord) -and $errorText.IndexOf($repo, [StringComparison]::OrdinalIgnoreCase) -lt 0 -and $errorText.IndexOf($repo.Replace('\', '/'), [StringComparison]::OrdinalIgnoreCase) -lt 0)
+        $checks.saysFactsStored = ($errorText -like '*the facts are stored in the operation record as trayNotReady*')
+        $checks.leftEverythingAsItWas = ((Test-Path -LiteralPath $script:pendingPath) -and (Test-Path -LiteralPath $script:restartPath) -and $manifest.state -eq 'restored-monitoring-snapshot')
+        $checks.noDataDirectoryPath = ($errorText.IndexOf($DataDirectory, [StringComparison]::OrdinalIgnoreCase) -lt 0 -and !(Test-SerializedPath $factsJson $DataDirectory))
+        # The detector must be real: JSON escapes backslashes, so it searches the escaped form. A path injected into the same facts fails it.
+        $injected = ConvertTo-Json -InputObject ([ordered]@{ lastReason = (Join-Path $DataDirectory 'state.json') }) -Compress
+        $checks.pathDetectorCatchesAnInjectedPath = ((Test-SerializedPath $injected $DataDirectory) -and !(Test-SerializedPath '{"lastReason":"state exceeds the limit"}' $DataDirectory))
+        $checks.storedFacts = ($null -ne $facts -and $facts.presence -eq 'missing' -and $facts.stateBudgetBytes -eq 16777216)
+        if ($overBudget) {
+            $checks.namesLiveProcess = ($errorText -like "*tray process alive (PID $PID)*" -and @($facts.trayProcesses) -contains $PID)
+            $checks.namesMissingPresence = ($errorText -like '*presence missing*')
+            $checks.namesSizeAgainstBudget = ($errorText -like '*state.json 16777216 of 16777216 bytes, at or over the budget*' -and $facts.stateBytes -eq 16777216)
+            $checks.namesFailureCountAndSpan = ($errorText -like '*6 tray-refresh-failed lines*between*and*' -and $facts.refreshFailures.count -eq 6 -and $null -ne $facts.refreshFailures.first)
+            $checks.quotesSafeReasonOnly = ($errorText -notlike '*cannot read*' -and $facts.refreshFailures.lastReason -eq $null)
+        } else {
+            $checks.reportsNoProcess = ($errorText -like '*no tray process identified*' -and @($facts.trayProcesses).Count -eq 0)
+            $checks.reportsNoLog = ($errorText -like '*no log found*' -and $facts.refreshFailures.logPresent -eq $false)
+            $checks.reportsSmallState = ($errorText -like '*state.json 19 of 16777216 bytes, within the budget*')
+        }
+    }
+    '^owner-unknown-(no-presence|ended-presence)$' {
+        # Both unknown-owner refusals carry the observable facts and the next step, and no data-directory path.
+        $controller = [pscustomobject]@{}
+        $controller | Add-Member -MemberType ScriptMethod -Name IsRunning -Value { return $true }
+        [IO.File]::WriteAllText((Join-Path $DataDirectory 'state.json'), '{"schemaVersion":1}')
+        function Get-InstallationTrayScan { return [ordered]@{ starts = @([ordered]@{ pid = $PID; ticks = 1 }); unclassified = @() } }
+        $ended = $Matches[1] -eq 'ended-presence'
+        if ($ended) {
+            [BellTower.Distribution.DistributionJson]::Write([BellTower.Updates.UpdateTransaction]::Presence($paths),
+                [BellTower.Updates.TrayPresence]::new([BellTower.Core.ProcessIdentity]::new(2147000000, 1), '0.1.8', $DataDirectory))
+        }
+        try { [void](Read-Owner) } catch { $errorText = $_.ToString() }
+        $checks.keepsTheOriginalRefusal = ($errorText -like ($(if ($ended) { 'Recorded tray identity ended*' } else { 'Tray-instance object exists without verifiable presence*' })))
+        $checks.namesLiveProcess = ($errorText -like "*tray process alive (PID $PID)*")
+        $checks.namesPresence = ($errorText -like ($(if ($ended) { '*presence record of an ended process*' } else { '*presence missing*' })))
+        $checks.namesNextStep = ($errorText -like '*Quit the tray from its tray menu*')
+        $checks.noDataDirectoryPath = ($errorText.IndexOf($DataDirectory, [StringComparison]::OrdinalIgnoreCase) -lt 0)
+    }
+    '^not-ready-save-fails$' {
+        # The facts cannot be written to the operation record: the message must say so instead of claiming they were stored.
+        $Action = 'Rollback'
+        $script:manifest.state = 'restored-monitoring-snapshot'
+        New-Item -ItemType Directory -Path (Join-Path $Root 'record-is-a-directory') | Out-Null
+        $OperationManifest = Join-Path $Root 'record-is-a-directory'
+        function Get-InstallationTrayScan { return [ordered]@{ starts = @(); unclassified = @() } }
+        try { throw (New-NotReadyFailure '0.1.8') } catch { $errorText = $_.ToString() }
+        $checks.namesDeadline = ($errorText -like '*did not confirm readiness*')
+        $checks.saysFactsCouldNotBeStored = ($errorText -like '*the facts could not be stored in the operation record*' -and $errorText -notlike '*facts are stored in the operation record*')
+        $checks.stillNamesNextStep = ($errorText -like '*Quit the tray from its tray menu*')
+    }
+    '^not-ready-incomplete-rollback$' {
+        # A Rollback that restarts the candidate it stopped misses the deadline: Finalize would refuse that state, so the step is Rollback.
+        $Action = 'Rollback'
+        $script:manifest.state = 'running-candidate'
+        function Get-InstallationTrayScan { return [ordered]@{ starts = @(); unclassified = @() } }
+        $relativeRecord = [IO.Path]::GetRelativePath($repo, $OperationManifest).Replace('\', '/')
+        try { throw (New-NotReadyFailure '0.1.9001') } catch { $errorText = $_.ToString() }
+        $checks.namesRollback = ($errorText -like ('*-Action Rollback -OperationManifest ''' + $relativeRecord + '''*'))
+        $checks.doesNotNameFinalize = ($errorText -notlike '*Finalize*')
+        $checks.dispositionIsRollback = ((Get-OperationDisposition $script:manifest $OperationManifest).kind -eq 'rollback')
+    }
+    '^stopped-tray-readiness-failure-prints-relative-recovery$' {
+        # ANALYSIS-101: the restart launched by Restore-StoppedTrayAfterFailure misses its deadline; the wrapped message names the record relative to the repository.
+        $Action = 'Switch'
+        $candidate = [pscustomobject]@{ Version = '0.1.9001' }
+        $original = [ordered]@{ pid = 4242; ticks = 7; version = '0.1.8'; executable = 'C:\fixture\bell-tower.exe'; activation = $null; dataDirectory = $DataDirectory }
+        $script:stoppedTray = $original
+        $manifest = [pscustomobject]@{ state = 'original-stopped'; candidateVersion = '0.1.9001'; originalTray = $original; operationDirectory = (Join-Path $Root 'operation') }
+        $script:manifest = $manifest
+        function Read-Owner { return $null }
+        function Get-InstallationTrayScan { return [ordered]@{ starts = @(); unclassified = @() } }
+        function Start-SelectedTray([string]$Version) { $script:restartLaunched = $true; throw (New-NotReadyFailure $Version) }
+        $relativeRecord = [IO.Path]::GetRelativePath($repo, $OperationManifest).Replace('\', '/')
+        try { Restore-StoppedTrayAfterFailure ([Management.Automation.ErrorRecord]::new([Exception]::new('Snapshot failed.'), 'x', 'NotSpecified', $null)) } catch { $errorText = $_.ToString() }
+        $checks.wrapsTheReadinessFailure = ($errorText -like '*did not confirm readiness*' -and $errorText -like '*could not be verified*')
+        $checks.namesRelativeRecovery = ($errorText -like ('*recover with -Action Rollback -OperationManifest ''' + $relativeRecord + '''.'))
+        $checks.noRepositoryPrefix = ($errorText.IndexOf($repo, [StringComparison]::OrdinalIgnoreCase) -lt 0 -and $errorText.IndexOf($repo.Replace('\', '/'), [StringComparison]::OrdinalIgnoreCase) -lt 0)
+    }
+    '^owner-unknown-names-owning-operation$' {
+        # The records belong to a workspace operation record: the refusal names it with its disposition, and never names one that matches only half.
+        $controller = [pscustomobject]@{}
+        $controller | Add-Member -MemberType ScriptMethod -Name IsRunning -Value { return $true }
+        [IO.File]::WriteAllText((Join-Path $DataDirectory 'state.json'), '{"schemaVersion":1}')
+        function Get-InstallationTrayScan { return [ordered]@{ starts = @(); unclassified = @() } }
+        $script:manifest.state = 'restored-monitoring-snapshot'
+        $OperationManifest = $null
+        $stale = Join-Path $Root 'wrong-token'
+        $owning = Join-Path $Root 'owning'
+        New-Item -ItemType Directory -Path $stale, $owning | Out-Null
+        $halfMatch = [pscustomobject]@{ state = 'restored-monitoring-snapshot'; coordinationPhase = 'Rollback'; coordinationId = $script:coordinationPlan.Id; coordinationToken = ('f' * 64) }
+        [IO.File]::WriteAllText((Join-Path $stale 'operation.json'), ($halfMatch | ConvertTo-Json))
+        [IO.File]::WriteAllText((Join-Path $owning 'operation.json'), ($script:manifest | ConvertTo-Json -Depth 20))
+        $relativeOwning = [IO.Path]::GetRelativePath($repo, (Join-Path $owning 'operation.json')).Replace('\', '/')
+        $relativeStale = [IO.Path]::GetRelativePath($repo, (Join-Path $stale 'operation.json')).Replace('\', '/')
+        try { [void](Read-Owner) } catch { $errorText = $_.ToString() }
+        $checks.keepsTheOriginalRefusal = ($errorText -like 'Tray-instance object exists without verifiable presence*')
+        $checks.namesTheFinalizeStep = ($errorText -like ('*-Action Finalize -OperationManifest ''' + $relativeOwning + '''*'))
+        $checks.neverNamesAHalfMatch = ($errorText -notlike ('*' + $relativeStale + '*'))
+        $checks.noRepositoryPrefix = ($errorText.IndexOf($repo, [StringComparison]::OrdinalIgnoreCase) -lt 0)
+        [IO.File]::WriteAllText((Join-Path $owning 'operation.json'), '{}')
+        $errorText = $null
+        try { [void](Read-Owner) } catch { $errorText = $_.ToString() }
+        $checks.namesNothingWhenNoRecordMatches = ($errorText -like 'Tray-instance object exists*' -and $errorText -notlike '*coordination records belong*')
     }
     default { throw "Unknown scenario $Scenario." }
 }

@@ -11,7 +11,7 @@ Run everything from the repository root in PowerShell 7. Paths below use the def
 
 ## Rules that always apply
 
-1. **Explicit authorization.** Build and Preflight are safe to run when asked. `Switch`, `Rollback` and `Retire` change the maintainer's installation, so run them only after the user clearly says so for this operation. Earlier approval for a different build or action does not carry over. Show the Preflight result first (version, commit, dirty flag, current tray state).
+1. **Explicit authorization.** Build and Preflight are safe to run when asked. `Switch`, `Rollback`, `Finalize` and `Retire` change the maintainer's installation, so run them only after the user clearly says so for this operation. Earlier approval for a different build or action does not carry over. Show the Preflight result first (version, commit, dirty flag, current tray state).
 2. **Never stop agent sessions.** The scripts stop only the verified Bell Tower tray and restart it from the stable launcher. Do not stop terminals, Claude Code or Codex processes, VS Code or provider runtimes. Do not stop the tray by any other means.
 3. **No integration changes.** Never edit `~/.claude` or `~/.codex`. Never run `bell-tower setup ... --apply` unless the user asks for it separately. A `setup --desktop` preview without `--apply` is fine.
 4. **No stable-launcher or payload changes.** Do not edit files under `versions\` or the launcher by hand. Do not pass `-AllowStaleBuild` or the disposable test switches (`-Disposable`, `-NoTray`, `-SkipProbe`) against the real installation.
@@ -64,6 +64,18 @@ Optional: preview (never apply) integration changes with `& $launcher setup --de
 ```
 
 Restores the selection and the `state.json` / `state.json.bak` snapshot from immediately before the switch, then restarts the tray on that version. This is a one-level rollback. Matching dead-operation records can be recovered from the same manifest; unrelated marker bytes are preserved. Monitoring state written by the dev tray since the switch is not kept. Identity data and configuration are left alone. It refuses if the selection or tray owner changed since the switch. The restored tray may automatically reclaim the dev payload once it is no longer selected or retained.
+
+## 5a. Finalize an unfinished rollback (needs authorization)
+
+Use it only when `Switch` or `Rollback` failed with "did not confirm readiness" (or Preflight refuses a tray-instance object without verifiable presence), the rollback already restored the original selection and the monitoring snapshot, and the restored tray still never becomes ready. The message names what was observed: tray process alive or gone, presence missing, the `state.json` size against its budget, and the count and time span of recent `tray-refresh-failed` lines. The same facts are stored in the operation record as `trayNotReady`. The next step is always the same: the maintainer quits the stuck tray from its tray menu (do not stop it any other way), then:
+
+```powershell
+./scripts/install-dev.ps1 -Action Finalize -OperationManifest <the operationManifest named in the message>
+```
+
+If the failed operation was a Switch, run `Rollback` with the same manifest first; Finalize refuses a Switch and names Rollback. Finalize runs only when the manifest is a Rollback in state `restored-monitoring-snapshot` or `running-original`, the selection is still the original one, both coordination records carry this operation's ID and token, the installer that owns them has ended (if a Rollback is still waiting for its tray, Finalize names its PID and says to wait for it), no tray is running or starting, and the original payload bytes are unchanged. It marks the manifest `finalized-without-tray` with the reason and removes only those two records. It never stops or starts a process and never changes the selection, payloads, launcher, `state.json` or `state.json.bak`. Every refusal changes nothing and names its next step (Rollback for an incomplete step, Preflight again for an operation that already ended, `docs/releases.md` for records it does not own, quitting the tray for a running one). Preflight's unknown-owner message and a Switch's interrupted-update refusal name the matching operation record and this command when the records belong to one; the record path is printed relative to the repository, so run the script from the repository root. Running Finalize again removes the record or records left by an interrupted finalize (a lone record only when it still matches this operation's recorded hash and plan), or reports `already-finalized`.
+
+Afterwards no tray is running: tell the maintainer to start it (`bell-tower start`), or run Preflight and Switch for a build that recovers the state and start the tray after it, because that Switch records no tray to restart and says so. Authorization is explicit, like Switch and Rollback. The script is identical for Claude Code and Codex, and no agent session of either is stopped.
 
 ## 6. Retire an old dev payload (needs authorization)
 

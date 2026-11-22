@@ -554,6 +554,9 @@ public sealed partial class InstallDevScriptTests : IDisposable
         return new Release(mutex);
     }
 
+    // A tray-instance object with no presence record: the unknown-owner state of a tray that never wrote its first refresh.
+    private IDisposable HoldTrayInstanceObject() => new Release(new Mutex(true, new DataPaths(dataDirectory).LockName("tray-instance")));
+
     private static Dictionary<string, string> Snapshot(params string[] roots)
     {
         var result = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
