@@ -9,6 +9,7 @@ public sealed class IntegrationRefresh(DataPaths paths, string executable, strin
         var manifest = Path.Combine(paths.Root, "integration.json");
         if (!File.Exists(manifest))
         { return "No owned integration refresh required."; }
+        BellTower.Protocol.HookTrayStart.RecordLauncher(paths.Root, executable);
         using var gate = new DataLock(paths, "setup");
         var before = File.ReadAllText(manifest);
         var ownership = Json.Decode<IntegrationOwnership>(before);

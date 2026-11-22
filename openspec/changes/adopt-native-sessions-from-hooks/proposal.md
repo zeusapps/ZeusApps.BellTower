@@ -11,6 +11,7 @@ Users should be able to run the native `claude` or `codex` command in an ordinar
 - Add a non-owning connection to an existing local Codex backend for exact-conversation runtime status and supported native-name operations, preserving existing naming ownership controls. Connection permission does not confer backend lifecycle ownership.
 - Separate conversation health, runtime access and terminal attachment health. A terminal can disconnect while its backend conversation remains active; a loaded thread alone is not proof that a terminal is open.
 - Apply terminal presentation to adopted direct sessions only while one global native-presentation setting, on by default and switchable off, allows it and destination and presentation ownership are verified. Preserve existing managed-launch behavior, manual overrides, data and running sessions; report first-hook timing and unverified capabilities honestly.
+- Start a stopped tray from the hook after the capture is persisted, so a native session appears after a Windows restart, for both providers (user decision 2026-11-15). Choosing Exit in the tray suppresses this until the next sign-in.
 - Make hook/bridge setup usable without generating terminal profiles or importing shell wrappers. Command shadowing, aliases and changes to PowerShell command lookup are not selected by this proposal.
 - Retain the investigation in `evidence/findings.md`, with sanitized native-probe results and explicit unperformed acceptance checks.
 

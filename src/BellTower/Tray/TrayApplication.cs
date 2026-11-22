@@ -45,6 +45,7 @@ public sealed class TrayApplication : ApplicationContext
     private AppConfig config = new();
     private DateTimeOffset nextOverview;
     private bool refreshing;
+    private readonly RefreshHealth refreshHealth;
     private bool disposed;
     private readonly Dictionary<string, GitContext> contexts = [];
     private readonly CancellationTokenSource updateCancellation = new();
@@ -54,6 +55,7 @@ public sealed class TrayApplication : ApplicationContext
     public TrayApplication(DataPaths paths, bool silent, IUserIdleSource? userIdle = null)
     {
         this.paths = paths;
+        refreshHealth = new(paths);
         this.userIdle = userIdle ?? new WindowsUserIdleSource();
         store = new(paths);
         attachments = new(paths);
@@ -172,7 +174,7 @@ public sealed class TrayApplication : ApplicationContext
         {
             audio.Enqueue(new("test", Guid.NewGuid().ToString("N"), "Bell Tower, test sound", true));
         });
-        menu.Items.Add("Exit", null, (_, _) => ExitThread());
+        menu.Items.Add(CreateExitMenuItem(paths, ExitThread));
         tray = new NotifyIcon
         {
             Icon = appIcon,
@@ -223,6 +225,18 @@ public sealed class TrayApplication : ApplicationContext
         Microsoft.Win32.SystemEvents.DisplaySettingsChanged += DisplayChanged;
         timer.Tick += (_, _) => Tick();
         timer.Start();
+    }
+
+    internal static ToolStripMenuItem CreateExitMenuItem(DataPaths paths, Action exitThread)
+    {
+        var item = new ToolStripMenuItem("Exit");
+        item.Click += (_, _) =>
+        {
+            // The user's own stop: hooks leave the tray stopped until it is started by hand or the user signs in again.
+            BellTower.Protocol.HookTrayStart.RecordUserStop(paths.Root);
+            exitThread();
+        };
+        return item;
     }
 
     private void Tick()
@@ -281,10 +295,11 @@ public sealed class TrayApplication : ApplicationContext
                 nativeNames.Update(live);
                 RefreshOverview(live);
             }
+            refreshHealth.Succeeded();
         }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException or System.Text.Json.JsonException or InvalidDataException)
         {
-            new LocalLog(paths).Write("tray-refresh-failed");
+            refreshHealth.Failed(e);
             overview.SetStatus("Local state could not be refreshed. Check diagnostics.");
         }
     }

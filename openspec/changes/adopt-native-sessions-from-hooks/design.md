@@ -97,7 +97,7 @@ Pre-launch coloring remains an existing managed-launch capability. Native first-
 
 ### 6. Setup selects hooks and bridges independently of profiles
 
-Separate provider hook and bridge setup from profile generation and PowerShell imports in the setup plan. Preserve current ownership/backups, handler trust and removal rules. Existing profile users can continue unchanged; native-command setup need not import a shell module or define commands. It also does not implicitly enable a new sign-in service: monitoring must be running through Bell Tower's existing independent lifecycle, and capture remains durable while it is stopped.
+Separate provider hook and bridge setup from profile generation and PowerShell imports in the setup plan. Preserve current ownership/backups, handler trust and removal rules. Existing profile users can continue unchanged; native-command setup need not import a shell module or define commands. It also does not implicitly enable a new sign-in service. Capture remains durable while monitoring is stopped, and the ingress starts a stopped tray after writing a capture (decision 9, user decision 2026-11-15).
 
 Diagnostics expose discovery, conversation health, runtime access, terminal binding, navigation precision and each presentation/restoration surface separately. Use supported, proven-restricted and unverified consistently, including the exact provider version and mode and any first-hook timing limit.
 
@@ -123,6 +123,20 @@ After eleven tasks of groundwork a first real trial (plain `claude` in Windows T
 - Review depth for the remaining tasks: one QA and one code-analyzer review on the final stable target instead of both reviews on every fix round. The user-operated trial (task 6.1) is the acceptance evidence.
 - A per-project opt-in for tracking (a Bell Tower allowlist checked by the hook) and a Bell Tower MCP server were discussed and are not part of this change.
 
+### 9. A hook starts a stopped tray (user decision, 2026-11-15)
+
+Trial observation T-2: after a Windows restart no tray was running, so plain `claude` hooks were only queued and the session never appeared, although the hooks worked. The user chose to have the hook start the tray rather than a sign-in entry or a warning only. The same ingress serves both providers, so the behavior is identical for Claude Code and Codex.
+
+- Order and failure: the ingress writes the capture first, then checks the tray. It never waits for the tray, never delays or fails the hook, and never changes its neutral output. A failed start is recorded as a bounded diagnostic; the capture stays queued.
+- Detection: the existing tray-instance mutex. When it exists nothing else happens, so the steady-state cost is one named-mutex open.
+- Suppression: choosing Exit in the tray, or an equivalent user stop command, records a user stop for the current Windows sign-in session (for example the token's logon session ID). Hooks do not start the tray while that record matches the current sign-in; starting the tray by hand clears it; a sign-out or restart makes it stale. A crash, an update or dev-build switch, or a management stop that restarts the tray is not a user stop. No start while an update or switch transaction is pending; the tray's own start gate remains authoritative.
+- Burst control: concurrent hooks from several sessions make at most one start attempt per bounded interval, through an exclusive-create attempt record in the data directory; the tray-instance mutex still guarantees one tray.
+- Launcher location: the ingress does not search for executables. Setup and the tray record the stable launcher path in the data directory; the ingress accepts only an absolute path to an existing regular file with the expected name and no reparse points. With no valid record it does not start anything, and doctor says so.
+- Process creation: the stable launcher with the normal tray arguments, quiet start, detached, with no inherited handles (a provider waits for the hook's output pipe to close), no console window, outside a provider job object that would end it with the hook, the launcher's directory as working directory, and the user's default environment rather than the provider's (no `CLAUDECODE`, `CODEX_*` or `BELLTOWER_*` leakage into the tray and the launches it starts).
+- Diagnostics report whether hook-start is available (launcher recorded), the latest attempt and its result, and whether a user stop suppresses it in this sign-in session.
+
+Alternatives: a sign-in Run entry is simpler and has no hook-path cost but does not cover a tray that crashed or was stopped by an update failure; a warning only leaves the session missing. Both rejected by the user; a sign-in entry can still be added later.
+
 ## Risks / Trade-offs
 
 - Plain default `codex` users see alerts they cannot click through to a tab -> state the limit in the chip result, doctor and documentation, and name the Codex profile and `codex --no-daemon` as the supported routes.
@@ -132,6 +146,7 @@ After eleven tasks of groundwork a first real trial (plain `claude` in Windows T
 - A bridge or runtime may disappear between observation and action -> recheck creation identities, generation and freshness at the action boundary and retain safe partial/unavailable results.
 - Native-name writes could erase a user title -> reuse pause/ownership/override policy; the disposable successful write is not consent to rename real sessions.
 - Observation may add startup latency or hook contention -> keep runtime and host work outside capture; verify unchanged hook latency budgets and bounded polling/backoff.
+- Starting the tray from a hook could delay or hang the hook, leak the provider environment or restart a tray the user stopped -> decision 9: capture first, detached start without inherited handles or provider environment, a sign-in-scoped user-stop record, one attempt per interval; measure hook latency with the tray running and stopped.
 - Provider versions drift daily -> rely on the decision 7 runtime cross-checks and action-time revalidation rather than version gates, and keep new work on documented hooks and process identity (decision 8). Residual risk: a provider change that keeps the command line and process relationships identical while changing behavior is caught only by use.
 - Probe topology differs from desktop behavior -> require the user-operated trial of task 6.1 in VS Code and Windows Terminal, including a mixed and a same-directory case; do not count pseudo-consoles as that acceptance.
 

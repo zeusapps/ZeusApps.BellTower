@@ -7,7 +7,7 @@ using BellTower.Updates;
 
 namespace BellTower.Setup;
 
-public sealed record IngressProvision(string Source, string Hash, string Target, string[] Providers, CodexHookShell? CodexShell = null)
+public sealed record IngressProvision(string Source, string Hash, string Target, string[] Providers, CodexHookShell? CodexShell = null, string? Launcher = null)
 {
     public static IngressProvision? Plan(string executable, DataPaths paths, IEnumerable<string>? providers = null)
     {
@@ -33,7 +33,7 @@ public sealed record IngressProvision(string Source, string Hash, string Target,
         CodexHookShell? codexShell = OperatingSystem.IsWindows() && selectedProviders.Contains("codex", StringComparer.Ordinal)
             ? ProviderHookProbe.SelectCodexShell(executable, source)
             : null;
-        return new(source, hash, target, selectedProviders, codexShell);
+        return new(source, hash, target, selectedProviders, codexShell, installation.Launcher);
     }
 
     public void Apply(DataPaths paths)
@@ -110,6 +110,11 @@ public sealed record IngressProvision(string Source, string Hash, string Target,
                 throw new InvalidDataException("Ingress protocol probe failed.");
             }
             AtomicFile.Write(Path.Combine(paths.Root, "capture-protocol.json"), "{\"protocol\":1}");
+            // The ingress starts a stopped tray only from this recorded stable launcher (never a versioned payload) and searches nowhere.
+            if (Launcher is not null)
+            {
+                HookTrayStart.RecordLauncher(paths.Root, Launcher);
+            }
         }
         catch
         {

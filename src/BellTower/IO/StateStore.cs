@@ -14,14 +14,22 @@ public sealed class StateStore
     private readonly Func<ProcessIdentity, ProcessLiveness> inspect;
     private readonly TimeProvider time;
 
+    /// <summary>An ended session untouched for this long is compacted: it keeps what it displays and its ordering floor, not its replay history.</summary>
+    public static readonly TimeSpan SettleInterval = TimeSpan.FromMinutes(10);
+    public const int MaxEndedSessions = 200;
+    private const int InboxBatchSize = 2000;
+    public static readonly TimeSpan EndedRetention = TimeSpan.FromDays(30);
+
     /// <param name="inspect">Process liveness check (PID plus creation time); injectable for deterministic tests.</param>
     /// <param name="time">Clock for attachment reconciliation; injectable for deterministic tests.</param>
-    public StateStore(DataPaths paths, Func<ProcessIdentity, ProcessLiveness>? inspect = null, TimeProvider? time = null)
+    /// <param name="budgetBytes">Snapshot budget; production keeps the default, tests inject a reduced one.</param>
+    public StateStore(DataPaths paths, Func<ProcessIdentity, ProcessLiveness>? inspect = null, TimeProvider? time = null,
+        long budgetBytes = StateSnapshotStore.DefaultBudgetBytes)
     {
         this.time = time ?? TimeProvider.System;
         this.inspect = inspect ?? ProcessProbe.Inspect;
         this.paths = paths;
-        snapshots = new StateSnapshotStore(paths);
+        snapshots = new StateSnapshotStore(paths, budgetBytes);
         attachments = new AttachmentStore(paths);
         configuration = new ConfigStore(paths);
     }
@@ -81,18 +89,23 @@ public sealed class StateStore
     {
         using var gate = new DataLock(paths, "state");
         var state = snapshots.Read();
+        // A backlog is applied over several drains; compaction waits until it is consumed so a late resume is not dropped, unless the save would exceed the budget.
+        var backlog = HasBacklog();
         var accepted = new CaptureConsumer(paths).Prepare(state);
         accepted.AddRange(ReplayInbox(state));
         var changed = ReconcileAttachments(state, facts ?? ConversationEvidenceSnapshot.Empty);
-        if (accepted.Count != 0 || changed || !File.Exists(paths.State))
+        // Retention runs before the gate so a quiet state is also bounded; accepted captures were applied first.
+        var retained = !backlog && CompactSettledSessions(state, time.GetUtcNow());
+        retained |= PruneEndedSessions(state, time.GetUtcNow());
+        if (accepted.Count != 0 || changed || retained || !File.Exists(paths.State))
         {
             if (state.Sessions.Count > 0)
             {
                 state.AttachmentHealthVersion = 1;
             }
             RetainPendingReceipts(state);
-            PruneEndedSessions(state);
-            snapshots.Save(state);
+            // A backlog skips compaction above, but a save over the budget compacts settled sessions before it removes any.
+            snapshots.Save(state, backlog ? s => CompactSettledSessions(s, time.GetUtcNow()) : null);
         }
         // Commit before deletion so accepted observations survive a crash and replay idempotently.
         foreach (var path in accepted)
@@ -127,10 +140,18 @@ public sealed class StateStore
         snapshots.Save(state);
     }
 
+    /// <summary>Whether this drain cannot take every pending capture or inbox file, so later drains still apply older events.</summary>
+    private bool HasBacklog()
+    {
+        var captures = Path.Combine(paths.Root, CaptureProtocol.InboxName);
+        return Directory.Exists(captures) && Directory.EnumerateFiles(captures, "*.json").Take(CaptureConsumer.BatchSize + 1).Count() > CaptureConsumer.BatchSize ||
+            Directory.Exists(paths.Inbox) && Directory.EnumerateFiles(paths.Inbox, "*.json").Take(InboxBatchSize + 1).Count() > InboxBatchSize;
+    }
+
     private List<string> ReplayInbox(AppState state)
     {
         var accepted = new List<string>();
-        foreach (var path in Directory.EnumerateFiles(paths.Inbox, "*.json").Order(StringComparer.Ordinal).Take(2000))
+        foreach (var path in Directory.EnumerateFiles(paths.Inbox, "*.json").Order(StringComparer.Ordinal).Take(InboxBatchSize))
         {
             try
             {
@@ -223,12 +244,30 @@ public sealed class StateStore
         state.AppliedEvents.IntersectWith(inboxIds);
     }
 
-    private static void PruneEndedSessions(AppState state)
+    private static bool CompactSettledSessions(AppState state, DateTimeOffset now)
     {
-        var cutoff = DateTimeOffset.UtcNow.AddDays(-30);
-        foreach (var key in state.Sessions.Where(pair => pair.Value.Ended && pair.Value.LastObserved < cutoff).Select(pair => pair.Key).ToArray())
+        var changed = false;
+        foreach (var session in state.Sessions.Values)
+        {
+            if (session.Ended && now - session.LastObserved > SettleInterval)
+            {
+                changed |= CausalSessionReducer.Compact(session);
+            }
+        }
+        return changed;
+    }
+
+    private static bool PruneEndedSessions(AppState state, DateTimeOffset now)
+    {
+        var cutoff = now - EndedRetention;
+        var remove = state.Sessions.Where(pair => pair.Value.Ended && pair.Value.LastObserved < cutoff).Select(pair => pair.Key).ToHashSet(StringComparer.Ordinal);
+        var kept = state.Sessions.Where(pair => pair.Value.Ended && !remove.Contains(pair.Key))
+            .OrderBy(pair => pair.Value.LastObserved).ThenBy(pair => pair.Key, StringComparer.Ordinal).ToArray();
+        remove.UnionWith(kept.Take(Math.Max(0, kept.Length - MaxEndedSessions)).Select(pair => pair.Key));
+        foreach (var key in remove)
         {
             state.Sessions.Remove(key);
         }
+        return remove.Count != 0;
     }
 }

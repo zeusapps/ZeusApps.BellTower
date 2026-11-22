@@ -5,6 +5,7 @@
     <IsAotCompatible>true</IsAotCompatible>
   </PropertyGroup>
   <ItemGroup>
+    <InternalsVisibleTo Include="BellTower.Tests" />
     <Compile Include="../BellTower/Core/Observation.cs" Link="Core/Observation.cs" />
     <Compile Include="../BellTower/Core/EventKind.cs" Link="Core/EventKind.cs" />
     <Compile Include="../BellTower/Core/BackgroundTask.cs" Link="Core/BackgroundTask.cs" />

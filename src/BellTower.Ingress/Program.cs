@@ -15,6 +15,7 @@ public static class Program
             return 0;
         }
         string? root = null;
+        var persisted = false;
         try
         {
             // The installed adapter has exactly these arguments; parsing never starts the desktop CLI.
@@ -49,6 +50,7 @@ public static class Program
             {
                 CaptureSpool.Write(root, envelope);
             }
+            persisted = true;
         }
         catch (Exception exception) when (exception is not (OutOfMemoryException or StackOverflowException))
         {
@@ -56,6 +58,12 @@ public static class Program
         }
         // This boundary never emits provider decisions, payloads or exception messages.
         Console.WriteLine("{}");
+        // Decision 9: after the capture is durable (or a benign event needs none) and the neutral output is out, a stopped tray is
+        // started detached. It never waits, never throws and is skipped after a rejected capture or an argument error.
+        if (persisted && root is not null)
+        {
+            HookTrayStart.TryStart(root);
+        }
         return 0;
     }
 }

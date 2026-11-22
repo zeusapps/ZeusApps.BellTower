@@ -10,6 +10,7 @@ public sealed class DataPaths
     public string Requests => Path.Combine(Root, "focus");
     public string State => Path.Combine(Root, "state.json");
     public string Config => Path.Combine(Root, "config.json");
+    public string RefreshHealth => Path.Combine(Root, "refresh-health.json");
     public string Position => Path.Combine(Root, "position.json");
 
     public DataPaths(string? root = null)
@@ -34,5 +35,5 @@ public sealed class DataPaths
         }
     }
 
-    public string LockName(string area) => "Local\\BellTower-" + ContentHash.Compute(Root.ToUpperInvariant() + area)[..24];
+    public string LockName(string area) => BellTower.Protocol.HookTrayStart.MutexName(Root, area);
 }

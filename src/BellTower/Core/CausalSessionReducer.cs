@@ -77,6 +77,56 @@ public static class CausalSessionReducer
         state.Sessions[observation.Key] = result;
     }
 
+    /// <summary>
+    /// Folds the replay history of an ended session. The journal observations at or before the session's last applied observation
+    /// (<see cref="SessionState.LastObserved"/>) are folded away and the floor moves to the latest of them, never backward, so delayed earlier
+    /// events stay ignored. Later observations were ignored by the ended session, for example a resumed client's prompt delivered before its
+    /// resume registration; they stay in the journal (bounded by the window) against a checkpoint copied from the compacted session, so a late
+    /// resume still sorts ahead of them. Operation memory is dropped because ended sessions ignore non-registration events and revival clears
+    /// it. Returns whether anything changed; a second call with nothing new to fold changes nothing.
+    /// </summary>
+    public static bool Compact(SessionState session)
+    {
+        if (!session.Ended)
+        {
+            return false;
+        }
+        var changed = false;
+        // The journal is sorted by Compare, which orders by time first, so what is at or before LastObserved is a prefix.
+        var folded = session.CausalEvents.TakeWhile(e => e.At <= session.LastObserved).Count();
+        if (folded > 0)
+        {
+            var floor = session.CausalEvents[folded - 1];
+            if (session.CausalFloor is null || Compare(floor, session.CausalFloor) > 0)
+            {
+                session.CausalFloor = floor;
+            }
+            session.CausalEvents = session.CausalEvents.Skip(folded).ToList();
+            session.CausalCheckpoint = null;
+            changed = true;
+        }
+        if (session.CausalEvents.Count == 0)
+        {
+            if (session.CausalCheckpoint is not null)
+            {
+                session.CausalCheckpoint = null;
+                changed = true;
+            }
+        }
+        if (session.CompletedOperations.Count > 0 || session.Operations.Count > 0)
+        {
+            session.CompletedOperations = [];
+            session.Operations = [];
+            changed = true;
+        }
+        if (folded > 0 && session.CausalEvents.Count > 0)
+        {
+            // The kept observations replay against the compacted session itself (they change nothing while it is ended).
+            session.CausalCheckpoint = Copy(session);
+        }
+        return changed;
+    }
+
     private static int Compare(Observation first, Observation second)
     {
         var time = first.At.CompareTo(second.At);

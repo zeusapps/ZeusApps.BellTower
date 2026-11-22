@@ -31,3 +31,11 @@ Codex hook command repair (`fix-codex-hook-command-shell`): Codex 0.164.0 delive
 ## Retained hook fixtures and rare scenarios
 
 The archive retains five unchecked tasks (1.2, 1.3, 4.1, 4.2 and 8.2) concerning comprehensive authenticated hook captures and dependent acceptance. Preserve the distinction between documented-contract fixtures, automated host/process probes and user-confirmed live results. Approval denial/cancellation, some question/failure/background combinations, linked-worktree switching and host edge cases are not all observed; normal working checks in live-acceptance.md do not need repeating.
+
+## Bounded monitoring state (`bound-ended-session-state`)
+
+Deferred suggestions and accepted residuals from the review of this change (see its `reports/findings.md`):
+
+- A refused over-budget save re-encodes the whole state on each tick and mutates its input (ANALYSIS-004). Doctor's `state` section decodes the state file once more without the store lock (ANALYSIS-005). The oldest-ended ordering is duplicated and the removal policy is split across the store and the snapshot store (ANALYSIS-007). The doctor and tray refresh-health wiring has no direct test (QA-004).
+- Draining a backlog costs about 4 s per batch of 128 captures on the maintainer's real data, because each accepted capture replays the live sessions' 256-event causal journals. This is existing reducer cost, outside this change.
+- Refresh-reason sanitizing masks every rooted path in realistic .NET IO messages. Accepted residuals with no known producer in the refresh path: an unquoted path whose final name contains a space keeps the words after the space; a quoted segment without a drive, UNC, Unix, profile or data-directory root is not masked; a closing quote glued to a letter or digit keeps the final word; and when no valid closing quote follows on the line (for example a path cut at the 2,000-character cap), text after an apostrophe before a separator is kept.

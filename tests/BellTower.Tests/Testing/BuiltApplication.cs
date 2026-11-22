@@ -33,4 +33,14 @@ internal static class BuiltApplication
             return Path.Combine(Repository, "src", "BellTower.Ingress", "bin", output.Parent!.Name, output.Name, "win-x64", "bell-tower-ingress.exe");
         }
     }
+
+    // The stand-in launcher (never a tray): its output folder, copied per test as bell-tower.exe.
+    public static string FakeLauncherDirectory
+    {
+        get
+        {
+            var output = new DirectoryInfo(AppContext.BaseDirectory);
+            return Path.Combine(Repository, "tests", "BellTower.Tests.FakeLauncher", "bin", output.Parent!.Name, output.Name);
+        }
+    }
 }

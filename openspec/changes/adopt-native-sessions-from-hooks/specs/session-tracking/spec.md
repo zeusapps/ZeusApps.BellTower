@@ -3,11 +3,23 @@
 ## ADDED Requirements
 
 ### Requirement: Hook-triggered adoption of native sessions
-After user-level integration is installed and trusted, Bell Tower SHALL discover Claude Code and Codex conversations from supported hooks when the user starts the original client command without a Bell Tower launch function or dedicated terminal profile. Adoption SHALL reuse the shared identity, attention and replay policy. A missing SessionStart SHALL NOT prevent a later valid lifecycle event from establishing the conversation. Capture SHALL remain neutral, bounded and independent of tray availability.
+After user-level integration is installed and trusted, Bell Tower SHALL discover Claude Code and Codex conversations from supported hooks when the user starts the original client command without a Bell Tower launch function or dedicated terminal profile. Adoption SHALL reuse the shared identity, attention and replay policy. A missing SessionStart SHALL NOT prevent a later valid lifecycle event from establishing the conversation. Capture SHALL remain neutral, bounded and independent of tray availability: a hook SHALL persist its capture whether or not the tray is running, and SHALL NOT wait for the tray. After persisting a capture, the ingress SHALL start a stopped tray through the recorded stable launcher, unless the user stopped the tray in the current Windows sign-in session or an update or switch is pending.
 
 #### Scenario: Native commands in ordinary terminals
 - **WHEN** native Claude Code and Codex sessions emit valid hooks from ordinary local terminals
 - **THEN** Bell Tower discovers separate conversations without requiring launcher metadata or a project-specific profile
+
+#### Scenario: No tray is running when a hook arrives
+- **WHEN** a native Claude Code or Codex session emits a hook after Windows started and no tray is running
+- **THEN** the hook persists its capture, returns its neutral output without waiting, and the tray is started once in the background, then consumes the queued captures and shows the session
+
+#### Scenario: User stopped the tray
+- **WHEN** the user chose Exit in the tray and a hook of either provider arrives in the same Windows sign-in session
+- **THEN** the hook persists its capture and does not start the tray; after the user starts the tray or signs in again, hooks start it when it is not running
+
+#### Scenario: Several hooks arrive while the tray is stopped
+- **WHEN** hooks from several sessions of both providers arrive at the same time with no tray running
+- **THEN** at most one start is attempted per bounded interval, exactly one tray runs, and the started tray does not inherit a provider's environment or hold the hook's output open
 
 #### Scenario: First observation arrives after startup
 - **WHEN** the provider delivers the first accepted lifecycle event only after initial user input or the startup event was missed

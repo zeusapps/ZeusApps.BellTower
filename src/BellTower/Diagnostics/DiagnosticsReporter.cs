@@ -10,12 +10,15 @@ public sealed class DiagnosticsReporter(DataPaths paths, IMicrophoneActivitySour
     public object Report(string? transcript = null, string transcriptProvider = "claude")
     {
         var microphoneSnapshot = microphone.GetSnapshot();
+        var trayRunning = new TrayController(paths).IsRunning();
         return new
         {
             Version = BellTower.Cli.ApplicationInfo.Display,
             DataDirectory = paths.Root,
-            TrayRunning = new TrayController(paths).IsRunning(),
+            TrayRunning = trayRunning,
+            State = new StateReporter(paths).Report(trayRunning),
             Capture = new CaptureHealthReporter(paths).Report(),
+            HookStart = new HookStartReporter(paths).Report(),
             HookDelivery = new HookDeliveryReporter(paths).Report(),
             TranscriptTimeouts = transcript is null ? null : new TranscriptTimeoutReader().Read(transcriptProvider, transcript),
             Claude = new
