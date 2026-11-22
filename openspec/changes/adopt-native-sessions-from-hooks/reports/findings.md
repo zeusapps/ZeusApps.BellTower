@@ -4,11 +4,10 @@ Orchestrator-owned ledger for implementation and independent review.
 
 ## Current orchestrator
 
-- Client / version: Codex (connected app, version not exposed)
-- Session identity: codex-hook-start-handoff-20261115
-- Since (UTC): 2026-11-15
-- Previous owner: Claude Code session `claude-native-adoption-20261115`; user explicitly confirmed hand-off to Codex on 2026-11-15
-- State: session work finished; no implementation or review running. Native acceptance is pending; this is not feature completion.
+- Client / version: Claude Code (Opus 5.5)
+- Session identity: claude-stop-guard-20261122
+- Since (UTC): 2026-11-22T12:20Z
+- Previous owner: Codex session `codex-hook-start-handoff-20261115` (marked finished; user asked this Claude Code session on 2026-11-22 to fix the stop-authority guard failure)
 
 ## Assignments and reservations
 
@@ -688,3 +687,7 @@ The user subsequently retained full terminal-support scope and requested continu
 - 2026-11-15: Final a592 snapshot focused suite executed outside sandbox: 37 passed, 11 failed of 48 (4m37s). Failures expect ordinary fake-tray startup; no-start safety and selector checks pass. Separate retained-diagnostic probe with snapshot ingress/fake launcher, disposable data and precreated fake release returned exit0, neutral {}, no fake execution, Failed/provider-job-breakaway-incomplete. Thus this tool execution host retains an ancestor job even after successful breakaway; it cannot establish ordinary startup acceptance. No provider restriction or native-hook failure is inferred. No gate weakened and no third source fix cycle; final full suite is not repeated while this condition persists. Requested current snapshot AOT publish/protocolsmoke only; assigned QA051 final functional evidence assessment, preserving QA050 unchanged.
 
 - 2026-11-15: Final QA051 accepted with matching a592 identity and hygiene pass. Source/correction safety rechecks pass via Analysis043/044 and the passing selector, refusal and Exit cases; QA5100 retains required successful-start/native acceptance. NativeAOT retry outside sandbox with Visual Studio Installer on PATH succeeded; published ingress protocol smoke and strict OpenSpec validation passed. Snapshot dependency/toolchain differences remain explicit; actual pin/locks and user installation are untouched. No final full-suite rerun, commit or feature-completion claim. Final-session handoff is ready for the required real-host trial, with all source fix cycles exhausted.
+
+- 2026-11-22: Hand-off to Claude Code (previous Codex owner marked its session finished). The full suite on f4dfa4e showed ProcessStopAuthorityTests.OnlyHandlesCreatedByTheOperationAreEverTerminated failing deterministically: DEV-056 added `TerminateProcess` (declaration and one call terminating only the hook-created suspended child) in src/BellTower.Protocol/TrayProcess.cs without an allowed-site entry. Gap in task 4.5 acceptance. Assigned DEV-057 (allow-list entry with rationale, plus the deferred recover-unready-dev-operation follow-ups in docs/follow-ups.md); reviews QA-052 and ANALYSIS-045 reserved (QA-5200..5299, ANALYSIS-4500..4599).
+- 2026-11-22: DEV-057 returned on `head=0c99801 baseline=0c99801 files=2 diff=514ac2fd579b untracked=0/e3b0c44298fc` (confirmed). Allow-list entry for TrayProcess.cs (2 sites) with rationale verified from source; production code unchanged; docs/follow-ups.md gains the recover-unready-dev-operation section. Release build clean; ProcessStopAuthorityTests 2/2; full suite 1827 passed, 12 failed (11 known HookTrayStartTests and CodexSharedRuntimeServiceTests.ElevatedSharedBackendIsRefusedWithItsOwnStatusAndNothingIsSent, not rerun). Assigned QA-052 and ANALYSIS-045.
+- 2026-11-22: QA-052 (no findings; ProcessStopAuthorityTests 2/2; the Codex elevated-backend test passed 3/3 standalone, intermittent under load and unrelated; hygiene passed) and ANALYSIS-045 (no findings; saved verbatim after a refused write) returned on the DEV-057 identity, unchanged before and after. The guard failure is resolved; committed with the evidence and reports. Task 4.5 stays unchecked: it still requires the 6.1 native trial.

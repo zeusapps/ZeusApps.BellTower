@@ -39,3 +39,13 @@ Deferred suggestions and accepted residuals from the review of this change (see 
 - A refused over-budget save re-encodes the whole state on each tick and mutates its input (ANALYSIS-004). Doctor's `state` section decodes the state file once more without the store lock (ANALYSIS-005). The oldest-ended ordering is duplicated and the removal policy is split across the store and the snapshot store (ANALYSIS-007). The doctor and tray refresh-health wiring has no direct test (QA-004).
 - Draining a backlog costs about 4 s per batch of 128 captures on the maintainer's real data, because each accepted capture replays the live sessions' 256-event causal journals. This is existing reducer cost, outside this change.
 - Refresh-reason sanitizing masks every rooted path in realistic .NET IO messages. Accepted residuals with no known producer in the refresh path: an unquoted path whose final name contains a space keeps the words after the space; a quoted segment without a drive, UNC, Unix, profile or data-directory root is not masked; a closing quote glued to a letter or digit keeps the final word; and when no valid closing quote follows on the line (for example a path cut at the 2,000-character cap), text after an apostrophe before a separator is kept.
+
+## Dev recovery of an unready tray (`recover-unready-dev-operation`)
+
+Deferred suggestions from the review of this change (see its archived `reports/findings.md` and `reports/analysis-001.md`):
+
+- A real readiness timeout through Finalize is not exercised by fixtures (QA-002). The installed recovery proved Finalize, Preflight and Switch, but not the deadline message. The fixture interrupts a Rollback after the pointer phase, and the readiness-deadline failure runs only in the function harness with a stubbed launcher.
+- The reason filter in `scripts/install-dev.ps1` drops every product-format reason (`<TypeName>: <message>`), because its drive-letter branch matches the `n:` of `IOException:`; the fixture uses a reason without a colon. The log is also opened without `FileShare.Delete`, so a concurrent `LocalLog` rotation fails silently once (ANALYSIS-004).
+- The Finalize prelude runs the package hash, descriptor and original-bytes checks before Finalize's own ordered preconditions, so a removed or rebuilt dev zip makes Finalize refuse with a message that names no next step (ANALYSIS-006).
+- Presence reading and the tray scan are duplicated between `Get-TrayHolderPids` and `Get-NotReadyFacts` (ANALYSIS-007).
+- The 16 MiB state budget is a literal in the script and in three product sites, not a product constant (ANALYSIS-011). A named constant on `AtomicFile` would need product code.
