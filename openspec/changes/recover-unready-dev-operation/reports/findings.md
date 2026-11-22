@@ -94,12 +94,14 @@ Details are in [analysis-001](analysis-001.md). Triage 2026-11-22: ANALYSIS-002 
 | --- | --- | --- | --- | --- |
 | 2026-11-22 | none | assigned / duplicate / deferred | orchestrator | as above; DEV-002 fix cycle 1 |
 
+- 2026-11-22: installed recovery performed with user authorization. User quit the stuck 0.1.9022 tray. Finalize on the 2026-11-21 operation record returned finalized-without-tray, removed the 2 owned records, selection 0.1.9022 and monitoring untouched, no tray started. Preflight and Switch 0.1.9022 -> 0.1.9028 dev f13697a passed (no tray restarted because none ran). `bell-tower start`: the tray wrote fresh presence within seconds, `update --status` reports 0.1.9028 running and selected, `state.json` fell from 16,772,891 to about 750 KB (4.5% of the budget), no pending captures remain, 84 ended sessions kept (52 Claude Code, 32 Codex), no refresh failure logged after the switch. Only the Bell Tower tray was stopped, by the user from its menu; no agent session of either provider was stopped. Task 4.3 checked.
+
 ## Completion assessment
 
 - Current QA / analysis reports: [qa-003](qa-003.md) and [analysis-003](analysis-003.md) on the DEV-003 target; [qa-004](qa-004.md) and [analysis-004](analysis-004.md) on the final docs-only target `head=f4dfa4e baseline=f4dfa4e files=10 diff=4995f1ed6ca6 untracked=1/943d3bdda832`
-- Required acceptance: fixture acceptance for tasks 1.1, 2.1-2.4 and 3.1 satisfied; Release build clean; install-dev and skill tests 124/124; full suite failures only known or rerun-passing flaky tests; strict validation passed. Task 4.3 (installed recovery on the maintainer's installation) remains.
+- Required acceptance: fixture acceptance for tasks 1.1, 2.1-2.4 and 3.1 satisfied; Release build clean; install-dev and skill tests 124/124; full suite failures only known or rerun-passing flaky tests; strict validation passed. Task 4.3 performed and passed on the maintainer's installation (see history).
 - Findings: 10 verified (QA-001, ANALYSIS-001, -003, -005, -008, -009, -010, -100, -101, -200), 1 duplicate (ANALYSIS-002 of QA-001), 5 deferred (QA-002, ANALYSIS-004, -006, -007, -011); none blocking open.
 - Nonblocking follow-ups: QA-002 (real readiness timeout covered by task 4.3), ANALYSIS-004 (reason quote filter and log share mode), ANALYSIS-006 (Finalize prelude order), ANALYSIS-007 (duplicated presence and scan), ANALYSIS-011 (budget constant in product code); destination docs/follow-ups.md at archive.
-- Evidence gaps / provider restrictions: the not-ready deadline path is fixture- and harness-proven only; a live run is task 4.3. No provider restriction claimed.
-- Commit: recorded below after the commit.
-- OpenSpec task reconciliation: 8/9 checked; 4.3 open.
+- Evidence gaps / provider restrictions: the not-ready deadline message itself was not reproduced live (Finalize ran on an already failed rollback); Finalize, Preflight and Switch were proven live in task 4.3. No provider restriction claimed.
+- Commit: f13697a on branch archive-completed-release-change (implementation and reviews); the 4.3 record follows in the next commit. Not pushed.
+- OpenSpec task reconciliation: 9/9 checked.

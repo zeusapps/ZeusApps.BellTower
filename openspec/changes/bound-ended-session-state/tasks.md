@@ -18,4 +18,4 @@
 
 - [x] 3.1 Run the Release build, the full .NET test suite, format verification and `openspec validate bound-ended-session-state --strict`, and record the results.
 - [x] 3.2 One QA review and one code-analyzer review of the stable implementation target. Resolve blocking findings and record suggestions as deferred.
-- [ ] 3.3 Installed check on the maintainer's dev build (user-authorized install): the tray processes the queued Claude Code and Codex captures and writes presence, `state.json` drops well below the budget, doctor reports healthy state, and the log stops repeating refresh failures. Record the result, or Not performed.
+- [x] 3.3 Installed check on the maintainer's dev build (user-authorized install): the tray processes the queued Claude Code and Codex captures and writes presence, `state.json` drops well below the budget, doctor reports healthy state, and the log stops repeating refresh failures. Record the result, or Not performed.
