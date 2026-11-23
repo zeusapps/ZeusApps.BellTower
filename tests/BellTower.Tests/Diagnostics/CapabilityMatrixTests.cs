@@ -151,12 +151,17 @@ public sealed class CapabilityMatrixTests
     }
 
     [Theory]
-    [InlineData(false, "off", "window only (Windows Terminal)")]
-    [InlineData(true, "on", "tab (Windows Terminal)")]
-    public void DoctorReportsTheNativePresentationStateAndBothPrecisionsPerProvider(bool enabled, string state, string now)
+    [InlineData(false, "off", "window only (Windows Terminal)", false)]
+    [InlineData(true, "on", "window only (Windows Terminal), the provider owns the tab title", false)]
+    [InlineData(true, "on", "tab (Windows Terminal) for sessions started after the setting took effect", true)]
+    public void DoctorReportsTheNativePresentationStateAndBothPrecisionsPerProvider(bool enabled, string state, string now, bool titleStep)
     {
         using var workspace = new TestWorkspace();
         new ConfigStore(workspace.Paths).Update(config => config.NativePresentation = enabled);
+        if (titleStep)
+        {
+            BellTower.Tests.Testing.ProviderTitleFixture.Apply(workspace.Paths, "claude", "codex");
+        }
         using var report = JsonDocument.Parse(Json.Encode(new DiagnosticsReporter(workspace.Paths).Report()));
         var native = report.RootElement.GetProperty(Name(report.RootElement, "nativeSessions"));
         Assert.Equal(state, native.GetProperty(Name(native, "setting")).GetString());
@@ -165,6 +170,7 @@ public sealed class CapabilityMatrixTests
             var item = native.GetProperty(Name(native, provider));
             Assert.Equal(now, item.GetProperty(Name(item, "navigationNow")).GetString());
             Assert.Contains("assumed until the 6.1 trial", item.GetProperty(Name(item, "titleAndColor")).GetString());
+            Assert.Contains(titleStep ? "Bell Tower title for sessions started after" : "provider-owned", item.GetProperty(Name(item, "title")).GetString());
         }
         var plain = native.GetProperty(Name(native, "codexPlainDefault"));
         Assert.Contains("not a provider restriction", plain.GetProperty(Name(plain, "unfinished")).GetString());

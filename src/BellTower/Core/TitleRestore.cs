@@ -5,7 +5,7 @@ namespace BellTower.Core;
 /// belongs to, the title found before the first write and the last title Bell Tower wrote. Restoration runs only against this
 /// exact shell (process identifier plus creation time) and only while the console still shows the written title.
 /// </summary>
-public sealed record TitleRestore(string AttachmentId, ProcessIdentity Shell, string Previous, string Written)
+public sealed record TitleRestore(string AttachmentId, ProcessIdentity Shell, string? Previous, string Written)
 {
     /// <summary>True when Bell Tower wrote the session palette to this shell, so the colors are reset to the terminal default on restore. The prior color is never read.</summary>
     public bool Colored { get; init; }

@@ -88,14 +88,23 @@ public sealed class DiagnosticsReporter(DataPaths paths, IMicrophoneActivitySour
     private object NativeSessionsReport()
     {
         var enabled = new ConfigStore(paths).Read().NativePresentation;
-        const string navigation = "Windows Terminal: window only with the setting off, the session's tab with it on; VS Code: the registered terminal through the bridge";
-        const string presentation = "supported behind the setting (on by default, switch it off in the tray): session title and identity palette background after the first accepted hook, not before startup; exit, switch-off or loss of the verified agent or shell resets the colors with OSC 110/111 and gives back the prior title on the recorded shell only; the reset in Windows Terminal and VS Code is assumed until the 6.1 trial";
+        var titles = new ProviderTitleState(paths);
+        var claudeTitle = titles.Report("claude");
+        var codexTitle = titles.Report("codex");
+        // Per session: the provider's disabling setting is in its actual settings file (set by the step or by the user) and the session
+        // started after it took effect. Doctor states the setting and the time; the session test is the same call the writer makes.
+        string Title((bool Present, DateTimeOffset? Since, string File) state) => state.Present
+            ? "Bell Tower title for sessions started after " + state.Since!.Value.ToString("O") + " (the provider's own title is disabled in its settings); a session started earlier keeps the provider's title"
+            : "provider-owned (Bell Tower writes color only; setup --provider-titles, or the provider's own setting, lets it write a title in new sessions)";
+        string Now((bool Present, DateTimeOffset? Since, string File) state) => !enabled ? "window only (Windows Terminal)" : state.Present ? "tab (Windows Terminal) for sessions started after the setting took effect" : "window only (Windows Terminal), the provider owns the tab title";
+        const string navigation = "Windows Terminal: window only with the setting off or while the provider owns the tab title, the session's tab with the setting on and the provider's own title in effect disabled for that session; VS Code: the registered terminal through the bridge";
+        const string presentation = "supported behind the setting (on by default, switch it off in the tray): identity palette background after the first accepted hook, not before startup, and the session title only while the provider's own title is in effect disabled for that session (set by the opt-in step or by the user, and the session started after it took effect; the provider overwrites a title otherwise); exit, switch-off or loss of the verified agent or shell resets the colors with OSC 110/111 and gives back the prior title on the recorded shell only; the reset in Windows Terminal and VS Code is assumed until the 6.1 trial";
         return new
         {
             Setting = enabled ? "on" : "off",
             SettingName = "Title and color native sessions (tray menu)",
-            ClaudeDirect = new { Navigation = navigation, NavigationNow = enabled ? "tab (Windows Terminal)" : "window only (Windows Terminal)", TitleAndColor = presentation },
-            CodexNoDaemon = new { Navigation = navigation, NavigationNow = enabled ? "tab (Windows Terminal)" : "window only (Windows Terminal)", TitleAndColor = presentation },
+            ClaudeDirect = new { Navigation = navigation, NavigationNow = Now(claudeTitle), Title = Title(claudeTitle), TitleAndColor = presentation },
+            CodexNoDaemon = new { Navigation = navigation, NavigationNow = Now(codexTitle), Title = Title(codexTitle), TitleAndColor = presentation },
             CodexPlainDefault = new
             {
                 Supported = "tracking, alerts, name sync and permission status (the shared backend confirms a human wait alongside the owning runtime)",

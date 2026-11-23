@@ -1,0 +1,16 @@
+{
+  "provider": "codex",
+  "providerVersion": "0.171.0",
+  "source": "verbatim capture from a real codex --no-daemon TUI in a pseudo-console with an isolated CODEX_HOME and a loopback stand-in model endpoint (2026-11-22), redacted: identifiers, paths and command text replaced",
+  "note": "The same payload shape arrives for a held approval (approvals_reviewer user) and for an automatically reviewed one (approvals_reviewer auto_review). It names no reviewer; the transcript turn_context does.",
+  "payload": {
+    "session_id": "<session>",
+    "turn_id": "<turn>",
+    "cwd": "<project>",
+    "hook_event_name": "PermissionRequest",
+    "model": "<model>",
+    "permission_mode": "default",
+    "tool_name": "Bash",
+    "tool_input": { "command": "<command>", "description": "<justification>" }
+  }
+}

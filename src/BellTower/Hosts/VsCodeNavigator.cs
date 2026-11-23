@@ -110,7 +110,7 @@ public sealed class VsCodeNavigator(DataPaths paths, VsCodeWindowOwnership owner
                 FocusResult? answer = null;
                 try
                 {
-                    answer = AtomicFile.Read<FocusResult>(receipt);
+                    answer = AtomicFile.Read<FocusResult>(receipt)?.Normalized();
                 }
                 catch (Exception exception) when (exception is IOException or JsonException or InvalidDataException)
                 {

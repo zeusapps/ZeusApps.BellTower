@@ -15,6 +15,7 @@ public static class ConfirmationEvidence
 {
     public const string ClaudeSignal = "Notification permission_prompt";
     public const string CodexSignal = "owning-runtime waitingOnApproval status";
+    public const string CodexTranscriptSignal = "transcript turn_context approvals_reviewer";
     private const int MaximumModes = 8;
 
     public static string Path(DataPaths paths, string provider) => System.IO.Path.Combine(paths.Root, provider + "-confirmation-observed.json");

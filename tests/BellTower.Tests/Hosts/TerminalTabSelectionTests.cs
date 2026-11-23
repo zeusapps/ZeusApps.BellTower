@@ -113,6 +113,7 @@ public sealed class TerminalTabSelectionTests
             new("windows-terminal", process, process, 1234, "terminal-session") { ShellSource = "ancestry" }, workspace.Root, DateTimeOffset.UtcNow)
         { Ownership = "observed" }, "session", mode, BellTower.Providers.AgentModeClassifier.MayShareBackend(provider));
         new AttachmentStore(workspace.Paths).Save(outcome.Attachment);
+        ProviderTitleFixture.Apply(workspace.Paths, "claude", "codex");
     }
 
     [Theory]

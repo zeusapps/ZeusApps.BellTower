@@ -1,5 +1,6 @@
 using BellTower.Core;
 using BellTower.Distribution;
+using BellTower.Hosts;
 
 namespace BellTower.Tray;
 
@@ -39,11 +40,29 @@ public sealed class OverviewForm : Form
     private readonly TextBox checkout = new() { Width = 250 };
     private readonly TextBox color = new() { Width = 100 };
     private string originalCheckout = "";
+    private readonly WindowActivator activator = new(new NativeWindowActivationApi());
     public event Action<string>? Navigate;
     public event Action<string, string?, string?>? SaveIdentity;
     public event Action<string, bool>? SetNativeSync;
     public event Action<string>? UseBellTowerName;
     public event Action<string, string?, string?, bool>? ConfigureIdentity;
+    /// <summary>
+    /// Shows the window and brings it in front of the terminal the user is working in. A plain Show and Activate leave it behind when
+    /// Windows declines the foreground request, so the shared window helper lifts it above other windows as the fallback.
+    /// </summary>
+    public void Raise()
+    {
+        if (!Visible)
+        {
+            Show();
+        }
+        activator.Raise(Handle, () =>
+        {
+            TopMost = true;
+            TopMost = false;
+        });
+    }
+
     public OverviewForm()
     {
         Text = "Bell Tower - sessions" + (VersionDisplay.IsDev(Cli.ApplicationInfo.Display) ? " - " + Cli.ApplicationInfo.Display : "");

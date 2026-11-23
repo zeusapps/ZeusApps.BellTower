@@ -185,14 +185,19 @@ public sealed class ConfirmationCoverageTests
     }
 
     [Fact]
-    public void TheMatrixKeepsTheCodexHookOnlyGapUnverifiedAndEveryNewRowStatesBothProviders()
+    public void TheMatrixStatesTheTranscriptEvidenceForBothProvidersWithItsLimits()
     {
         var rows = CapabilityMatrix.Rows.Where(row => row.Surface.StartsWith("Human-wait", StringComparison.Ordinal) ||
             row.Surface.StartsWith("Question-tool", StringComparison.Ordinal)).ToList();
         Assert.Equal(3, rows.Count);
         var gap = rows.Single(row => row.Surface.Contains("without an owning runtime", StringComparison.Ordinal));
-        Assert.Equal(CapabilityMatrix.Unverified, gap.Codex.Status);
-        Assert.Contains("Closing evidence", gap.Codex.Detail);
+        // Task 4.9: the transcript supplies the evidence the hooks lack, for both providers, and the matrix states what is still unverified.
+        Assert.Equal(CapabilityMatrix.Supported, gap.Codex.Status);
+        Assert.Contains("approvals_reviewer", gap.Codex.Detail);
+        Assert.Contains("other versions and remote sessions are unverified", gap.Codex.Detail);
+        Assert.Contains("live trial 6.1 open", gap.Codex.Detail);
         Assert.Equal(CapabilityMatrix.Supported, gap.Claude.Status);
+        Assert.Contains("user-rejected", gap.Claude.Detail);
+        Assert.Contains("live trial 6.1 open", gap.Claude.Detail);
     }
 }

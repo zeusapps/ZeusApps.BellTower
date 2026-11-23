@@ -63,7 +63,13 @@ public sealed class NativePresentationTests
 
     private static ProcessIdentity Self => ProcessProbe.Identify(Environment.ProcessId)!;
 
-    private static void Setting(TestWorkspace workspace, bool enabled) => new ConfigStore(workspace.Paths).Update(c => c.NativePresentation = enabled);
+    // These fixtures exercise the title and color policy, so the opt-in provider title step is applied for both providers here;
+    // ProviderTitleStepTests covers the behavior without it.
+    private static void Setting(TestWorkspace workspace, bool enabled)
+    {
+        new ConfigStore(workspace.Paths).Update(c => c.NativePresentation = enabled);
+        ProviderTitleFixture.Apply(workspace.Paths, "claude", "codex");
+    }
 
     private static Attachment Captured(string provider, string id, ProcessIdentity agent, ProcessIdentity shell, string ownership = "observed") =>
         new(id, provider, agent, new("windows-terminal", shell, Self, 1234, "terminal-session") { ShellSource = "ancestry" }, "D:/example",
@@ -105,10 +111,10 @@ public sealed class NativePresentationTests
         Assert.False(NativePresentation.GrantsPresentation(outcome.Attachment, enabled: false));
         // The consumer's view adds the title and background consent; ingress never sets it.
         Assert.False(outcome.Attachment.ManagedTitle);
-        var effective = NativePresentation.Effective(outcome.Attachment, true);
+        var effective = NativePresentation.Effective(outcome.Attachment, true, true);
         Assert.True(effective.ManagedTitle);
         Assert.True(effective.ManagedBackground);
-        Assert.False(NativePresentation.Effective(outcome.Attachment, false).ManagedTitle);
+        Assert.False(NativePresentation.Effective(outcome.Attachment, false, true).ManagedTitle);
         Assert.False(NativePresentation.IsAdoptedDirect(outcome.Attachment with { Process = null }));
         Assert.False(NativePresentation.IsAdoptedDirect(outcome.Attachment with { Host = outcome.Attachment.Host with { Shell = null } }));
         Assert.False(NativePresentation.IsAdoptedDirect(outcome.Attachment with { Evidence = null }));
@@ -141,10 +147,10 @@ public sealed class NativePresentationTests
         var evidence = new AttachmentEvidence { Mode = AgentModes.InteractiveClient, Generation = Self, LifecycleOwner = LifecycleOwners.BellTower };
         var optedOut = Captured("claude", "m", Self, Self, "managed") with { Evidence = evidence };
         Assert.False(NativePresentation.GrantsPresentation(optedOut, enabled: true));
-        Assert.False(NativePresentation.Effective(optedOut, true).ManagedTitle);
+        Assert.False(NativePresentation.Effective(optedOut, true, true).ManagedTitle);
         var managed = optedOut with { ManagedTitle = true, ManagedBackground = true };
-        Assert.Equal(managed, NativePresentation.Effective(managed, true));
-        Assert.Equal(managed, NativePresentation.Effective(managed, false));
+        Assert.Equal(managed, NativePresentation.Effective(managed, true, true));
+        Assert.Equal(managed, NativePresentation.Effective(managed, false, true));
     }
 
     [Theory]

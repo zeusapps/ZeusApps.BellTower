@@ -36,6 +36,10 @@ internal sealed class SetupCommand : Command
         {
             Description = "Configure native hooks and the optional VS Code focus bridge without terminal profiles or shell imports."
         };
+        var providerTitles = new Option<bool>("--provider-titles")
+        {
+            Description = "Opt-in step: stop the provider writing its own terminal title (whole provider profile) so Bell Tower's session title can persist; --remove undoes it."
+        };
         var migrate = new Option<bool>("--migrate-edited-hooks")
         {
             Description = "Explicitly replace edited Bell Tower hook handlers after preview; --apply writes backups."
@@ -49,12 +53,15 @@ internal sealed class SetupCommand : Command
         Options.Add(desktop);
         Options.Add(hostBridge);
         Options.Add(migrate);
+        Options.Add(providerTitles);
         SetAction(result =>
         {
             var paths = CommonOptions.Paths(result, dataDirectory);
             var setup = new IntegrationSetup(paths, BellTower.Distribution.Installation.StableExecutable(Environment.ProcessPath!), result.GetValue(home));
-            var plan = setup.Plan(result.GetValue(clients)!, result.GetValue(remove), result.GetValue(statusLine), result.GetValue(desktop), result.GetValue(project),
-                result.GetValue(migrate), result.GetValue(hostBridge));
+            var plan = result.GetValue(providerTitles)
+                ? setup.PlanProviderTitles(result.GetValue(clients)!, result.GetValue(remove))
+                : setup.Plan(result.GetValue(clients)!, result.GetValue(remove), result.GetValue(statusLine), result.GetValue(desktop), result.GetValue(project),
+                    result.GetValue(migrate), result.GetValue(hostBridge));
             var output = result.InvocationConfiguration.Output;
             foreach (var file in plan.Changes)
             {

@@ -114,6 +114,8 @@ public sealed record IngressProvision(string Source, string Hash, string Target,
             if (Launcher is not null)
             {
                 HookTrayStart.RecordLauncher(paths.Root, Launcher);
+                // The fallback start: an on-demand task with no trigger. A failure leaves only the shell start, which doctor reports.
+                HookStartTaskSetup.Register(paths.Root, Launcher);
             }
         }
         catch

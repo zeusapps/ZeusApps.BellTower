@@ -125,25 +125,25 @@ public static class CodexFooterSettings
         return text + (text.Length == 0 || text.EndsWith('\n') ? "" : newline) + "[tui]" + newline + line;
     }
 
-    private static KeyValueSyntax? Find(DocumentSyntax document)
+    internal static KeyValueSyntax? Find(DocumentSyntax document, string key = "status_line")
     {
         foreach (var pair in document.KeyValues)
         {
-            if (Parts(pair.Key).SequenceEqual(["tui", "status_line"]))
+            if (Parts(pair.Key).SequenceEqual(["tui", key]))
             {
                 return pair;
             }
             if (Parts(pair.Key).SequenceEqual(["tui"]) && pair.Value is InlineTableSyntax inline)
             {
                 return inline.Items.Select(item => item.KeyValue).OfType<KeyValueSyntax>()
-                    .FirstOrDefault(item => Parts(item.Key).SequenceEqual(["status_line"]));
+                    .FirstOrDefault(item => Parts(item.Key).SequenceEqual([key]));
             }
         }
         return document.Tables.OfType<TableSyntax>().Where(table => Parts(table.Name).SequenceEqual(["tui"]))
-            .SelectMany(table => table.Items).FirstOrDefault(pair => Parts(pair.Key).SequenceEqual(["status_line"]));
+            .SelectMany(table => table.Items).FirstOrDefault(pair => Parts(pair.Key).SequenceEqual([key]));
     }
 
-    private static IEnumerable<string> Parts(KeySyntax? key)
+    internal static IEnumerable<string> Parts(KeySyntax? key)
     {
         if (key is null)
         {
@@ -162,7 +162,7 @@ public static class CodexFooterSettings
         }
     }
 
-    private static string Slice(string text, SyntaxNode value) => text.Substring(value.Span.Start.Offset, value.Span.Length);
-    private static string Replace(string text, SyntaxNode value, string replacement) =>
+    internal static string Slice(string text, SyntaxNode value) => text.Substring(value.Span.Start.Offset, value.Span.Length);
+    internal static string Replace(string text, SyntaxNode value, string replacement) =>
         text[..value.Span.Start.Offset] + replacement + text[(value.Span.Start.Offset + value.Span.Length)..];
 }

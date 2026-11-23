@@ -6,6 +6,7 @@
   </PropertyGroup>
   <ItemGroup>
     <None Update="Fixtures/hooks/*" CopyToOutputDirectory="PreserveNewest" />
+    <None Update="Fixtures/approval/*" CopyToOutputDirectory="PreserveNewest" />
     <None Update="Fixtures/identity/*" CopyToOutputDirectory="PreserveNewest" />
     <None Update="Fixtures/native/*" CopyToOutputDirectory="PreserveNewest" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />

@@ -1,0 +1,4 @@
+{"timestamp":"2026-11-22T19:27:19.276Z","type":"session_meta","payload":{"id":"<session>","cli_version":"0.171.0","originator":"codex-tui"}}
+{"timestamp":"2026-11-22T19:27:19.294Z","type":"turn_context","payload":{"turn_id":"<turn>","approval_policy":"on-request","approvals_reviewer":"user","sandbox_policy":{"type":"read-only"}}}
+{"timestamp":"2026-11-22T19:27:19.888Z","type":"response_item","payload":{"type":"function_call","name":"exec_command","call_id":"<call>"}}
+{"timestamp":"2026-11-22T19:27:26.074Z","type":"event_msg","payload":{"type":"item_completed","turn_id":"<turn>"}}

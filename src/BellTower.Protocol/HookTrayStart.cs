@@ -24,12 +24,34 @@ public static class HookTrayStart
 {
     public const string TrayArea = "tray-instance";
     public const string LauncherName = "bell-tower.exe";
+    /// <summary>
+    /// The marker a hook puts in the environment of the tray it starts, so the tray checks its own job. It is an environment variable
+    /// and not an argument: a tray from before this contract ignores it, so a rollback or switch to an older payload still starts. The
+    /// tray removes it from its own environment at once, so nothing it launches inherits it.
+    /// </summary>
+    public const string HookStartVariable = "BELLTOWER_HOOK_START";
+
+    public static string JobRefusalRecord(string root) => Path.Combine(StateDirectory(root), "tray-job.txt");
+
+    /// <summary>The time a hook-started tray refused its job, or null. Cleared when a tray takes the instance mutex.</summary>
+    public static DateTimeOffset? JobRefusalAt(string root) => ReadRecord(JobRefusalRecord(root))?.Split('\t') is { Length: 2 } parts &&
+        DateTimeOffset.TryParse(parts[0], CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var at) ? at : null;
+
+    public static void ClearJobRefusal(string root)
+    {
+        try
+        {
+            File.Delete(JobRefusalRecord(root));
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or ArgumentException) { }
+    }
     // Long enough that a slow tray start (it consumes the queue only after it shows) is not retried by every hook of a busy
     // session, short enough that a start that failed is retried within a minute of the next hook.
     public static readonly TimeSpan AttemptInterval = TimeSpan.FromSeconds(30);
     // The update marker is honored for as long as the update transaction itself honors it (UpdateTransaction.RestartPending).
     private static readonly TimeSpan UpdateWindow = TimeSpan.FromMinutes(10);
     private const int RecordLimit = 2048;
+    private static readonly TimeSpan RefusalBinding = TimeSpan.FromMinutes(10);
 
     public static string StateDirectory(string root) => Path.Combine(root, "hook-start");
     public static string LauncherRecord(string root) => Path.Combine(StateDirectory(root), "launcher.txt");
@@ -62,7 +84,19 @@ public static class HookTrayStart
         }
     }
 
-    public static HookStartOutcome TryStart(string root, DateTimeOffset? at = null)
+    /// <summary>Null when a desktop shell can be verified now (for doctor); otherwise the bounded reason. Opens and releases the shell handle.</summary>
+    public static string? ShellProblem()
+    {
+        var shell = DesktopShell.Open();
+        shell.Close();
+        return shell.Problem;
+    }
+
+    public static HookStartOutcome TryStart(string root, DateTimeOffset? at = null) => TryStart(root, at, null, null);
+
+    /// <summary>The routes are injectable only so a test can prove the fallback is chosen solely when the shell start fails.</summary>
+    internal static HookStartOutcome TryStart(string root, DateTimeOffset? at, Func<string, string, (HookStartOutcome Outcome, string Detail)>? shellStart,
+        Func<string, (HookStartOutcome Outcome, string Detail)>? taskStart)
     {
         try
         {
@@ -89,7 +123,17 @@ public static class HookTrayStart
             {
                 return HookStartOutcome.Throttled;
             }
-            var (outcome, detail) = TrayProcess.Start(launcher, root);
+            // A tray started by an earlier hook that refused its job (after the last attempt) is not retried through the shell: the next
+            // start goes to the recorded task, or fails with a stated reason, so a false trigger cannot keep the tray down.
+            // The refusal binds until a tray takes the instance (which clears it) or, for a stale record nobody cleared, for ten minutes.
+            var refused = JobRefusalAt(root) is { } refusedAt && (LastAttempt(root) is not { } previousAttempt || refusedAt >= previousAttempt.At || now - refusedAt < RefusalBinding);
+            var (outcome, detail) = refused ? (HookStartOutcome.Failed, "shell-route-refused") : (shellStart ?? TrayProcess.Start)(launcher, root);
+            // Only a failed shell start falls back, and only to the task setup recorded; a started tray never takes a second route.
+            if (outcome == HookStartOutcome.Failed && HookStartTask.Recorded(root) is not null)
+            {
+                var (taskOutcome, taskDetail) = (taskStart ?? HookStartTask.Run)(root);
+                (outcome, detail) = taskOutcome == HookStartOutcome.Started ? (taskOutcome, taskDetail) : (HookStartOutcome.Failed, detail + ";" + taskDetail);
+            }
             try
             {
                 WriteRecord(LastAttemptRecord(root), now.ToString("O", CultureInfo.InvariantCulture) + "\t" + outcome + "\t" + detail);
@@ -277,7 +321,7 @@ public static class HookTrayStart
             ? (at, parts[1], parts[2]) : null;
     }
 
-    internal static string? ReadRecord(string path)
+    public static string? ReadRecord(string path)
     {
         try
         {

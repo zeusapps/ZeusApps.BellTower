@@ -15,10 +15,16 @@ public sealed class Navigator
 
     public Task<FocusResult> FocusAsync(Attachment? attachment)
     {
+        // A shared-backend conversation never has a terminal of its own; say so and name the supported routes instead of the
+        // generic process message, for every click and both hosts.
+        if (NavigationReasons.ForSharedConversation(attachment) is { } shared)
+        {
+            return Task.FromResult(new FocusResult(false, "unavailable", shared));
+        }
         if (attachment is null || attachment.EndedAt is not null || attachment.Health == "unavailable" ||
             attachment.Process is not { } registered || ProcessProbe.Identify(registered.Pid) != registered)
         {
-            return Task.FromResult(new FocusResult(false, "unavailable", "The session process cannot be verified."));
+            return Task.FromResult(new FocusResult(false, "unavailable", NavigationReasons.ProcessUnverified));
         }
 
         return hosts.TryGetValue(attachment.Host.Kind, out var host)

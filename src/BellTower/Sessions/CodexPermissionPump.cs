@@ -106,7 +106,16 @@ public sealed class CodexPermissionPump(DataPaths paths, Func<CodexAccess, Cance
             var access = opener.Select(session);
             if (access is null)
             {
-                verified.TryRemove(session.Key, out _);
+                // No owning runtime and no shared backend (codex --no-daemon): the turn's approval reviewer recorded in the transcript
+                // says whether a person decides. The same confirmed-or-suppressed state follows as for a runtime status.
+                if (TranscriptWaiting(check) is { } fromTranscript)
+                {
+                    Record(check, fromTranscript, null, ConfirmationEvidence.CodexTranscriptSignal);
+                }
+                else
+                {
+                    verified.TryRemove(session.Key, out _);
+                }
                 return;
             }
             using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(3));
@@ -118,30 +127,10 @@ public sealed class CodexPermissionPump(DataPaths paths, Func<CodexAccess, Cance
                 verified.TryRemove(session.Key, out _);
                 return;
             }
-            var now = DateTimeOffset.UtcNow;
-            if (now - lastEvidence > TimeSpan.FromMinutes(1))
-            {
-                lastEvidence = now;
-                try
-                {
-                    ConfirmationEvidence.Record(paths, "codex", ConfirmationEvidence.CodexSignal, null, now);
-                }
-                catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
-                {
-                    // Diagnostics evidence is best effort and never affects verification.
-                }
-            }
-            var since = verified.TryGetValue(session.Key, out var previous) && previous.Pending && waiting.Value &&
-                previous.Attachment == check.Scope.Attachment && previous.Episode == check.Scope.Episode && previous.Scope == check.Scope.Scope && previous.Revision == check.Scope.Revision &&
-                now - previous.Observed <= TimeSpan.FromSeconds(5) ? previous.Since : now;
             // The question dialog status is confirmation evidence only; it never gates or delays a question.
             var userInput = check.HasQuestion
                 ? await client.ReadUserInputPendingAsync(check.SessionId, timeout.Token).ConfigureAwait(false) : null;
-            verified[session.Key] = new(check.Scope.Attachment, check.Scope.Episode, check.Scope.Scope, check.Scope.Revision, waiting.Value, since, now, userInput);
-            if (waiting.Value)
-            {
-                SubmitConfirmation(check, now);
-            }
+            Record(check, waiting.Value, userInput, ConfirmationEvidence.CodexSignal);
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or WebSocketException or
                 OperationCanceledException or JsonException or InvalidOperationException or ArgumentException)
@@ -158,6 +147,38 @@ public sealed class CodexPermissionPump(DataPaths paths, Func<CodexAccess, Cance
             ((ICollection<KeyValuePair<string, ScopeKey>>)checking).Remove(new(session.Key, check.Scope));
         }
     }
+
+    // The stored result of one status source for one session: confirmed (a person decides), suppressed (another reviewer decides) or
+    // nothing. Every source, a runtime status or the transcript, goes through here so they cannot diverge.
+    private void Record(Check check, bool waiting, bool? userInput, string signal)
+    {
+        var session = check.Session;
+        var now = DateTimeOffset.UtcNow;
+        if (now - lastEvidence > TimeSpan.FromMinutes(1))
+        {
+            lastEvidence = now;
+            try
+            {
+                ConfirmationEvidence.Record(paths, "codex", signal, null, now);
+            }
+            catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+            {
+                // Diagnostics evidence is best effort and never affects verification.
+            }
+        }
+        var since = verified.TryGetValue(session.Key, out var previous) && previous.Pending && waiting &&
+            previous.Attachment == check.Scope.Attachment && previous.Episode == check.Scope.Episode && previous.Scope == check.Scope.Scope && previous.Revision == check.Scope.Revision &&
+            now - previous.Observed <= TimeSpan.FromSeconds(5) ? previous.Since : now;
+        verified[session.Key] = new(check.Scope.Attachment, check.Scope.Episode, check.Scope.Scope, check.Scope.Revision, waiting, since, now, userInput);
+        if (waiting)
+        {
+            SubmitConfirmation(check, now);
+        }
+    }
+
+    // A bounded read of the end of the session's transcript, off the tray thread. Null when the transcript is unknown or holds no record of the turn.
+    private bool? TranscriptWaiting(Check check) =>
+        CodexApprovalEvidence.HumanMustDecide(TranscriptTail.Read(new IdentityStore(paths).Get(check.Session.Key, check.Directory).TranscriptPath), check.TurnId);
 
     // Runtime confirmation takes the same stored transition as a Claude prompt: the pump publishes a runtime-approval observation
     // that the shared reducer applies, so the episode and receipt handling is identical. The observation keeps its own time (the

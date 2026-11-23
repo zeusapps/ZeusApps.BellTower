@@ -10,7 +10,7 @@ public sealed class WindowsTerminalNavigator(DataPaths paths) : ITerminalNavigat
     private readonly WindowActivator activation = new(new NativeWindowActivationApi());
     public string HostKind => "windows-terminal";
     public string Precision(Attachment attachment) => !IsAvailable(attachment.Host) ? "unavailable" :
-        NativePresentation.Effective(attachment, new ConfigStore(paths).Read().NativePresentation).ManagedTitle ? "tab or window" : "window only";
+        NativePresentation.Effective(attachment, new ConfigStore(paths).Read().NativePresentation, new ProviderTitleState(paths).DisabledFor(attachment.Provider, attachment.Process?.StartedUtcTicks)).ManagedTitle ? "tab or window" : "window only";
     public async Task<FocusResult> FocusAsync(Attachment attachment)
     {
         if (!IsAvailable(attachment.Host))
@@ -47,7 +47,7 @@ public sealed class WindowsTerminalNavigator(DataPaths paths) : ITerminalNavigat
         {
             await child.WaitForExitAsync(timeout.Token).ConfigureAwait(false);
             await errors.ConfigureAwait(false);
-            return System.Text.Json.JsonSerializer.Deserialize<FocusResult>(await output.ConfigureAwait(false), IO.Json.Options)
+            return System.Text.Json.JsonSerializer.Deserialize<FocusResult>(await output.ConfigureAwait(false), IO.Json.Options)?.Normalized()
                 ?? FocusWindow(attachment.Host);
         }
         catch (OperationCanceledException)

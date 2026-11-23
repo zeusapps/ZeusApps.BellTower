@@ -4,15 +4,19 @@ namespace BellTower.Tray;
 
 public sealed class TrayHost(DataPaths paths)
 {
-    public int Run(bool silent, int durationMilliseconds = 0)
+    public int Run(bool silent, int durationMilliseconds = 0, bool hookStarted = false)
     {
         if (!BellTower.Updates.UpdateTransaction.CanStartTray(paths))
+        { return 0; }
+        if (TrayJobGuard.Refuses(paths, hookStarted))
         { return 0; }
         using var instance = new Mutex(true, paths.LockName("tray-instance"), out var created);
         if (!created)
         {
             return 0;
         }
+        // This tray holds the instance now, so an earlier job refusal no longer describes the state of the tray.
+        BellTower.Protocol.HookTrayStart.ClearJobRefusal(paths.Root);
         BellTower.Distribution.DistributionJson.Write(BellTower.Updates.UpdateTransaction.Presence(paths) + ".starting",
             new BellTower.Updates.TrayPresence(BellTower.IO.ProcessProbe.Identify(Environment.ProcessId)!, BellTower.Cli.ApplicationInfo.Version,
                 paths.Root, Environment.GetEnvironmentVariable("BELLTOWER_UPDATE_ACTIVATION"), Capture: 1));

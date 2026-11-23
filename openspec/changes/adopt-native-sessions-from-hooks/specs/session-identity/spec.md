@@ -53,7 +53,7 @@ Bell Tower SHALL change an adopted terminal's title or colors only when the user
 - **THEN** adoption preserves those controls and existing verified pre-launch and exit restoration behavior
 
 ### Requirement: Provider-owned terminal titles
-Bell Tower SHALL write its own terminal title for an adopted direct session only when the provider's own terminal title is disabled through Bell Tower's opt-in setup step. Without that step, the session SHALL keep its color and badge, Bell Tower SHALL write no title, and diagnostics SHALL state that titles are provider-owned. The rule SHALL apply equally to Claude Code and Codex.
+Bell Tower SHALL write its own terminal title for an adopted direct session only when the provider's own terminal title is in effect disabled for that session: the disabling setting is present in the provider's actual settings file, whether Bell Tower's opt-in step or the user set it, and the session started after it took effect. Without that step, the session SHALL keep its color and badge, Bell Tower SHALL write no title, and diagnostics SHALL state that titles are provider-owned. The rule SHALL apply equally to Claude Code and Codex.
 
 #### Scenario: Title step applied
 - **WHEN** the user has applied the opt-in title step for a provider and a direct session of that provider is adopted
@@ -62,3 +62,8 @@ Bell Tower SHALL write its own terminal title for an adopted direct session only
 #### Scenario: Title step not applied
 - **WHEN** the opt-in title step is not applied for a provider
 - **THEN** the session receives color and badge only, and doctor reports the title as provider-owned
+
+#### Scenario: Setting reset or applied while a session runs
+- **WHEN** the disabling setting is removed by the user, or applied while a session is already running
+- **THEN** Bell Tower writes no title for sessions whose provider still writes its own, reports window-only navigation for them, and titles only sessions started after the setting took effect
+- **AND** a removal and re-add made while the tray is not running is not observed, so a session started in that gap may still be titled; this limitation is stated in the installation and compatibility documentation

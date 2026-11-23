@@ -14,6 +14,7 @@ public sealed class TrayApplication : ApplicationContext
     private readonly DataPaths paths;
     private readonly StripForm strip = new();
     private readonly OverviewForm overview = new();
+    private readonly NoticeForm notice = new();
     private readonly NotifyIcon tray;
     private readonly Icon appIcon = AppIcon.Load();
     private readonly System.Windows.Forms.Timer timer = new()
@@ -32,6 +33,7 @@ public sealed class TrayApplication : ApplicationContext
     private readonly TerminalTitlePump titles;
     private readonly NativeNamePump nativeNames;
     private readonly CodexPermissionPump permissions;
+    private readonly ClaudeDeclineWatcher declines;
     private readonly AlertPolicy policy = new(DateTimeOffset.UtcNow);
     private readonly AudioQueue audio;
     private readonly IMicrophoneActivitySource microphone = new WindowsMicrophoneActivitySource();
@@ -70,6 +72,7 @@ public sealed class TrayApplication : ApplicationContext
         var codexRuntime = new CodexRuntimeOpener(paths);
         nativeNames = new(paths, checkout, opener: codexRuntime);
         permissions = new(paths, opener: codexRuntime);
+        declines = new(paths);
         config = configuration.Read();
         updates = new(paths, new ReleaseClient(updateHttp));
         if (Installation.ForPayload(Environment.ProcessPath!) is not null)
@@ -89,11 +92,7 @@ public sealed class TrayApplication : ApplicationContext
             installUpdate.Text = offer is null ? "Install update" : "Install update " + offer.Version;
         };
         menu.Items.Add(new ToolStripSeparator());
-        menu.Items.Add("Sessions", null, (_, _) =>
-        {
-            overview.Show();
-            overview.Activate();
-        });
+        menu.Items.Add("Sessions", null, (_, _) => overview.Raise());
         menu.Items.Add(new ToolStripSeparator());
         var mute = new ToolStripMenuItem("Mute")
         {
@@ -156,7 +155,7 @@ public sealed class TrayApplication : ApplicationContext
             catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or InvalidDataException)
             {
                 overview.SetStatus("The notification tone could not be selected: " + exception.Message);
-                overview.Show();
+                overview.Raise();
             }
         });
         menu.Items.Add(tones);
@@ -182,11 +181,7 @@ public sealed class TrayApplication : ApplicationContext
             Visible = true,
             ContextMenuStrip = menu
         };
-        tray.DoubleClick += (_, _) =>
-        {
-            overview.Show();
-            overview.Activate();
-        };
+        tray.DoubleClick += (_, _) => overview.Raise();
         strip.Acknowledge += key =>
         {
             store.Acknowledge(key);
@@ -272,6 +267,7 @@ public sealed class TrayApplication : ApplicationContext
             var live = state.Sessions.Values.Where(s => !s.Ended).ToArray();
             permissions.Update(live);
             permissions.Apply(live, now);
+            declines.Update(live);
             ClaudeConfirmationSignal.Apply(live);
             strip.UpdateChips(views.Chips(live, now, contexts));
             foreach (var s in policy.Collect(live, now, config.Muted))
@@ -291,6 +287,8 @@ public sealed class TrayApplication : ApplicationContext
             if (now >= nextOverview && !refreshing)
             {
                 nextOverview = now.AddSeconds(2);
+                // Both providers' settings files are looked at on the tick, so a removed disabling setting is seen while the tray runs.
+                new ProviderTitleState(paths).ObserveBoth();
                 titles.Update(live);
                 nativeNames.Update(live);
                 RefreshOverview(live);
@@ -328,10 +326,10 @@ public sealed class TrayApplication : ApplicationContext
                 { overview.SetStatus(result?.Error ?? (updates.Hint() is { } offer ? "Update available: " + offer.Version + ". Use Install update in the tray menu." : "No newer compatible stable release available.")); }
             }
             if (!disposed)
-            { overview.Show(); }
+            { overview.Raise(); }
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException or OperationCanceledException or System.ComponentModel.Win32Exception)
-        { if (!disposed) { overview.SetStatus("Update could not complete: " + error.Message); overview.Show(); } }
+        { if (!disposed) { overview.SetStatus("Update could not complete: " + error.Message); overview.Raise(); } }
     }
 
     private async void RefreshOverview(SessionState[] live)
@@ -409,13 +407,18 @@ public sealed class TrayApplication : ApplicationContext
 
     private async void Navigate(string key, bool hideTimer)
     {
+        FocusResult result;
+        string logCode;
+        string? episode = null;
         if (!state.Sessions.TryGetValue(key, out var s))
         {
-            return;
+            (result, logCode) = NavigationNotice.Missing();
         }
-
-        var episode = s.Episode;
-        var result = await navigation.FocusAsync(attachments.Get(s.AttachmentId));
+        else
+        {
+            episode = s.Episode;
+            (result, logCode) = await NavigationNotice.RunAsync(() => navigation.FocusAsync(attachments.Get(s.AttachmentId)));
+        }
         if (disposed)
         {
             return;
@@ -435,9 +438,15 @@ public sealed class TrayApplication : ApplicationContext
             new LocalLog(paths).Write("viewed-wait-save-failed");
             overview.SetStatus("Session focused; the timer preference could not be saved.");
         }
-        if (NavigationOutcome.NeedsNotice(result))
+        // Every click is accounted for in one local log line (no paths, names or messages), so a click that showed nothing is diagnosable.
+        new LocalLog(paths).Write(logCode);
+        if (NavigationNotice.ShowsNotice(result))
         {
-            tray.ShowBalloonTip(3000, "Bell Tower", result.Message, ToolTipIcon.Info);
+            // Windows may hide a balloon without telling the application, so the reason is always shown in Bell Tower's own notice,
+            // next to the window the click came from.
+            var anchor = hideTimer && strip.Visible ? strip.Bounds : overview.Visible ? overview.Bounds :
+                strip.Visible ? strip.Bounds : Screen.PrimaryScreen!.WorkingArea with { Height = 0 };
+            notice.ShowNotice(result.Message, anchor);
         }
     }
 
@@ -465,9 +474,11 @@ public sealed class TrayApplication : ApplicationContext
         titles.Dispose();
         nativeNames.Dispose();
         permissions.Dispose();
+        declines.Dispose();
         tray.Visible = false;
         tray.Dispose();
         strip.Dispose();
+        notice.Dispose();
         overview.Dispose();
         appIcon.Dispose();
         timer.Dispose();

@@ -12,7 +12,8 @@ public sealed class ProcessStopAuthorityTests
     // file -> (terminating calls, the process whose handle Bell Tower created in that operation)
     private static readonly Dictionary<string, (int Count, string Owner)> Allowed = new()
     {
-        ["BellTower.Protocol/TrayProcess.cs"] = (2, "the suspended tray child this hook start created with CREATE_SUSPENDED, terminated before any of its code ran when the job check, the query or ResumeThread fails (one call site), and the P/Invoke declaration for that call (one site)"),
+        ["BellTower.Protocol/TrayProcess.cs"] = (2, "the suspended tray child this hook start created with CREATE_SUSPENDED as a child of the desktop shell, terminated before any of its code ran when its token query, its elevation check or ResumeThread fails (one call site), and the P/Invoke declaration for that call (one site)"),
+        ["BellTower/Setup/HookStartTaskSetup.cs"] = (1, "the PowerShell registration child it started, when it has not finished within its timeout"),
         ["BellTower/Hosts/WindowsTerminalNavigator.cs"] = (1, "the disposable tab-selection helper it started"),
         ["BellTower/IO/GitReader.cs"] = (1, "the git child it started"),
         ["BellTower/IO/OwnedProcessRunner.cs"] = (1, "the single helper child it started"),

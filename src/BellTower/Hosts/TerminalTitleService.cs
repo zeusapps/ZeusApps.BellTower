@@ -9,7 +9,8 @@ public sealed class TerminalTitleService(DataPaths paths, IConsoleTitleWriter wr
 
     public bool Apply(DesiredTerminalPresentation desired)
     {
-        if (string.IsNullOrEmpty(desired.Title) || desired.Title.Length > 512 || desired.Title.Any(char.IsControl) ||
+        // An empty title is a color-only request (the provider's own title is not disabled, so Bell Tower writes none).
+        if (desired.Title is null || desired.Title.Length > 512 || desired.Title.Length == 0 && desired.Background is null || desired.Title.Any(char.IsControl) ||
             string.IsNullOrEmpty(desired.AttachmentId) || desired.AttachmentId.Length > 256 || desired.Agent is null || desired.Shell is null ||
             desired.Background is not null && !Core.Palette.IsHex(desired.Background))
         {
@@ -23,8 +24,9 @@ public sealed class TerminalTitleService(DataPaths paths, IConsoleTitleWriter wr
         }
         // The setting is read again under the lock, so turning it off stops writes even for a request computed earlier.
         var native = NativePresentation.GrantsPresentation(stored, NativeEnabled());
-        var attachment = NativePresentation.Effective(stored, native);
-        if (attachment is not { ManagedTitle: true, EndedAt: null } || attachment.Health == "unavailable" ||
+        var attachment = NativePresentation.Effective(stored, native, new ProviderTitleState(paths).DisabledFor(stored.Provider, stored.Process?.StartedUtcTicks));
+        if (attachment is not { EndedAt: null } || !(attachment.ManagedTitle || attachment.ManagedBackground) || desired.Title.Length != 0 && !attachment.ManagedTitle ||
+            attachment.Health == "unavailable" ||
             attachment.Provider != desired.Provider || attachment.RegisteredAt != desired.RegisteredAt ||
             attachment.Process != desired.Agent || attachment.Host.Shell != desired.Shell ||
             attachment.Host.Kind is not ("vscode" or "windows-terminal") ||
@@ -43,12 +45,16 @@ public sealed class TerminalTitleService(DataPaths paths, IConsoleTitleWriter wr
     {
         var records = new TitleRestoreStore(paths);
         var existing = records.Get(desired.Shell);
-        var previous = existing?.Previous ?? writer.ReadTitle(desired.Shell, desired.Agent);
-        if (previous is null)
+        var colorOnly = desired.Title.Length == 0;
+        // A color-only record captures no title (null), so a title written later in the same shell still reads and keeps the real prior one.
+        var previous = existing?.Previous ?? (colorOnly ? null : writer.ReadTitle(desired.Shell, desired.Agent));
+        if (previous is null && !colorOnly)
         {
             return false;
         }
-        records.Save(new TitleRestore(desired.AttachmentId, desired.Shell, previous, desired.Title) { Colored = desired.Background is not null || existing is { Colored: true } });
+        // A color-only write keeps the title Bell Tower wrote earlier (if any) so a later restore still gives it back.
+        records.Save(new TitleRestore(desired.AttachmentId, desired.Shell, previous, colorOnly ? existing?.Written ?? "" : desired.Title)
+        { Colored = desired.Background is not null || existing is { Colored: true } });
         return writer.Write(desired.Shell, desired.Agent, desired.Title, desired.Background);
     }
 
@@ -71,7 +77,7 @@ public sealed class TerminalTitleService(DataPaths paths, IConsoleTitleWriter wr
             {
                 records.Remove(record.Shell);
             }
-            else if (!writer.RestoreTitle(record.Shell, record.Written, record.Previous) || record.Colored && !writer.ResetColors(record.Shell))
+            else if (record.Written.Length != 0 && record.Previous is not null && !writer.RestoreTitle(record.Shell, record.Written, record.Previous) || record.Colored && !writer.ResetColors(record.Shell))
             {
                 restored = false;
             }
@@ -93,8 +99,8 @@ public sealed class TerminalTitleService(DataPaths paths, IConsoleTitleWriter wr
         }
         var stored = new AttachmentStore(paths).Get(session.AttachmentId);
         var native = stored is not null && NativePresentation.GrantsPresentation(stored, NativeEnabled());
-        var attachment = stored is null ? null : NativePresentation.Effective(stored, native);
-        if (attachment is not { ManagedTitle: true, EndedAt: null, Process: { } agent, Host.Shell: { } shell } ||
+        var attachment = stored is null ? null : NativePresentation.Effective(stored, native, new ProviderTitleState(paths).DisabledFor(stored.Provider, stored.Process?.StartedUtcTicks));
+        if (attachment is not { EndedAt: null, Process: { } agent, Host.Shell: { } shell } || !(attachment.ManagedTitle || attachment.ManagedBackground) ||
             attachment.Health == "unavailable" ||
             attachment.Host.Kind is not ("vscode" or "windows-terminal") ||
             ProcessProbe.Identify(agent.Pid) != agent || ProcessProbe.Identify(shell.Pid) != shell)
@@ -102,7 +108,7 @@ public sealed class TerminalTitleService(DataPaths paths, IConsoleTitleWriter wr
             return false;
         }
         var identity = new IdentityStore(paths).Get(session.Key, session.Directory);
-        var title = Core.SessionPresentation.Title(identity.Name, new GitReader().Read(session.Directory));
+        var title = attachment.ManagedTitle ? Core.SessionPresentation.Title(identity.Name, new GitReader().Read(session.Directory)) : "";
         if (native)
         {
             return WriteNative(new(attachment.Id, attachment.Provider, attachment.RegisteredAt, agent, shell, title, identity.Palette.Background));

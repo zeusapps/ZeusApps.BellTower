@@ -1,5 +1,5 @@
-using System.Runtime.InteropServices;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using BellTower.Protocol;
 
 // A stand-in for the stable launcher. It never starts a tray: it records how it was started (arguments, working directory,
@@ -64,10 +64,17 @@ internal static class Program
         {
             return RunJobHost(args);
         }
-        if (args is not ["tray", "--data-dir", var root])
+        if (args.Length >= 1 && args[0] == "/run")
+        {
+            return SchtasksStandIn(args);
+        }
+        // Exactly the arguments every payload has always accepted: a payload that rejects unknown options still starts (ANALYSIS-4702).
+        var valid = args is ["tray", "--data-dir", _];
+        if (!valid)
         {
             return 2;
         }
+        var root = args[2];
         var folder = Path.Combine(root, "fake-launcher");
         Directory.CreateDirectory(folder);
         var lines = new List<string>
@@ -92,6 +99,19 @@ internal static class Program
             Thread.Sleep(50);
         }
         return 0;
+    }
+
+    // Stands in for schtasks.exe /run: records the call and, per the mode file next to it, exits at once (ok, fail) or only after a while (slow).
+    private static int SchtasksStandIn(string[] args)
+    {
+        var folder = AppContext.BaseDirectory;
+        File.AppendAllText(Path.Combine(folder, "schtasks-calls.txt"), string.Join("|", args) + Environment.NewLine);
+        var mode = File.Exists(Path.Combine(folder, "schtasks-mode.txt")) ? File.ReadAllText(Path.Combine(folder, "schtasks-mode.txt")).Trim() : "ok";
+        if (mode == "slow")
+        {
+            Thread.Sleep(1500);
+        }
+        return mode == "fail" ? 1 : 0;
     }
 
     private static int RunJobHost(string[] args)

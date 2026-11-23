@@ -30,7 +30,7 @@ Scope was reduced on 2026-11-13 (design decision 8). Completed tasks are unchang
 - [ ] 4.5 Start a stopped tray from the hook (design decision 9, user decision 2026-11-15, trial observation T-2), the same for both providers. After persisting the capture the ingress checks the tray-instance mutex and, when no tray runs, starts the recorded stable launcher detached: no inherited handles, no console window, outside the provider's job, the user's default environment, never waiting. Setup and the tray record the launcher path; the ingress validates it. Tray Exit (and an equivalent user stop command) records a user stop for the current sign-in session that suppresses hook starts until the tray is started by hand or the user signs in again; crash, update, dev switch and restarting management stops do not. At most one attempt per bounded interval; nothing starts while an update or switch is pending. Doctor reports availability, the last attempt and suppression. Verify for both providers: hook with no tray starts exactly one tray that consumes the queue; tray running costs only the mutex check (measure hook latency both ways); user Exit then hook starts nothing; stale sign-in record is ignored; concurrent hooks start one tray; missing or invalid launcher record starts nothing; the hook returns while the started tray keeps running and its output pipe is closed; the tray does not see `CLAUDECODE`, `CODEX_*` or `BELLTOWER_*` from the hook; no test starts a real tray.
 - [ ] 4.4 Keep managed launches unchanged: pre-launch coloring, native-name controls and final shell restoration. Verify a mixed managed and native run of both providers does not inherit stale launch metadata, replay sounds or reset waiting episodes.
 
-- [ ] 4.6 Rework the hook tray start (design decision 10, user decision 2026-11-22).
+- [x] 4.6 Rework the hook tray start (design decision 10, user decision 2026-11-22).
   - Create the tray as a child of the verified desktop shell with no inherited handles, and remove the DEV-056 any-job check.
   - Add the tray's own kill-on-close self-check as a diagnostic.
   - Add the on-demand per-user scheduled-task fallback, created and removed by setup and reported by doctor.
@@ -42,19 +42,19 @@ Scope was reduced on 2026-11-13 (design decision 8). Completed tasks are unchang
     - the fallback is chosen only when the shell start fails;
     - user-stop suppression, burst control and the update gate are unchanged.
   - The previously failing `HookTrayStartTests` pass or are replaced by tests of the new contract.
-- [ ] 4.7 Add the opt-in provider title step (design decision 11).
+- [x] 4.7 Add the opt-in provider title step (design decision 11).
   - First probe that the Codex `[tui] terminal_title` value stops Codex's title writes. If it does not, offer the step for Claude Code only and record the Codex limitation.
   - Bell Tower writes its native title only when the step is applied for that provider; otherwise color and badge only, with window-only navigation stated.
   - Verify the preview, apply, repeat and remove behavior, backups, and untouched unrelated settings for each provider with disposable settings. Cover doctor and the capability matrix.
-- [ ] 4.8 Capture the real Codex approval evidence (design decision 12).
+- [x] 4.8 Capture the real Codex approval evidence (design decision 12).
   - With isolated provider homes, record the `PermissionRequest` payload and the transcript records for a held approval, an automatic review and a decline from `codex --no-daemon`.
   - Store redacted fixtures and choose the reliable signal. Record the evidence.
-- [ ] 4.9 Implement the shared wait rule with thin adapters (design decision 12).
+- [x] 4.9 Implement the shared wait rule with thin adapters (design decision 12).
   - Codex: a held approval becomes a confirmed wait from the chosen signal.
   - Claude Code: a declined prompt clears the wait from a bounded read of the end of the transcript.
   - Timing never confirms a wait.
   - Verify with fixture tests for both providers and a mixed case. Automatic review never alerts.
-- [ ] 4.10 Make every click result visible (design decision 13).
+- [x] 4.10 Make every click result visible (design decision 13).
   - The notice is always shown for a click that needs a reason; it is topmost from creation without activation (ANALYSIS-4600, ANALYSIS-4601).
   - Stale-key and navigator-failure clicks are logged and explained (ANALYSIS-4602).
   - Deserialized focus results are normalized (QA-5304), and the Codex matrix wording is aligned (ANALYSIS-4603).

@@ -23,7 +23,12 @@ public static class NativePresentation
     /// <summary>True when the setting grants the managed title and palette background to this attachment that carries no managed title of its own.</summary>
     public static bool GrantsPresentation(Attachment attachment, bool enabled) => enabled && !attachment.ManagedTitle && IsAdoptedDirect(attachment);
 
-    /// <summary>The attachment as the presentation and navigation consumers must see it: title and background consent added when granted.</summary>
-    public static Attachment Effective(Attachment attachment, bool enabled) =>
-        GrantsPresentation(attachment, enabled) ? attachment with { ManagedTitle = true, ManagedBackground = true } : attachment;
+    /// <summary>
+    /// The attachment as the presentation and navigation consumers must see it. The setting grants the palette background; the managed title
+    /// is granted only while the provider's own terminal title is disabled through Bell Tower's opt-in setup step
+    /// (<paramref name="providerTitleDisabled"/>), because a provider that writes its own title overwrites Bell Tower's within a frame
+    /// (design decision 11). Without the step the session keeps color only and Windows Terminal navigation stays at the window.
+    /// </summary>
+    public static Attachment Effective(Attachment attachment, bool enabled, bool providerTitleDisabled) =>
+        GrantsPresentation(attachment, enabled) ? attachment with { ManagedTitle = providerTitleDisabled, ManagedBackground = true } : attachment;
 }

@@ -9,8 +9,6 @@ namespace BellTower.Protocol;
 /// </summary>
 internal static class TrayProcess
 {
-    internal enum LaunchTokenChoice { Refuse, Current, LinkedLimited }
-
     private const uint TokenQuery = 0x0008;
     private const uint TokenDuplicate = 0x0002;
     private const uint TokenImpersonate = 0x0004;
@@ -23,11 +21,11 @@ internal static class TrayProcess
     private const uint TokenAssignPrimary = 0x0001;
     private const uint CreateNewProcessGroup = 0x00000200;
     private const uint CreateUnicodeEnvironment = 0x00000400;
-    private const uint CreateBreakawayFromJob = 0x01000000;
+    private const uint ExtendedStartupInfoPresent = 0x00080000;
+    private static readonly IntPtr ProcThreadAttributeParentProcess = (IntPtr)0x00020000;
     private const uint CreateSuspended = 0x00000004;
     private const uint CreateNoWindow = 0x08000000;
     private const uint StartfUseShowWindow = 0x00000001;
-    private const int ErrorAccessDenied = 5;
 
     [StructLayout(LayoutKind.Sequential)]
     private struct LinkedToken { public IntPtr Token; }
@@ -45,6 +43,13 @@ internal static class TrayProcess
     }
 
     [StructLayout(LayoutKind.Sequential)]
+    private struct StartupInfoEx
+    {
+        public StartupInfo Startup;
+        public IntPtr Attributes;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
     private struct ProcessInformation
     {
         public IntPtr Process, Thread;
@@ -58,25 +63,22 @@ internal static class TrayProcess
     [return: MarshalAs(UnmanagedType.Bool)]
     private static extern bool CloseHandle(IntPtr handle);
 
-    [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+    [DllImport("kernel32.dll", EntryPoint = "CreateProcessW", CharSet = CharSet.Unicode, SetLastError = true)]
     [return: MarshalAs(UnmanagedType.Bool)]
-    private static extern bool CreateProcessW(string applicationName, IntPtr commandLine, IntPtr processAttributes, IntPtr threadAttributes,
+    private static extern bool CreateProcessExW(string applicationName, IntPtr commandLine, IntPtr processAttributes, IntPtr threadAttributes,
         [MarshalAs(UnmanagedType.Bool)] bool inheritHandles, uint creationFlags, IntPtr environment, string currentDirectory,
-        ref StartupInfo startupInfo, out ProcessInformation processInformation);
-
-    [DllImport("advapi32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
-    [return: MarshalAs(UnmanagedType.Bool)]
-    private static extern bool CreateProcessWithTokenW(IntPtr token, uint logonFlags, string applicationName, IntPtr commandLine,
-        uint creationFlags, IntPtr environment, string currentDirectory, ref StartupInfo startupInfo, out ProcessInformation processInformation);
-
-    [DllImport("advapi32.dll", SetLastError = true)]
-    [return: MarshalAs(UnmanagedType.Bool)]
-    private static extern bool DuplicateTokenEx(IntPtr existingToken, uint desiredAccess, IntPtr tokenAttributes, int impersonationLevel,
-        int tokenType, out IntPtr newToken);
+        ref StartupInfoEx startupInfo, out ProcessInformation processInformation);
 
     [DllImport("kernel32.dll", SetLastError = true)]
     [return: MarshalAs(UnmanagedType.Bool)]
-    private static extern bool IsProcessInJob(IntPtr process, IntPtr job, [MarshalAs(UnmanagedType.Bool)] out bool result);
+    private static extern bool InitializeProcThreadAttributeList(IntPtr list, int count, int flags, ref IntPtr size);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool UpdateProcThreadAttribute(IntPtr list, uint flags, IntPtr attribute, IntPtr value, IntPtr size, IntPtr previous, IntPtr returned);
+
+    [DllImport("kernel32.dll")]
+    private static extern void DeleteProcThreadAttributeList(IntPtr list);
 
     [DllImport("kernel32.dll", SetLastError = true)]
     private static extern uint ResumeThread(IntPtr thread);
@@ -164,13 +166,6 @@ internal static class TrayProcess
         _ => null
     };
 
-    internal static LaunchTokenChoice SelectLaunchToken(int? elevationType, bool? elevated) => (elevationType, elevated) switch
-    {
-        (1, false) or (3, false) => LaunchTokenChoice.Current,
-        (2, true) => LaunchTokenChoice.LinkedLimited,
-        _ => LaunchTokenChoice.Refuse
-    };
-
     private static string? TokenIdentity(IntPtr token)
     {
         var buffer = Marshal.AllocHGlobal(256);
@@ -207,111 +202,130 @@ internal static class TrayProcess
         }
     }
 
+    /// <summary>The route recorded when the tray was created as a child of the desktop shell.</summary>
+    public const string RouteShell = "started-via-shell";
+
     /// <summary>
-    /// Starts the launcher suspended with no inherited handles, then verifies it is outside every job before resuming it. Uses no
-    /// window, the launcher's folder as the working directory and a fresh environment block rather than the hook's. Unsafe token,
-    /// job or resume results terminate the owned suspended process and leave the capture queued.
+    /// Starts the launcher as a child of the verified desktop shell (design decision 10). PROC_THREAD_ATTRIBUTE_PARENT_PROCESS
+    /// makes the child inherit the shell's jobs and token, never the provider's. No handle of this process is inherited, there is
+    /// no window, the launcher folder is the working directory, and the environment block is built for the shell's token instead
+    /// of copied from the hook. The child is created suspended and resumed only when its token is not elevated while the shell's
+    /// is not. An unverifiable shell starts nothing. There is no job check: on Windows build 26300 every process is in the session
+    /// job, so "outside every job" cannot be satisfied.
     /// </summary>
-    public static (HookStartOutcome Outcome, string Detail) Start(string launcher, string root)
+    public static (HookStartOutcome Outcome, string Detail) Start(string launcher, string root) => Start(launcher, root, DesktopShell.Open);
+
+    internal static (HookStartOutcome Outcome, string Detail) Start(string launcher, string root, Func<DesktopShell.Opened> openShell)
     {
+        var shell = openShell();
         var token = IntPtr.Zero;
-        var linked = IntPtr.Zero;
-        var launchToken = IntPtr.Zero;
-        var elevated = false;
         var environment = IntPtr.Zero;
         var command = IntPtr.Zero;
+        var attributes = IntPtr.Zero;
+        var parentValue = IntPtr.Zero;
+        var marked = IntPtr.Zero;
         try
         {
-            if (!OpenProcessToken(GetCurrentProcess(), TokenQuery | TokenDuplicate | TokenImpersonate, out token))
+            if (shell.Problem is not null)
             {
-                return (HookStartOutcome.Failed, "environment-token:" + Marshal.GetLastPInvokeError());
+                return (HookStartOutcome.Failed, shell.Problem);
             }
-            var elevationType = ReadTokenElevationType(token);
-            if (elevationType is null)
+            if (!OpenProcessToken(shell.Process, TokenQuery | TokenDuplicate | TokenImpersonate, out token))
             {
-                return (HookStartOutcome.Failed, "token-elevation-type-query:" + Marshal.GetLastPInvokeError());
+                return (HookStartOutcome.Failed, "shell-token:" + Marshal.GetLastPInvokeError());
             }
-            var tokenElevated = ReadTokenIsElevated(token);
-            if (tokenElevated is null)
+            var shellElevated = ReadTokenIsElevated(token);
+            if (shellElevated is null)
             {
-                return (HookStartOutcome.Failed, "token-elevation-query:" + Marshal.GetLastPInvokeError());
+                return (HookStartOutcome.Failed, "shell-token-elevation-query:" + Marshal.GetLastPInvokeError());
             }
-            var choice = SelectLaunchToken(elevationType.Value, tokenElevated.Value);
-            if (choice == LaunchTokenChoice.Refuse)
-            {
-                var reason = elevationType == 1 && tokenElevated == true ? "elevated-token-no-limited-counterpart" : "token-elevation-inconsistent";
-                return (HookStartOutcome.Failed, reason);
-            }
-            elevated = choice == LaunchTokenChoice.LinkedLimited;
-            launchToken = token;
-            if (elevated)
-            {
-                if (!TryGetLinkedToken(token, out linked) || linked == IntPtr.Zero || ReadTokenElevationType(linked) != 3 || ReadTokenIsElevated(linked) != false)
-                {
-                    return (HookStartOutcome.Failed, "linked-token-not-verified-limited");
-                }
-                if (!DuplicateTokenEx(linked, TokenQuery | TokenDuplicate | TokenAssignPrimary, IntPtr.Zero, SecurityImpersonation,
-                    TokenTypePrimary, out launchToken))
-                {
-                    return (HookStartOutcome.Failed, "duplicate-limited-token:" + Marshal.GetLastPInvokeError());
-                }
-            }
-            // Build the normal-user environment for an elevated hook, and never inherit provider or Bell Tower variables.
-            if (!CreateEnvironmentBlock(out environment, launchToken, false))
+            if (!CreateEnvironmentBlock(out environment, token, false))
             {
                 return (HookStartOutcome.Failed, "environment-block:" + Marshal.GetLastPInvokeError());
             }
             var line = Quote(launcher) + " tray --data-dir " + Quote(root);
+            marked = WithVariable(environment, HookTrayStart.HookStartVariable, "1");
             command = Marshal.StringToHGlobalUni(line);
             var directory = Path.GetDirectoryName(launcher)!;
-            var info = new StartupInfo { Flags = StartfUseShowWindow, ShowWindow = 0 };
-            info.Size = (uint)Marshal.SizeOf<StartupInfo>();
-            var flags = CreateNewProcessGroup | CreateUnicodeEnvironment | CreateNoWindow | CreateBreakawayFromJob | CreateSuspended;
-            var created = elevated
-                ? CreateProcessWithTokenW(launchToken, 0, launcher, command, flags, environment, directory, ref info, out var process)
-                : CreateProcessW(launcher, command, IntPtr.Zero, IntPtr.Zero, false, flags, environment, directory, ref info, out process);
-            if (created)
+
+            var size = IntPtr.Zero;
+            InitializeProcThreadAttributeList(IntPtr.Zero, 1, 0, ref size);
+            attributes = Marshal.AllocHGlobal(size);
+            if (!InitializeProcThreadAttributeList(attributes, 1, 0, ref size))
             {
+                Marshal.FreeHGlobal(attributes);
+                attributes = IntPtr.Zero;
+                return (HookStartOutcome.Failed, "attribute-list:" + Marshal.GetLastPInvokeError());
+            }
+            parentValue = Marshal.AllocHGlobal(IntPtr.Size);
+            Marshal.WriteIntPtr(parentValue, shell.Process);
+            if (!UpdateProcThreadAttribute(attributes, 0, ProcThreadAttributeParentProcess, parentValue, (IntPtr)IntPtr.Size, IntPtr.Zero, IntPtr.Zero))
+            {
+                return (HookStartOutcome.Failed, "attribute-parent:" + Marshal.GetLastPInvokeError());
+            }
+            var info = new StartupInfoEx { Attributes = attributes };
+            info.Startup.Flags = StartfUseShowWindow;
+            info.Startup.ShowWindow = 0;
+            info.Startup.Size = (uint)Marshal.SizeOf<StartupInfoEx>();
+            var flags = CreateNewProcessGroup | CreateUnicodeEnvironment | CreateNoWindow | ExtendedStartupInfoPresent | CreateSuspended;
+            if (!CreateProcessExW(launcher, command, IntPtr.Zero, IntPtr.Zero, false, flags, marked, directory, ref info, out var process))
+            {
+                return (HookStartOutcome.Failed, "create-process:" + Marshal.GetLastPInvokeError());
+            }
+            try
+            {
+                if (!OpenProcessToken(process.Process, TokenQuery, out var childToken))
+                {
+                    return StopSuspended(process, "child-token:" + Marshal.GetLastPInvokeError());
+                }
+                bool? childElevated;
                 try
                 {
-                    if (!IsProcessInJob(process.Process, IntPtr.Zero, out var childInJob))
-                    {
-                        return StopSuspended(process, "child-job-check:" + Marshal.GetLastPInvokeError());
-                    }
-                    if (childInJob)
-                    {
-                        return StopSuspended(process, "provider-job-breakaway-incomplete");
-                    }
-                    var previousSuspendCount = ResumeThread(process.Thread);
-                    if (previousSuspendCount == uint.MaxValue)
-                    {
-                        return StopSuspended(process, "child-resume:" + Marshal.GetLastPInvokeError());
-                    }
-                    if (previousSuspendCount != 1)
-                    {
-                        return StopSuspended(process, "child-resume-count:" + previousSuspendCount.ToString(CultureInfo.InvariantCulture));
-                    }
-                    return (HookStartOutcome.Started, elevated ? "started-with-linked-limited-token" : "started");
+                    childElevated = ReadTokenIsElevated(childToken);
                 }
                 finally
                 {
-                    CloseHandle(process.Process);
-                    CloseHandle(process.Thread);
+                    CloseHandle(childToken);
                 }
+                if (childElevated is null || childElevated == true && shellElevated == false)
+                {
+                    return StopSuspended(process, "child-elevated");
+                }
+                var previousSuspendCount = ResumeThread(process.Thread);
+                if (previousSuspendCount == uint.MaxValue)
+                {
+                    return StopSuspended(process, "child-resume:" + Marshal.GetLastPInvokeError());
+                }
+                if (previousSuspendCount != 1)
+                {
+                    return StopSuspended(process, "child-resume-count:" + previousSuspendCount.ToString(CultureInfo.InvariantCulture));
+                }
+                return (HookStartOutcome.Started, RouteShell);
             }
-            var error = Marshal.GetLastPInvokeError();
-            if (error == ErrorAccessDenied && IsProcessInJob(GetCurrentProcess(), IntPtr.Zero, out var inJob) && inJob)
+            finally
             {
-                // Never fall back inside a provider job: a kill-on-close job would kill the tray with its hook.
-                return (HookStartOutcome.Failed, "provider-job-breakaway-refused");
+                CloseHandle(process.Process);
+                CloseHandle(process.Thread);
             }
-            return (HookStartOutcome.Failed, "create-process:" + error);
         }
         finally
         {
+            if (attributes != IntPtr.Zero)
+            {
+                DeleteProcThreadAttributeList(attributes);
+                Marshal.FreeHGlobal(attributes);
+            }
+            if (parentValue != IntPtr.Zero)
+            {
+                Marshal.FreeHGlobal(parentValue);
+            }
             if (command != IntPtr.Zero)
             {
                 Marshal.FreeHGlobal(command);
+            }
+            if (marked != IntPtr.Zero)
+            {
+                Marshal.FreeHGlobal(marked);
             }
             if (environment != IntPtr.Zero)
             {
@@ -321,15 +335,34 @@ internal static class TrayProcess
             {
                 CloseHandle(token);
             }
-            if (launchToken != IntPtr.Zero && launchToken != token)
+            shell.Close();
+        }
+    }
+
+    /// <summary>
+    /// A copy of an environment block with one variable added, sorted the way Windows requires (case-insensitive by name) and ended by two
+    /// terminators. The caller frees the copy with <see cref="Marshal.FreeHGlobal"/>.
+    /// </summary>
+    internal static IntPtr WithVariable(IntPtr block, string name, string value)
+    {
+        var entries = new List<string>();
+        for (var offset = 0; ;)
+        {
+            var entry = Marshal.PtrToStringUni(block + offset * sizeof(char)) ?? "";
+            if (entry.Length == 0)
             {
-                CloseHandle(launchToken);
+                break;
             }
-            if (linked != IntPtr.Zero)
+            offset += entry.Length + 1;
+            if (!entry.StartsWith(name + "=", StringComparison.OrdinalIgnoreCase))
             {
-                CloseHandle(linked);
+                entries.Add(entry);
             }
         }
+        entries.Add(name + "=" + value);
+        entries.Sort((left, right) => string.Compare(left[..Math.Max(1, left.IndexOf('=', 1))], right[..Math.Max(1, right.IndexOf('=', 1))], StringComparison.OrdinalIgnoreCase));
+        var text = string.Concat(entries.Select(entry => entry + "\0")) + "\0";
+        return Marshal.StringToHGlobalUni(text);
     }
 
     private static (HookStartOutcome Outcome, string Detail) StopSuspended(ProcessInformation process, string reason)

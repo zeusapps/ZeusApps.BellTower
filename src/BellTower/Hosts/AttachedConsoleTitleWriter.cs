@@ -12,7 +12,7 @@ public sealed class AttachedConsoleTitleWriter : IConsoleTitleWriter
         {
             return false;
         }
-        var changed = console.SetTitle(title);
+        var changed = title.Length == 0 || console.SetTitle(title);
         return background is null ? changed : console.Write(TerminalColors.Apply(background)) && changed;
     }
 

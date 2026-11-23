@@ -1,0 +1,14 @@
+{
+  "provider": "codex",
+  "providerVersion": "0.171.0",
+  "source": "verbatim capture, same environment as the permission request, redacted (2026-11-22)",
+  "note": "Declining the held approval with Esc fires this hook about 3 s after the PermissionRequest; the shared reducer already clears the wait on it.",
+  "payload": {
+    "session_id": "<session>",
+    "turn_id": "<turn>",
+    "cwd": "<project>",
+    "hook_event_name": "Interrupt",
+    "model": "<model>",
+    "permission_mode": "default"
+  }
+}

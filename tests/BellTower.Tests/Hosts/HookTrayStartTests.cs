@@ -1,8 +1,9 @@
 using System.Diagnostics;
-using BellTower.Diagnostics;
 using BellTower.Cli;
+using BellTower.Diagnostics;
 using BellTower.IO;
 using BellTower.Protocol;
+using BellTower.Setup;
 using BellTower.Tests.Testing;
 using BellTower.Tray;
 using Xunit;
@@ -193,7 +194,10 @@ public sealed class HookTrayStartTests
         Assert.True(run is { ExitCode: 0, Output: "{}", Error: "", StdoutClosed: true }, run.Message);
         var fake = Assert.Single(await harness.WaitForFakes(1));
         Assert.Equal(1, harness.Captures());
+        // The arguments are exactly the ones every payload has always accepted; the hook marker travels in the environment, which an older
+        // tray ignores, so a rollback or switch to an older payload still starts (ANALYSIS-4702).
         Assert.Equal($"tray|--data-dir|{harness.Root}", fake.Arguments);
+        Assert.Contains(HookTrayStart.HookStartVariable, fake.Environment);
         Assert.Equal(harness.LauncherDirectory, fake.WorkingDirectory, ignoreCase: true);
         // The hook returned and its output reached end-of-file while the started tray is still running.
         Assert.True(harness.Alive(fake.Pid));
@@ -342,41 +346,207 @@ public sealed class HookTrayStartTests
         Assert.True(HookTrayStart.UserStopActive(harness.Root));
     }
 
+    // ---- Design decision 10: the tray is created as a child of the verified desktop shell --------------------------------------
+
+    private static DesktopShell.Facts GoodShell() => new(100, @"C:\Windows\explorer.exe", @"C:\Windows", true, 1, 1, 100);
+
+    [Fact]
+    public void AVerifiedShellHasNoProblem() => Assert.Null(DesktopShell.Problem(GoodShell()));
+
+    // The T-12 regression: a hook running inside a provider's kill-on-close job (immediate, or nested under a job that permits
+    // breakaway) starts the tray as a child of the shell, so closing the provider's job does not end it.
     [Theory]
-    [InlineData("claude")]
-    [InlineData("codex")]
-    public async Task PartialBreakawayInsideNestedKillOnCloseProviderJobsKeepsCaptureAndDoesNotStartTray(string provider)
+    [InlineData("claude", "immediate")]
+    [InlineData("claude", "nested")]
+    [InlineData("codex", "immediate")]
+    [InlineData("codex", "nested")]
+    public async Task ATrayStartedFromInsideAKillOnCloseProviderJobSurvivesTheJobClosing(string provider, string shape)
     {
         using var harness = new Harness();
-
-        var run = await harness.HookInNestedKillOnCloseJob(provider);
-
-        Assert.True(run is { ExitCode: 0, Output: "{}", Error: "", StdoutClosed: true }, run.Message);
-        Assert.True(run.Elapsed < TimeSpan.FromSeconds(20), run.Message);
+        var run = shape == "immediate" ? await harness.HookInKillOnCloseJob(provider) : await harness.HookInNestedKillOnCloseJob(provider);
+        Assert.True(run is { ExitCode: 0, Output: "{}", Error: "" }, run.Message);
         Assert.Equal(1, harness.Captures());
-        Assert.Empty(harness.Fakes());
-        var attempt = HookTrayStart.LastAttempt(harness.Root);
-        Assert.True(attempt.HasValue);
-        Assert.Equal(nameof(HookStartOutcome.Failed), attempt.Value.Outcome);
-        Assert.Equal("provider-job-breakaway-incomplete", attempt.Value.Detail);
+        if (HookTrayStart.ShellProblem() is not null)
+        {
+            // Headless run with no desktop shell: nothing starts and the capture stays queued.
+            Assert.Empty(harness.Fakes());
+            return;
+        }
+        var fake = Assert.Single(await harness.WaitForFakes(1));
+        // The host closed its kill-on-close job before returning; the tray it started is still running.
+        await Task.Delay(500);
+        Assert.True(harness.Alive(fake.Pid));
+        Assert.Equal(TrayProcess.RouteShell, HookTrayStart.LastAttempt(harness.Root)!.Value.Detail);
     }
 
     [Theory]
-    [InlineData("claude")]
-    [InlineData("codex")]
-    public async Task ImmediateBreakawayRefusalInsideKillOnCloseProviderJobKeepsCaptureAndDoesNotStartTray(string provider)
+    [InlineData(0, "shell-none")]
+    [InlineData(1, "shell-changed")]
+    [InlineData(2, "shell-image-unverified")]
+    [InlineData(3, "shell-image-unverified")]
+    [InlineData(4, "shell-other-user")]
+    [InlineData(5, "shell-other-user")]
+    [InlineData(6, "shell-other-session")]
+    [InlineData(7, "shell-other-session")]
+    public void ShellLookupAndVerificationFailClosed(int variant, string expected)
+    {
+        var good = GoodShell();
+        var facts = variant switch
+        {
+            0 => good with { ShellPid = 0 },
+            1 => good with { OpenedPid = 101 },
+            2 => good with { Image = null },
+            3 => good with { Image = @"C:\Users\someone\explorer.exe" },
+            4 => good with { SameUser = false },
+            5 => good with { SameUser = null },
+            6 => good with { ShellSession = 2 },
+            _ => good with { ShellSession = null }
+        };
+        Assert.Equal(expected, DesktopShell.Problem(facts));
+    }
+
+    [Fact]
+    public void AnUnverifiedShellStartsNothingAndTheReasonIsRecorded()
     {
         using var harness = new Harness();
-
-        var run = await harness.HookInKillOnCloseJob(provider);
-
-        Assert.True(run is { ExitCode: 0, Output: "{}", Error: "", StdoutClosed: true }, run.Message);
-        Assert.Equal(1, harness.Captures());
+        var (outcome, detail) = TrayProcess.Start(harness.Launcher, harness.Root, () => new DesktopShell.Opened(IntPtr.Zero, "shell-other-session"));
+        Assert.Equal(HookStartOutcome.Failed, outcome);
+        Assert.Equal("shell-other-session", detail);
         Assert.Empty(harness.Fakes());
-        var attempt = HookTrayStart.LastAttempt(harness.Root);
-        Assert.True(attempt.HasValue);
-        Assert.Equal(nameof(HookStartOutcome.Failed), attempt.Value.Outcome);
-        Assert.Equal("provider-job-breakaway-refused", attempt.Value.Detail);
+    }
+
+    private static (HookStartOutcome Outcome, string Detail) ShellFailure(string launcher, string root) => (HookStartOutcome.Failed, "shell-none");
+    private static (HookStartOutcome Outcome, string Detail) ShellSuccess(string launcher, string root) => (HookStartOutcome.Started, TrayProcess.RouteShell);
+
+    [Fact]
+    public void TheTaskIsRunOnlyWhenTheShellStartFailsAndOnlyWhenOneIsRecorded()
+    {
+        using var harness = new Harness();
+        var ran = 0;
+        (HookStartOutcome Outcome, string Detail) RunTask(string root)
+        {
+            ran++;
+            return (HookStartOutcome.Started, HookStartTask.RouteTask);
+        }
+
+        // The shell start works: the task is never consulted.
+        HookTrayStart.RecordLauncher(harness.Root, harness.Launcher);
+        HookStartTask.Record(harness.Root, HookStartTask.TaskPath(harness.Root, "BellTowerTest-DEV059"));
+        Assert.Equal(HookStartOutcome.Started, HookTrayStart.TryStart(harness.Root, DateTimeOffset.UtcNow, ShellSuccess, RunTask));
+        Assert.Equal(0, ran);
+        Assert.Equal(TrayProcess.RouteShell, HookTrayStart.LastAttempt(harness.Root)!.Value.Detail);
+
+        // The shell start fails: the recorded task starts the tray and the route is recorded.
+        Assert.Equal(HookStartOutcome.Started, HookTrayStart.TryStart(harness.Root, DateTimeOffset.UtcNow.AddMinutes(5), ShellFailure, RunTask));
+        Assert.Equal(1, ran);
+        Assert.Equal(HookStartTask.RouteTask, HookTrayStart.LastAttempt(harness.Root)!.Value.Detail);
+
+        // No task recorded: a failed shell start stays failed and nothing else runs.
+        HookStartTask.ClearRecord(harness.Root);
+        Assert.Equal(HookStartOutcome.Failed, HookTrayStart.TryStart(harness.Root, DateTimeOffset.UtcNow.AddMinutes(10), ShellFailure, RunTask));
+        Assert.Equal(1, ran);
+
+        // Both routes fail: the failure names both reasons.
+        HookStartTask.Record(harness.Root, HookStartTask.TaskPath(harness.Root, "BellTowerTest-DEV059"));
+        Assert.Equal(HookStartOutcome.Failed, HookTrayStart.TryStart(harness.Root, DateTimeOffset.UtcNow.AddMinutes(15), ShellFailure, _ => (HookStartOutcome.Failed, "task-run-exit:1")));
+        Assert.Equal("shell-none;task-run-exit:1", HookTrayStart.LastAttempt(harness.Root)!.Value.Detail);
+    }
+
+    [Fact]
+    public void UserStopBurstControlAndTheUpdateGateStillApplyBeforeAnyRoute()
+    {
+        using var harness = new Harness();
+        var starts = 0;
+        (HookStartOutcome Outcome, string Detail) Shell(string launcher, string root)
+        {
+            starts++;
+            return (HookStartOutcome.Started, TrayProcess.RouteShell);
+        }
+        HookTrayStart.RecordUserStop(harness.Root);
+        Assert.Equal(HookStartOutcome.UserStopped, HookTrayStart.TryStart(harness.Root, DateTimeOffset.UtcNow, Shell, null));
+        HookTrayStart.ClearUserStop(harness.Root);
+        var now = DateTimeOffset.UtcNow;
+        Assert.Equal(HookStartOutcome.Started, HookTrayStart.TryStart(harness.Root, now, Shell, null));
+        Assert.Equal(HookStartOutcome.Throttled, HookTrayStart.TryStart(harness.Root, now.AddSeconds(1), Shell, null));
+        Directory.CreateDirectory(Path.Combine(harness.Root, "updates"));
+        File.WriteAllText(Path.Combine(harness.Root, "updates", "restart.json"), "{}");
+        Assert.Equal(HookStartOutcome.UpdatePending, HookTrayStart.TryStart(harness.Root, now.AddMinutes(5), Shell, null));
+        Assert.Equal(1, starts);
+    }
+
+    [Theory]
+    [InlineData(null, false)]
+    [InlineData(0x1800u, false)]
+    [InlineData(0x2000u, true)]
+    [InlineData(0x2800u, true)]
+    public void AHookStartedTrayRefusesAJobThatKillsItOnCloseAndRecordsWhy(uint? flags, bool refuses)
+    {
+        using var workspace = new TestWorkspace();
+        Assert.Equal(refuses, TrayJobGuard.Refuses(workspace.Paths, hookStarted: true, () => flags));
+        Assert.Equal(refuses, TrayJobGuard.LastRefusal(workspace.Paths.Root) is not null);
+        if (refuses)
+        {
+            Assert.Contains(TrayJobGuard.LogCode, File.ReadAllText(Path.Combine(workspace.Paths.Root, "bell-tower.log")), StringComparison.Ordinal);
+            Assert.True(new HookStartReporter(workspace.Paths).Report().ToString()!.Length > 0);
+        }
+    }
+
+    [Fact]
+    public void ATrayStartedByHandOrByTheTaskIsNeverRefusedForItsJob()
+    {
+        using var workspace = new TestWorkspace();
+        Assert.False(TrayJobGuard.Refuses(workspace.Paths, hookStarted: false, () => 0x2800u));
+        Assert.Null(TrayJobGuard.LastRefusal(workspace.Paths.Root));
+    }
+
+    [Fact]
+    public void AHookStartedTrayIsClassifiedByItsOrdinaryCommandLine()
+    {
+        var kind = TrayInvocationCommand.Classify("\"D:\\app\\bell-tower.exe\" tray --data-dir D:\\data", "D:\\app\\bell-tower.exe", "D:\\data");
+        Assert.Equal(TrayInvocationKind.ThisDataDirectory, kind);
+    }
+
+    [Fact]
+    public void TheTaskDefinitionHasNoTriggerAndTheLimitedInteractivePrincipal()
+    {
+        var script = HookStartTaskSetup.RegisterScript(HookStartTask.TaskPath(@"D:\data", "BellTowerTest-DEV059"), @"D:\app\bell-tower.exe", @"D:\data");
+        Assert.DoesNotContain("-Trigger", script, StringComparison.Ordinal);
+        Assert.Contains("-LogonType Interactive -RunLevel Limited", script, StringComparison.Ordinal);
+        Assert.Contains("-ExecutionTimeLimit ([TimeSpan]::Zero)", script, StringComparison.Ordinal);
+        Assert.Contains("-AllowStartIfOnBatteries -DontStopIfGoingOnBatteries", script, StringComparison.Ordinal);
+        Assert.Contains("-MultipleInstances IgnoreNew", script, StringComparison.Ordinal);
+        Assert.Contains("'\\BellTowerTest-DEV059\\'", script, StringComparison.Ordinal);
+    }
+
+    // A real per-user task under a disposable folder, run through the same code the hook uses, then deleted. The folder is the test
+    // prefix: nothing under the product folder is touched.
+    [Fact]
+    public async Task ARegisteredOnDemandTaskStartsTheTrayFromTheTaskSchedulerAndIsDeleted()
+    {
+        const string folder = "BellTowerTest-DEV059";
+        using var harness = new Harness();
+        var task = HookStartTask.TaskPath(harness.Root, folder);
+        try
+        {
+            Assert.True(HookStartTaskSetup.Register(harness.Root, harness.Launcher, folder));
+            Assert.True(HookStartTaskSetup.Exists(task));
+            Assert.Equal(task, HookStartTask.Recorded(harness.Root));
+            var (outcome, detail) = HookStartTask.Run(harness.Root);
+            Assert.True(outcome == HookStartOutcome.Started, detail);
+            var fake = Assert.Single(await harness.WaitForFakes(1));
+            // The task action is the launcher with the normal arguments and no hook marker.
+            Assert.Equal($"tray|--data-dir|{harness.Root}", fake.Arguments);
+            // A second run while the instance runs starts no second tray (one instance at most).
+            HookStartTask.Run(harness.Root);
+            await Task.Delay(1500);
+            Assert.Single(harness.Fakes());
+        }
+        finally
+        {
+            HookStartTaskSetup.Unregister(harness.Root, folder);
+        }
+        Assert.False(HookStartTaskSetup.Exists(task));
+        Assert.Null(HookStartTask.Recorded(harness.Root));
     }
 
     [Theory]
@@ -391,20 +561,6 @@ public sealed class HookTrayStartTests
     public void SignInIdentityUsesVerifiedLimitedTokenAndFailsClosed(int? elevationType, bool? elevated, string current, string? linked, string? expected)
     {
         Assert.Equal(expected, TrayProcess.SelectSignInIdentity(elevationType, elevated, current, linked));
-    }
-
-    [Theory]
-    [InlineData(1, false, 1)]
-    [InlineData(1, true, 0)]
-    [InlineData(2, true, 2)]
-    [InlineData(2, false, 0)]
-    [InlineData(3, false, 1)]
-    [InlineData(3, true, 0)]
-    [InlineData(null, false, 0)]
-    [InlineData(1, null, 0)]
-    public void LaunchTokenSelectionRequiresKnownNonElevatedOrVerifiedLinkedLimitedToken(int? elevationType, bool? elevated, int expected)
-    {
-        Assert.Equal((TrayProcess.LaunchTokenChoice)expected, TrayProcess.SelectLaunchToken(elevationType, elevated));
     }
 
     [Fact]
@@ -591,5 +747,219 @@ public sealed class HookTrayStartTests
         Assert.Contains("\"UserStopRecord\":\"this sign-in\"", Report());
         File.WriteAllText(HookTrayStart.UserStopRecord(harness.Root), "luid:1/1");
         Assert.Contains("\"UserStopRecord\":\"from another sign-in (stale, ignored)\"", Report());
+    }
+
+    // ---- DEV-060: ANALYSIS-4700, 4701, 4702, 4708, 4709 ---------------------------------------------------------------------
+
+    private const string TestFolder = "BellTowerTest-DEV060";
+
+    private static void Mode(Harness harness, string mode) => File.WriteAllText(Path.Combine(harness.LauncherDirectory, "schtasks-mode.txt"), mode);
+
+    private static string[] SchtasksCalls(Harness harness)
+    {
+        var path = Path.Combine(harness.LauncherDirectory, "schtasks-calls.txt");
+        return File.Exists(path) ? File.ReadAllLines(path) : [];
+    }
+
+    // 4700: the hook never waits for schtasks. A request still running after the short bound is pending, not a failure.
+    [Fact]
+    public void TheTaskRequestNeverBlocksTheHookAndAPendingRequestIsNotAFailure()
+    {
+        using var harness = new Harness();
+        HookStartTask.Record(harness.Root, HookStartTask.TaskPath(harness.Root, TestFolder));
+        Mode(harness, "slow");
+        var watch = Stopwatch.StartNew();
+        var (outcome, detail) = HookStartTask.Run(harness.Root, harness.Launcher);
+        watch.Stop();
+        Assert.True(watch.Elapsed < TimeSpan.FromMilliseconds(1500), watch.Elapsed.ToString());
+        Assert.Equal(HookStartOutcome.Started, outcome);
+        Assert.Equal(HookStartTask.RoutePending, detail);
+
+        Mode(harness, "ok");
+        Assert.Equal((HookStartOutcome.Started, HookStartTask.RouteTask), HookStartTask.Run(harness.Root, harness.Launcher));
+        // A refusal that arrives inside the bound is a failure with its exit code.
+        Mode(harness, "fail");
+        Assert.Equal((HookStartOutcome.Failed, "task-run-exit:1"), HookStartTask.Run(harness.Root, harness.Launcher));
+        // The stand-in from the first, slow call is still ending; let it finish before the folder is removed.
+        Thread.Sleep(2000);
+    }
+
+    // 4701: only a record of the exact Bell Tower shape for this data directory is ever used or removed.
+    [Theory]
+    [InlineData("\\BellTowerTest-DEV060\\HookStart-0123456789abcdef", false)]
+    [InlineData("\\X\\HookStart-0123456789abcdef\" /s attacker /u x", false)]
+    [InlineData("\\X\" /tn \"\\Microsoft\\Windows\\Defrag\\ScheduledDefrag", false)]
+    [InlineData("\\HookStart-0123456789abcdef", false)]
+    [InlineData("\\A B\\HookStart-0123456789abcdef", false)]
+    [InlineData("\\Microsoft\\Windows\\Defrag\\ScheduledDefrag", false)]
+    [InlineData("HookStart-0123456789abcdef", false)]
+    [InlineData("", false)]
+    public void AnInvalidTaskRecordIsNeverUsed(string record, bool expected)
+    {
+        using var harness = new Harness();
+        Directory.CreateDirectory(HookTrayStart.StateDirectory(harness.Root));
+        File.WriteAllText(HookStartTask.RecordPath(harness.Root), record);
+        Assert.Equal(expected, HookStartTask.Recorded(harness.Root) is not null);
+        Assert.Equal("invalid", HookStartTask.RecordState(harness.Root));
+        // The hook never starts schtasks for it, and removal plans no task action for it.
+        Assert.Equal((HookStartOutcome.Failed, "no-task-recorded"), HookStartTask.Run(harness.Root, harness.Launcher));
+        Assert.Empty(SchtasksCalls(harness));
+    }
+
+    [Fact]
+    public void ARecordOfTheExactShapeForThisDataDirectoryIsAcceptedAndAnotherDirectorysIsNot()
+    {
+        using var harness = new Harness();
+        using var other = new TestWorkspace();
+        var own = HookStartTask.TaskPath(harness.Root, TestFolder);
+        HookStartTask.Record(harness.Root, own);
+        Assert.Equal(own, HookStartTask.Recorded(harness.Root));
+        Assert.Equal("valid", HookStartTask.RecordState(harness.Root));
+        HookStartTask.Record(harness.Root, HookStartTask.TaskPath(other.Paths.Root, TestFolder));
+        Assert.Null(HookStartTask.Recorded(harness.Root));
+        Assert.Equal("invalid", HookStartTask.RecordState(harness.Root));
+        Assert.Contains("not a Bell Tower task", BellTower.IO.Json.Encode(new HookStartReporter(harness.Workspace.Paths).Report()), StringComparison.Ordinal);
+        Assert.Equal((HookStartOutcome.Failed, "no-task-recorded"), HookStartTask.Run(harness.Root, harness.Launcher));
+        Assert.Empty(SchtasksCalls(harness));
+    }
+
+    // 4702: the marker is an environment variable, so a payload that rejects unknown options (the stand-in accepts exactly the old
+    // arguments) still starts, and the start is recorded as the success it is.
+    [Theory]
+    [InlineData("claude")]
+    [InlineData("codex")]
+    public async Task AHookStartAgainstAPayloadThatRejectsUnknownOptionsStillStartsTheTray(string provider)
+    {
+        using var harness = new Harness();
+        var run = await harness.Hook(provider);
+        Assert.True(run is { ExitCode: 0, Output: "{}" }, run.Message);
+        if (HookTrayStart.ShellProblem() is not null)
+        {
+            Assert.Empty(harness.Fakes());
+            return;
+        }
+        var fake = Assert.Single(await harness.WaitForFakes(1));
+        Assert.Equal($"tray|--data-dir|{harness.Root}", fake.Arguments);
+        Assert.Contains(HookTrayStart.HookStartVariable, fake.Environment);
+        Assert.Equal((HookStartOutcome.Started, TrayProcess.RouteShell), (Enum.Parse<HookStartOutcome>(HookTrayStart.LastAttempt(harness.Root)!.Value.Outcome), HookTrayStart.LastAttempt(harness.Root)!.Value.Detail));
+    }
+
+    [Fact]
+    public void TheEnvironmentBlockCopyAddsTheMarkerOnceKeepsTheOrderAndTheTrayRemovesIt()
+    {
+        var block = System.Runtime.InteropServices.Marshal.StringToHGlobalUni("Zeta=1\0alpha=2\0Path=C:\\x\0\0");
+        var copy = IntPtr.Zero;
+        try
+        {
+            copy = TrayProcess.WithVariable(block, HookTrayStart.HookStartVariable, "1");
+            var entries = new List<string>();
+            for (var offset = 0; ;)
+            {
+                var entry = System.Runtime.InteropServices.Marshal.PtrToStringUni(copy + offset * sizeof(char)) ?? "";
+                if (entry.Length == 0)
+                {
+                    break;
+                }
+                entries.Add(entry);
+                offset += entry.Length + 1;
+            }
+            Assert.Equal(["alpha=2", "BELLTOWER_HOOK_START=1", "Path=C:\\x", "Zeta=1"], entries);
+            // An existing value is replaced, never duplicated.
+            var again = TrayProcess.WithVariable(copy, HookTrayStart.HookStartVariable, "1");
+            var second = new List<string>();
+            for (var offset = 0; ;)
+            {
+                var entry = System.Runtime.InteropServices.Marshal.PtrToStringUni(again + offset * sizeof(char)) ?? "";
+                if (entry.Length == 0)
+                {
+                    break;
+                }
+                second.Add(entry);
+                offset += entry.Length + 1;
+            }
+            Assert.Equal(entries, second);
+            System.Runtime.InteropServices.Marshal.FreeHGlobal(again);
+        }
+        finally
+        {
+            System.Runtime.InteropServices.Marshal.FreeHGlobal(block);
+            if (copy != IntPtr.Zero)
+            {
+                System.Runtime.InteropServices.Marshal.FreeHGlobal(copy);
+            }
+        }
+        Environment.SetEnvironmentVariable(HookTrayStart.HookStartVariable, "1");
+        Assert.True(TrayJobGuard.TakeMarker());
+        Assert.Null(Environment.GetEnvironmentVariable(HookTrayStart.HookStartVariable));
+        Assert.False(TrayJobGuard.TakeMarker());
+    }
+
+    // 4708: a hook-started tray that refused its job does not keep the tray down while a fallback exists.
+    [Fact]
+    public void ARefusalNewerThanTheLastAttemptRoutesTheNextHookToTheTaskOrFailsWithAStatedReason()
+    {
+        using var harness = new Harness();
+        var shellStarts = 0;
+        (HookStartOutcome Outcome, string Detail) Shell(string launcher, string root)
+        {
+            shellStarts++;
+            return (HookStartOutcome.Started, TrayProcess.RouteShell);
+        }
+        var tasks = 0;
+        (HookStartOutcome Outcome, string Detail) RunTask(string root)
+        {
+            tasks++;
+            return (HookStartOutcome.Started, HookStartTask.RouteTask);
+        }
+        var t0 = DateTimeOffset.UtcNow;
+        Assert.Equal(HookStartOutcome.Started, HookTrayStart.TryStart(harness.Root, t0, Shell, RunTask));
+        Assert.Equal(1, shellStarts);
+
+        // The tray it started refuses its job (a kill-on-close job), recording the refusal after that attempt.
+        Assert.True(TrayJobGuard.Refuses(harness.Workspace.Paths, hookStarted: true, () => 0x2000u));
+
+        // No task recorded: nothing starts through the shell again, and the reason is stated.
+        Assert.Equal(HookStartOutcome.Failed, HookTrayStart.TryStart(harness.Root, DateTimeOffset.UtcNow.AddMinutes(5), Shell, RunTask));
+        Assert.Equal("shell-route-refused", HookTrayStart.LastAttempt(harness.Root)!.Value.Detail);
+        Assert.Equal(1, shellStarts);
+
+        // A task recorded: the next hook goes straight to it.
+        HookStartTask.Record(harness.Root, HookStartTask.TaskPath(harness.Root, TestFolder));
+        Assert.Equal(HookStartOutcome.Started, HookTrayStart.TryStart(harness.Root, DateTimeOffset.UtcNow.AddMinutes(6), Shell, RunTask));
+        Assert.Equal(1, shellStarts);
+        Assert.Equal(1, tasks);
+        Assert.Equal(HookStartTask.RouteTask, HookTrayStart.LastAttempt(harness.Root)!.Value.Detail);
+
+        // A tray that takes the instance clears the refusal; doctor no longer shows it and the shell route is used again.
+        HookTrayStart.ClearJobRefusal(harness.Root);
+        Assert.Null(TrayJobGuard.LastRefusal(harness.Root));
+        Assert.Equal(HookStartOutcome.Started, HookTrayStart.TryStart(harness.Root, DateTimeOffset.UtcNow.AddMinutes(8), Shell, RunTask));
+        Assert.Equal(2, shellStarts);
+    }
+
+    [Theory]
+    [InlineData("claude")]
+    [InlineData("codex")]
+    public async Task AHookAfterARefusalNeverStartsTheShellRouteAndStatesWhy(string provider)
+    {
+        using var harness = new Harness();
+        Directory.CreateDirectory(HookTrayStart.StateDirectory(harness.Root));
+        File.WriteAllText(HookTrayStart.JobRefusalRecord(harness.Root), DateTimeOffset.UtcNow.ToString("O") + "\tkill-on-close-job");
+        var run = await harness.Hook(provider);
+        Assert.True(run is { ExitCode: 0, Output: "{}" }, run.Message);
+        await Task.Delay(500);
+        Assert.Empty(harness.Fakes());
+        Assert.Equal(1, harness.Captures());
+        Assert.Equal("shell-route-refused", HookTrayStart.LastAttempt(harness.Root)!.Value.Detail);
+    }
+
+    // 4709: an access failure on the shell is reported as such.
+    [Fact]
+    public void AShellOpenFailureIsReportedWithItsErrorNotAsAnUnverifiedImage()
+    {
+        var facts = GoodShell() with { OpenError = 5, Image = null };
+        Assert.Equal("shell-open:5", DesktopShell.Problem(facts));
+        var opened = DesktopShell.Open(() => (IntPtr.Zero, facts));
+        Assert.Equal("shell-open:5", opened.Problem);
     }
 }

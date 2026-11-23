@@ -15,6 +15,6 @@ internal sealed class TrayCommand : Command
         };
         Options.Add(silent);
         Options.Add(duration);
-        SetAction(result => new TrayHost(CommonOptions.Paths(result, dataDirectory)).Run(result.GetValue(silent), result.GetValue(duration)));
+        SetAction(result => new TrayHost(CommonOptions.Paths(result, dataDirectory)).Run(result.GetValue(silent), result.GetValue(duration), BellTower.Tray.TrayJobGuard.TakeMarker()));
     }
 }

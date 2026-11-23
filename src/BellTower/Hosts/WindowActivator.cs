@@ -16,6 +16,24 @@ public sealed class WindowActivator(IWindowActivationApi api)
     }
 
     /// <summary>
+    /// Brings one of Bell Tower's own windows in front of other applications when it is opened. It asks for the foreground first.
+    /// Windows can refuse that to a background process (the window then opens behind the terminal in use), so the one remaining
+    /// request is preceded by <paramref name="pulseTopMost"/>, which the caller uses to lift its window above ordinary windows.
+    /// Returns whether the window ended up in the foreground; either way it is no longer hidden behind other windows.
+    /// </summary>
+    public bool Raise(IntPtr window, Action? pulseTopMost = null)
+    {
+        Activate(window);
+        if (api.IsForeground(window))
+        {
+            return true;
+        }
+        pulseTopMost?.Invoke();
+        Activate(window);
+        return api.IsForeground(window);
+    }
+
+    /// <summary>
     /// Restores only a minimized window, requests the foreground and reports success only when Windows
     /// actually made the window the foreground window. The SetForegroundWindow return value is not proof.
     /// </summary>

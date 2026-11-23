@@ -10,7 +10,7 @@ namespace BellTower.Diagnostics;
 // substitutes for a signal.
 public sealed class ConfirmationCoverageReporter(DataPaths paths)
 {
-    public const string Policy = "approval-flow starts (PermissionRequest) are provisional and never attention by themselves; a supported human-wait signal confirms them; the shared five-second grace counts any provider delay already elapsed; timing-only evidence is reported as unverified and never alerts, but a session with no supported signal (Codex without a verified owning runtime or shared backend, or Claude where no permission_prompt has been observed) shows a visibly unverified \"possibly waiting for approval\" chip after 15 seconds with no sound, reminder or escalation and is never labelled confirmed";
+    public const string Policy = "approval-flow starts (PermissionRequest) are provisional and never attention by themselves; a supported human-wait signal confirms them; the shared five-second grace counts any provider delay already elapsed; timing-only evidence is reported as unverified and never alerts, but a session with no supported signal (Codex without a verified owning runtime, shared backend or transcript, or Claude where no permission_prompt has been observed) shows a visibly unverified \"possibly waiting for approval\" chip after 15 seconds with no sound, reminder or escalation and is never labelled confirmed";
 
     public object Report()
     {
@@ -27,8 +27,18 @@ public sealed class ConfirmationCoverageReporter(DataPaths paths)
     {
         var observed = ConfirmationEvidence.Read(paths, "claude");
         var active = sessions.Where(session => session.Provider == "claude" && !session.Ended).ToList();
+        var identities = new IdentityStore(paths);
+        var declines = DeclineEvidenceRecord.Read(paths);
         return new
         {
+            // The decline adapter counterpart of the Codex transcript counters: the rejected tool result is read from the transcript (no hook exists).
+            Decline = new
+            {
+                Signal = "transcript tool_result toolDenialKind user-rejected (bounded read of the end of the hook-named transcript; Claude Code fires no hook for a decline)",
+                SessionsWithKnownTranscript = active.Count(session => identities.Get(session.Key, session.Directory).TranscriptPath is not null),
+                DeclinesPublished = declines.DeclinesPublished,
+                LastReadFailure = declines.LastFailure ?? "none"
+            },
             Signal = ConfirmationEvidence.ClaudeSignal + " hook (PermissionRequest is the provisional precursor)",
             Configured = "setup registers PermissionRequest and Notification(permission_prompt) hooks; the user's Claude settings are not read by doctor, so a hand-edited removal is reported only as not observed",
             Observed = observed is null ? "not observed in this data directory" : $"last seen {observed.At:O}; permission modes seen: {(observed.Modes.Count == 0 ? "none reported" : string.Join(", ", observed.Modes))}",
@@ -49,6 +59,11 @@ public sealed class ConfirmationCoverageReporter(DataPaths paths)
         // The one selection rule the permission pump uses: an owned runtime or a verified shared backend counts as a status source.
         var opener = new CodexRuntimeOpener(paths);
         var verifiable = active.Count(session => opener.Select(session) is not null);
+        // A session without a runtime has evidence only when the transcript its hooks named produced a turn record now: the same bounded
+        // read the permission pump makes. A missing, unreadable, drifted or out-of-window transcript is not counted as covered.
+        var identities = new IdentityStore(paths);
+        var transcript = active.Count(session => opener.Select(session) is null &&
+            CodexApprovalEvidence.HumanMustDecide(TranscriptTail.Read(identities.Get(session.Key, session.Directory).TranscriptPath), session.TurnId) is not null);
         return new
         {
             Signal = ConfirmationEvidence.CodexSignal,
@@ -56,9 +71,11 @@ public sealed class ConfirmationCoverageReporter(DataPaths paths)
             Observed = observed is null ? "not observed in this data directory" : $"last verified {observed.At:O}",
             ActiveSessions = active.Count,
             WithVerifiableRuntime = verifiable,
-            UnavailableWithoutRuntime = active.Count - verifiable,
-            Status = active.Count - verifiable > 0
-                ? "unavailable for sessions with neither a verified owning runtime nor a verified shared backend (explicit --no-daemon, remote, and shared conversations not yet reached, by the 2026-11-13 user scope decision) or whose status read fails: a request pending 15 seconds shows a visibly unverified \"possibly waiting for approval\" chip with no sound, reminder or escalation, never labelled confirmed"
+            WithTranscriptEvidence = transcript,
+            TranscriptSignal = ConfirmationEvidence.CodexTranscriptSignal + " (bounded read of the end of the hook-named transcript; a person decides when the reviewer is user, automatic review is suppressed, no record confirms nothing)",
+            UnavailableWithoutRuntime = active.Count - verifiable - transcript,
+            Status = active.Count - verifiable - transcript > 0
+                ? "unavailable for sessions with no verified owning runtime, no verified shared backend and no readable transcript, or whose status read fails: a request pending 15 seconds shows a visibly unverified \"possibly waiting for approval\" chip with no sound, reminder or escalation, never labelled confirmed"
                 : IngressStatus("codex") ?? (observed is null ? "configured, not yet observed" : "observed"),
             IngressImage = IngressImage("codex"),
             VerifiedVersionModes = CapabilityMatrix.CodexConfirmationEvidence,
