@@ -4,7 +4,7 @@ namespace BellTower.Core;
 public static class IdentityControls
 {
     // A named or hex colour is honoured even when close to another session's colour; "random" (or null) clears
-    // the pin and allocates a distinguishable palette.
+    // the pin and allocates a distinct series color that no other live session uses (the session's own current color is excluded).
     public static void ApplyColor(SessionIdentity identity, string? color, Func<Palette> allocate)
     {
         var random = string.IsNullOrWhiteSpace(color) || string.Equals(color, "random", StringComparison.OrdinalIgnoreCase);
@@ -13,7 +13,7 @@ public static class IdentityControls
         identity.Palette = palette;
     }
 
-    // Clears the Bell Tower pins (title, change, checkout, colour) and picks a distinguishable palette. Native
+    // Clears the Bell Tower pins (title, change, checkout, colour) and picks a distinct series color like random color. Native
     // user titles, live work evidence and provider ownership are kept; the resolver re-derives the
     // automatic subject and checkout on its next pass. Attention state lives in another store and is untouched.
     public static void Reset(SessionIdentity identity, Func<Palette> allocate)
