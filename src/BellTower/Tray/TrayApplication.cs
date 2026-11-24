@@ -425,18 +425,11 @@ public sealed class TrayApplication : ApplicationContext
         }
 
         overview.SetStatus(result.Message);
-        try
+        // A success hides the timer at once. A stated permanent limit hides it only after its reason was shown in Bell Tower's own notice,
+        // so a failure to show the reason leaves the timer visible.
+        if (result.Success)
         {
-            // NavigationOutcome is the single decision point: only a confirmed chip-click success hides the timer.
-            if (NavigationOutcome.ApplyViewed(store, key, episode, result, hideTimer))
-            {
-                Tick();
-            }
-        }
-        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or System.Text.Json.JsonException)
-        {
-            new LocalLog(paths).Write("viewed-wait-save-failed");
-            overview.SetStatus("Session focused; the timer preference could not be saved.");
+            MarkViewed(key, episode, result, hideTimer);
         }
         // Every click is accounted for in one local log line (no paths, names or messages), so a click that showed nothing is diagnosable.
         new LocalLog(paths).Write(logCode);
@@ -447,6 +440,27 @@ public sealed class TrayApplication : ApplicationContext
             var anchor = hideTimer && strip.Visible ? strip.Bounds : overview.Visible ? overview.Bounds :
                 strip.Visible ? strip.Bounds : Screen.PrimaryScreen!.WorkingArea with { Height = 0 };
             notice.ShowNotice(result.Message, anchor);
+        }
+        if (!result.Success)
+        {
+            MarkViewed(key, episode, result, hideTimer);
+        }
+    }
+
+    private void MarkViewed(string key, string? episode, FocusResult result, bool hideTimer)
+    {
+        try
+        {
+            // NavigationOutcome is the single decision point: only a chip-click success or a stated permanent limit hides the timer.
+            if (NavigationOutcome.ApplyViewed(store, key, episode, result, hideTimer))
+            {
+                Tick();
+            }
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or System.Text.Json.JsonException)
+        {
+            new LocalLog(paths).Write("viewed-wait-save-failed");
+            overview.SetStatus(NavigationOutcome.SaveFailedStatus(result));
         }
     }
 

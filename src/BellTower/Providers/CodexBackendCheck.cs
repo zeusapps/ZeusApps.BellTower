@@ -46,6 +46,8 @@ public sealed class CodexBackendCheck(Func<ProcessIdentity, bool>? accept = null
         }
         var text = commandLine(backend.Pid) ??
             throw new CodexTransportException(CodexTransportFailure.PeerUnreadable, "The command line of the process serving the control socket cannot be read.");
+        // The same command-line vocabulary as capture: any `app-server` is accepted (which includes every managed-daemon launch,
+        // AgentModeClassifier.LauncherIndependentBackend), and no parent relationship is required. Not stricter than before.
         if (AgentModeClassifier.Classify("codex", true, AgentModeClassifier.Arguments(text)) != AgentModes.SharedBackend)
         {
             throw new CodexTransportException(CodexTransportFailure.CommandLineMismatch, "The command line of the process serving the control socket is not a shared backend.");

@@ -19,7 +19,8 @@ public static class AttachmentCapture
     {
         var attachment = Capture(provider, directory, table, out var agent, out var parent, out var lineage);
         var arguments = agent.Pid > 0 && ProcessProbe.CommandLine(agent.Pid) is { } commandLine ? AgentModeClassifier.Arguments(commandLine) : null;
-        var mode = CrossChecked(provider, AgentModeClassifier.Classify(provider, agent.Pid > 0, arguments), attachment.Process, table);
+        var mode = CrossChecked(provider, AgentModeClassifier.Classify(provider, agent.Pid > 0, arguments), attachment.Process, table,
+            AgentModeClassifier.LauncherIndependentBackend(provider, arguments));
         var outcome = NativeAdoption.Apply(attachment, sessionId, mode, AgentModeClassifier.MayShareBackend(provider), parent, lineage);
         if (outcome.Attachment.Evidence is { Candidate: { } candidate } evidence)
         {
@@ -45,7 +46,7 @@ public static class AttachmentCapture
 
     // Reads, from the hook's one process table, only the relationships Core says the mode needs (one bounded command-line read
     // per related process). A related process whose command line cannot be read classifies as unknown, which never satisfies a rule.
-    private static string CrossChecked(string provider, string mode, ProcessIdentity? agent, ProcessTable table)
+    private static string CrossChecked(string provider, string mode, ProcessIdentity? agent, ProcessTable table, bool launcherIndependent)
     {
         if (agent is null)
         {
@@ -56,7 +57,7 @@ public static class AttachmentCapture
         return NativeAdoption.CrossCheck(mode, AgentModeClassifier.MayShareBackend(provider), needs =>
             table.Neighbors(agent, provider + ".exe", needs.HasFlag(NativeAdoption.Relation.Children)) is { } neighbors
                 ? new NativeAdoption.ProcessRelations(neighbors.Parent is { } parent ? Related(parent) : null,
-                    neighbors.Children.Select(Related).ToList(), neighbors.Complete) : null);
+                    neighbors.Children.Select(Related).ToList(), neighbors.Complete) : null, launcherIndependent);
     }
 
     public static Attachment Capture(string provider, string directory) => Capture(provider, directory, ProcessTable.Take(), out _, out _, out _);

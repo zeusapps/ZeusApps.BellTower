@@ -110,6 +110,10 @@ public sealed class NativeOwnedRuntimeProcessTests
         ("codex", "app-server", "node", "independent", SharedUnknown),
         // A backend started by a Codex client keeps its shared-backend result even when a live record exists.
         ("codex", "app-server", "codex", "valid", "shared:shared-backend"),
+        // Task 4.12 regression: the owned runtime's own launch shape (not the provider's managed daemon) is bound only through
+        // its record.
+        ("codex", "app-server --listen ws://127.0.0.1:1 --ws-auth capability-token", "", "valid", Direct),
+        ("codex", "app-server --listen ws://127.0.0.1:1 --ws-auth capability-token", "", "none", SharedUnknown),
         // Claude managed launches never depend on a runtime record.
         ("claude", "", "", "valid", Direct),
         ("claude", "", "", "none", Direct)

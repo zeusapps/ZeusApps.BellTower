@@ -150,4 +150,109 @@ public sealed class ModeCrossCheckTests
         });
         Assert.Equal(expected == NativeAdoption.Relation.None ? [] : [expected], requests);
     }
+
+    // Task 4.12 / ANALYSIS-5600: the adapter fact is true only for the provider's managed daemon launch shape.
+    [Theory]
+    [InlineData("codex", "app-server --listen unix:// --analytics-default-enabled --managed-daemon", true)]
+    [InlineData("codex", "app-server --listen unix:// --managed-daemon", true)]
+    [InlineData("codex", "-c x=y app-server --managed-daemon", true)]
+    [InlineData("codex", "app-server --listen ws://127.0.0.1:1 --ws-auth capability-token --ws-token-file x", false)]
+    [InlineData("codex", "app-server", false)]
+    [InlineData("codex", "app-server --stdio", false)]
+    [InlineData("codex", "app-server --listen unix://", false)]
+    [InlineData("codex", "app-server daemon pid-update-loop", false)]
+    [InlineData("codex", "app-server -- --managed-daemon", false)]
+    [InlineData("codex", "exec --managed-daemon", false)]
+    [InlineData("codex", "--managed-daemon", false)]
+    [InlineData("codex", "", false)]
+    [InlineData("claude", "", false)]
+    [InlineData("claude", "-p", false)]
+    [InlineData("claude", "--print", false)]
+    [InlineData("claude", "app-server --managed-daemon", false)]
+    public void OnlyACodexManagedDaemonLaunchIsLauncherIndependent(string provider, string line, bool expected) =>
+        Assert.Equal(expected, AgentModeClassifier.LauncherIndependentBackend(provider, AgentModeClassifier.Arguments("x.exe " + line)));
+
+    [Theory]
+    [InlineData("codex")]
+    [InlineData("claude")]
+    public void AnUnreadableCommandLineIsNeverLauncherIndependent(string provider) =>
+        Assert.False(AgentModeClassifier.LauncherIndependentBackend(provider, null));
+
+    public static TheoryData<string?, bool> ManagedParents => new()
+    {
+        { null, true },
+        { AgentModes.EmbeddedRuntime, true },
+        { AgentModes.InteractiveClient, true },
+        { AgentModes.SharedBackend, true },
+        { AgentModes.Unknown, true },
+        { AgentModes.Headless, true },
+        { null, false }
+    };
+
+    // The managed daemon keeps shared-backend whatever its parent is (an exited client, the updater loop, a non-Codex launcher,
+    // an unreadable relationship) and the relationships are never read for it.
+    [Theory]
+    [MemberData(nameof(ManagedParents))]
+    public void ALauncherIndependentSharedBackendNeedsNoRelationship(string? parent, bool readable)
+    {
+        var read = false;
+        var mode = NativeAdoption.CrossCheck(AgentModes.SharedBackend, true, _ =>
+        {
+            read = true;
+            return readable ? With(parent) : null;
+        }, launcherIndependent: true);
+        Assert.Equal(AgentModes.SharedBackend, mode);
+        Assert.False(read);
+        Assert.Equal(NativeAdoption.Relation.None, NativeAdoption.Needs(AgentModes.SharedBackend, true, true));
+    }
+
+    // The fact never strengthens or relaxes anything else: another mode and Claude behave as without it, and a backend without
+    // the fact keeps the existing parent rule.
+    [Theory]
+    [InlineData("codex", AgentModes.EmbeddedRuntime, AgentModes.EmbeddedRuntime, AgentModes.Unknown)]
+    [InlineData("codex", AgentModes.InteractiveClient, AgentModes.EmbeddedRuntime, AgentModes.Unknown)]
+    [InlineData("codex", AgentModes.Unknown, AgentModes.EmbeddedRuntime, AgentModes.Unknown)]
+    [InlineData("codex", AgentModes.Headless, AgentModes.SharedBackend, AgentModes.Headless)]
+    [InlineData("claude", AgentModes.InteractiveClient, AgentModes.InteractiveClient, AgentModes.InteractiveClient)]
+    [InlineData("claude", AgentModes.SharedBackend, null, AgentModes.SharedBackend)]
+    public void TheFactChangesNoOtherMode(string provider, string mode, string? parent, string expected)
+    {
+        var mayShare = AgentModeClassifier.MayShareBackend(provider);
+        Assert.Equal(expected, NativeAdoption.CrossCheck(mode, mayShare, _ => With(parent), launcherIndependent: true));
+        Assert.Equal(expected, NativeAdoption.CrossCheck(mode, mayShare, _ => With(parent)));
+        Assert.Equal(AgentModes.Unknown, NativeAdoption.CrossCheck(AgentModes.SharedBackend, true, _ => With(AgentModes.SharedBackend)));
+        Assert.Equal(AgentModes.Unknown, NativeAdoption.CrossCheck(AgentModes.SharedBackend, true, _ => null));
+    }
+
+    // ANALYSIS-5601: the transport accepts the same 0.172.0 and 0.166.0 managed lines the capture recognizes, and nothing
+    // it accepted before (every other app-server line) is refused.
+    [Theory]
+    [InlineData("codex app-server --listen unix:// --analytics-default-enabled --managed-daemon", true)]
+    [InlineData("codex app-server --listen unix:// --managed-daemon", true)]
+    [InlineData("codex app-server --listen unix://", false)]
+    public void CaptureAndTransportAgreeOnTheManagedDaemonLine(string line, bool independent)
+    {
+        var arguments = AgentModeClassifier.Arguments(line);
+        Assert.Equal(independent, AgentModeClassifier.LauncherIndependentBackend("codex", arguments));
+        Assert.Equal(AgentModes.SharedBackend, AgentModeClassifier.Classify("codex", true, arguments));
+        new CodexBackendCheck(null, _ => ProcessLiveness.Live, _ => true, _ => line, _ => false).Verify(new ProcessIdentity(4242, 1));
+    }
+
+    // A stored unknown shared attachment learns shared-backend from the next capture, and a known mode is never downgraded.
+    [Theory]
+    [InlineData(AgentModes.Unknown, AgentModes.SharedBackend, AgentModes.SharedBackend)]
+    [InlineData(AgentModes.SharedBackend, AgentModes.Unknown, AgentModes.SharedBackend)]
+    [InlineData(AgentModes.EmbeddedRuntime, AgentModes.SharedBackend, AgentModes.EmbeddedRuntime)]
+    [InlineData(AgentModes.SharedBackend, AgentModes.EmbeddedRuntime, AgentModes.SharedBackend)]
+    public void AStoredUnknownSharedConversationAdoptsSharedBackendAndAKnownModeIsNeverDowngraded(string stored, string incoming, string expected)
+    {
+        using var workspace = new TestWorkspace();
+        var store = new AttachmentStore(workspace.Paths);
+        var first = NativeAdoption.Shared(NativeAdoptionTests.Captured("codex", new ProcessIdentity(1, 1), "x", "observed"), "late-session", stored);
+        store.Adopt(first, DateTimeOffset.UtcNow.AddMinutes(-1));
+        var next = NativeAdoption.Shared(NativeAdoptionTests.Captured("codex", new ProcessIdentity(1, 1), "x", "observed"), "late-session", incoming);
+        var adopted = store.Adopt(next, DateTimeOffset.UtcNow);
+        Assert.Equal(expected, adopted.Evidence!.Mode);
+        Assert.Equal(expected, store.Get(first.Id)!.Evidence!.Mode);
+    }
 }

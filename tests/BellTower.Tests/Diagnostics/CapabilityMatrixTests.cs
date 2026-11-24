@@ -134,8 +134,12 @@ public sealed class CapabilityMatrixTests
         Assert.Contains("window only", navigation.Codex.Detail);
         Assert.Contains("Title and color native sessions", navigation.Claude.Detail);
         Assert.Contains("OSC 110/111", presentation.Claude.Detail);
-        Assert.Contains("assumed until the 6.1 trial", presentation.Claude.Detail);
-        Assert.Contains("assumed", presentation.Codex.Detail);
+        foreach (var detail in new[] { presentation.Claude.Detail, presentation.Codex.Detail })
+        {
+            Assert.Contains(CapabilityMatrix.ExitResetEvidence, detail);
+            Assert.DoesNotContain("assumed", detail);
+            Assert.Contains("not itemized", detail);
+        }
         Assert.DoesNotContain("pre-launch coloring for native", presentation.Claude.Detail.Replace("no pre-launch coloring for native sessions", ""));
 
         var tracking = Row("Plain default codex (shared backend): tracking, alerts, name sync and permission status");
@@ -148,6 +152,32 @@ public sealed class CapabilityMatrixTests
         Assert.Contains("Codex profile", unfinished.Codex.Detail);
         Assert.Contains("codex --no-daemon", unfinished.Codex.Detail);
         Assert.Null(unfinished.Proof);
+    }
+
+    // Task 4.12 / ANALYSIS-5602: the managed-daemon backend is recognized however it was started; the remaining unknown case is
+    // named, in the matrix and in docs/compatibility.md, with the same wording.
+    [Fact]
+    public void TheManagedDaemonIsStatedAsRecognizedHoweverItWasStartedAndTheRemainingGapIsNamed()
+    {
+        var row = Row("Native name and runtime status: shared conversations not yet reached");
+        Assert.Equal(CapabilityMatrix.NotApplicable, row.Claude.Status);
+        Assert.Equal(CapabilityMatrix.Unverified, row.Codex.Status);
+        const string recognized = "managed daemon (app-server with --managed-daemon) is recognized however it was started (client, lifecycle command or updater restart)";
+        Assert.Contains(recognized, row.Codex.Detail);
+        Assert.Contains("any other app-server shape (or a daemon whose flag a later Codex renames) is recognized only while a Codex client is its direct parent", row.Codex.Detail);
+        Assert.Contains("not a provider restriction", row.Codex.Detail);
+        Assert.DoesNotContain("adopted after its launching client exited", row.Codex.Detail);
+        Assert.DoesNotContain("adopted-late", row.Codex.Detail);
+        Assert.DoesNotContain(CapabilityMatrix.Rows, item => item.Surface.Contains("shared conversations adopted after", StringComparison.Ordinal));
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+        while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "ZeusApps.BellTower.slnx")))
+        {
+            directory = directory.Parent;
+        }
+        var document = File.ReadAllText(Path.Combine(directory!.FullName, "docs", "compatibility.md"));
+        Assert.Contains(recognized.Replace("app-server with --managed-daemon", "`app-server` with `--managed-daemon`"), document);
+        Assert.DoesNotContain("adopted after its launching client exited", document);
+        Assert.DoesNotContain("adopted-late", document);
     }
 
     [Theory]
@@ -169,7 +199,9 @@ public sealed class CapabilityMatrixTests
         {
             var item = native.GetProperty(Name(native, provider));
             Assert.Equal(now, item.GetProperty(Name(item, "navigationNow")).GetString());
-            Assert.Contains("assumed until the 6.1 trial", item.GetProperty(Name(item, "titleAndColor")).GetString());
+            var presentationText = item.GetProperty(Name(item, "titleAndColor")).GetString();
+            Assert.Contains(CapabilityMatrix.ExitResetEvidence, presentationText);
+            Assert.DoesNotContain("assumed", presentationText);
             Assert.Contains(titleStep ? "Bell Tower title for sessions started after" : "provider-owned", item.GetProperty(Name(item, "title")).GetString());
         }
         var plain = native.GetProperty(Name(native, "codexPlainDefault"));

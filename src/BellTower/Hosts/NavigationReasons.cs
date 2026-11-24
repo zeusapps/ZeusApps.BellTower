@@ -33,6 +33,17 @@ public static class NavigationReasons
         "Windows Terminal focused, but the tab was not selected because the provider writes its own tab title in this session. " +
         "Run setup --provider-titles (or set the provider's own setting) and start a new session, or select the tab manually.";
 
+    /// <summary>
+    /// True when a refused click states a limit that cannot resolve for that session: no terminal destination exists for it. Only the
+    /// shared backend qualifies, because that conversation never has a terminal of its own. The process and unrecognized-mode refusals can resolve (a process is re-verified, a mode is learned from later evidence),
+    /// and so can an unregistered-host refusal for a direct capture whose host is learned later, so they keep the timer. A headless run keeps
+    /// an unstated permanent limit and also keeps the timer, as do declined activation, a stale session and a navigator failure. The comparison
+    /// relies on the constant being passed through unchanged.
+    /// One rule for both providers.
+    /// </summary>
+    public static bool IsPermanentLimit(FocusResult result) =>
+        !result.Success && string.Equals(result.Message, SharedBackend, StringComparison.Ordinal);
+
     /// <summary>The stated reason for a conversation that has no process of its own (a shared conversation), or null for any other attachment.</summary>
     public static string? ForSharedConversation(Attachment? attachment) =>
         attachment is { EndedAt: null } && ConversationLifecycle.IsSharedConversation(attachment)

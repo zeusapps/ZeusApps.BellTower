@@ -1,6 +1,8 @@
 using System.Diagnostics;
 using BellTower.Core;
+using BellTower.Hosts;
 using BellTower.IO;
+using BellTower.Sessions;
 using BellTower.Tests.Testing;
 using Xunit;
 
@@ -38,13 +40,31 @@ public sealed class NativeAgentRelationshipProcessTests
         // Claude has no shared backend and no relationship rule, so the same positions keep their classification.
         ("claude", "claude", "", "", "own:interactive-client"),
         ("claude", "claude", "-p", "", "own:interactive-client"),
-        ("claude", "claude", "", "-p", "own:headless")
+        ("claude", "claude", "", "-p", "own:headless"),
+        // Task 4.12: the provider's managed daemon is the shared backend however it was started, with no relationship needed:
+        // under a non-Codex launcher, under the updater loop, under another backend, under a headless run.
+        ("codex", "claude", "", ManagedDaemon, "shared:shared-backend"),
+        ("codex", "codex", UpdaterLoop, ManagedDaemon, "shared:shared-backend"),
+        ("codex", "codex", "app-server", ManagedDaemon, "shared:shared-backend"),
+        ("codex", "codex", "exec", ManagedDaemon, "shared:shared-backend"),
+        // Bell Tower's owned runtime shape is not the managed daemon: under a non-client launcher it stays unknown (QA-2400 rows
+        // keep their owned result in NativeOwnedRuntimeProcessTests), and the flag after `--` or on another shape does not count.
+        ("codex", "claude", "", OwnedShape, "shared:unknown"),
+        ("codex", "codex", UpdaterLoop, OwnedShape, "shared:unknown"),
+        ("codex", "claude", "", "app-server -- --managed-daemon", "shared:unknown"),
+        ("codex", "claude", "", "app-server --listen unix://", "shared:unknown"),
+        // Claude has no shared backend: the same words on a Claude command line change nothing.
+        ("claude", "claude", "", ManagedDaemon, "own:interactive-client")
     ];
+
+    private const string ManagedDaemon = "app-server --listen unix:// --analytics-default-enabled --managed-daemon";
+    private const string UpdaterLoop = "app-server daemon pid-update-loop";
+    private const string OwnedShape = "app-server --listen ws://127.0.0.1:1 --ws-auth capability-token --ws-token-file x";
 
     // Both entry points call the same AttachmentCapture.Resolve, so each row runs under one entry point (alternating) and one
     // representative row per rule runs under both: R1 (backend under a client), R2 (client under a Codex process) and Claude
     // unchanged. The Claude-under-Codex positions are covered by the Resolve rows (NativeAgentResolveProcessTests).
-    private static readonly HashSet<int> NestedBoth = [0, 5, 11];
+    private static readonly HashSet<int> NestedBoth = [0, 5, 11, 14, 15, 18, 22];
     private static readonly HashSet<int> HeldBoth = [0, 5];
 
     private static IEnumerable<string> Entries(int index, HashSet<int> both) =>
@@ -120,6 +140,33 @@ public sealed class NativeAgentRelationshipProcessTests
         Verify(workspace, entry, provider, fixture, outcome, 0, run.Message);
     }
 
+    // Task 4.12 / ANALYSIS-5600: the provider's updater restarts the daemon and exits, so the backend outlives its launcher. It is
+    // still the shared backend: no relationship is read for the managed daemon shape.
+    [Theory]
+    [InlineData(Event)]
+    [InlineData(Ingress)]
+    public async Task ABackendWhoseLauncherHasExitedIsStillTheSharedBackend(string entry)
+    {
+        using var workspace = new TestWorkspace();
+        var fixture = NativeFixture.SessionStart("codex");
+        var (ran, message) = await LaunchOrphan(workspace, entry, "orphan", ManagedDaemon, fixture.PayloadText);
+        Assert.True(ran, message);
+        Verify(workspace, entry, "codex", fixture, "shared:shared-backend", 0, message);
+    }
+
+    // The same orphan without the managed-daemon shape stays unknown, so the rule is the flag and not the missing parent.
+    [Theory]
+    [InlineData(Event)]
+    [InlineData(Ingress)]
+    public async Task AnOrphanedAppServerWithoutTheManagedDaemonShapeStaysUnknown(string entry)
+    {
+        using var workspace = new TestWorkspace();
+        var fixture = NativeFixture.SessionStart("codex");
+        var (ran, message) = await LaunchOrphan(workspace, entry, "orphan", OwnedShape, fixture.PayloadText);
+        Assert.True(ran, message);
+        Verify(workspace, entry, "codex", fixture, "shared:unknown", 0, message);
+    }
+
     // A Codex backend and client and a Claude client run at the same moment against one data folder: each is judged by its
     // own relationships, none disturbs another's conversation, and no one claims another's process.
     [Theory]
@@ -142,14 +189,21 @@ public sealed class NativeAgentRelationshipProcessTests
             return NativeAgentResolveProcessTests.Launch(outer, StandIns.Under(outerArguments, $"\"{script}\""), payload);
         }
 
+        var orphanPayload = codex.PayloadText.Replace(codex.SessionId, "mixed-orphan-session", StringComparison.Ordinal);
+        var embeddedPayload = codex.PayloadText.Replace(codex.SessionId, "mixed-embedded-session", StringComparison.Ordinal);
+        var embedded = StandIns.CopyImage(workspace, "codex", "embedded");
+        var orphan = LaunchOrphan(workspace, entry, "orphan", ManagedDaemon, orphanPayload);
         var runs = await Task.WhenAll(
             Nest("backend", "codex", "codex", "", "app-server", backendPayload),
             Nest("client", "codex", "codex", "", "", clientPayload),
-            Nest("claude", "claude", "claude", "", "", claude.PayloadText));
-        foreach (var run in runs)
+            Nest("claude", "claude", "claude", "", "", claude.PayloadText),
+            NativeAgentResolveProcessTests.Launch(embedded, StandIns.Under("--no-daemon", StandIns.Hook(entry, "codex", workspace)), embeddedPayload));
+        foreach (var (run, name) in runs.Zip(new[] { "backend", "client", "claude", "embedded" }))
         {
-            NativeAgentResolveProcessTests.AssertRan(run);
+            Assert.True(run.ExitCode == 0 && run.Output == "{}" && run.Error.Length == 0, name + ": " + run.Message);
         }
+        var (orphanRan, orphanMessage) = await orphan;
+        Assert.True(orphanRan, orphanMessage);
 
         new StateStore(workspace.Paths).Drain();
         var attachments = new AttachmentStore(workspace.Paths);
@@ -161,12 +215,19 @@ public sealed class NativeAgentRelationshipProcessTests
         Assert.True(client is not null, runs[1].Message);
         Assert.Null(client.Process);
         Assert.Equal(AgentModes.Unknown, client.Evidence!.Mode);
-        var own = Assert.Single(attachments.List(), item => item.Process is not null);
+        var orphaned = attachments.Get(NativeAdoption.SharedId("codex", "mixed-orphan-session"));
+        Assert.True(orphaned is not null, orphanMessage);
+        Assert.Null(orphaned.Process);
+        Assert.Equal(AgentModes.SharedBackend, orphaned.Evidence!.Mode);
+        var direct = Assert.Single(attachments.List(), item => item.Provider == "codex" && item.Process is not null);
+        Assert.Equal(AgentModes.EmbeddedRuntime, direct.Evidence!.Mode);
+        Assert.Equal(runs[3].Agent.Pid, direct.Process!.Pid);
+        var own = Assert.Single(attachments.List(), item => item.Provider == "claude" && item.Process is not null);
         Assert.Equal("claude", own.Provider);
         Assert.Equal(AgentModes.InteractiveClient, own.Evidence!.Mode);
         Assert.NotEqual(runs[2].Agent.Pid, own.Process!.Pid);
         var sessions = new StateStore(workspace.Paths).Drain().Sessions;
-        foreach (var key in new[] { "codex:mixed-backend-session", "codex:mixed-client-session", "claude:" + claude.SessionId })
+        foreach (var key in new[] { "codex:mixed-backend-session", "codex:mixed-client-session", "codex:mixed-orphan-session", "claude:" + claude.SessionId })
         {
             // A claimed direct agent has exited by now, so only the process-less conversations are still live.
             Assert.True(key.StartsWith("claude:", StringComparison.Ordinal) || !sessions[key].Ended);
@@ -196,6 +257,7 @@ public sealed class NativeAgentRelationshipProcessTests
             Assert.Equal("shared-runtime", shared.Ownership);
             Assert.Equal(mode, shared.Evidence!.Mode);
             Assert.Equal(EvidenceStatus.HookObserved, shared.Evidence.ConversationHealth);
+            AssertConsumers(workspace, session, shared, mode);
             return;
         }
         var own = Assert.Single(claimed);
@@ -203,6 +265,76 @@ public sealed class NativeAgentRelationshipProcessTests
         Assert.Equal(mode, own.Evidence!.Mode);
         Assert.Equal(LifecycleOwners.AgentProcess, own.Evidence.LifecycleOwner);
         Assert.Equal(EvidenceStatus.HookObserved, own.Evidence.ConversationHealth);
+    }
+
+    // The stated reason, the permanent-limit rule of the viewed timer and the runtime access selection read the stored mode alone.
+    private static void AssertConsumers(TestWorkspace workspace, SessionState session, Attachment shared, string mode)
+    {
+        var reason = NavigationReasons.ForSharedConversation(shared);
+        var access = new CodexRuntimeOpener(workspace.Paths, home: () => "home").Select(session);
+        if (mode == AgentModes.SharedBackend)
+        {
+            Assert.Equal(NavigationReasons.SharedBackend, reason);
+            Assert.True(NavigationReasons.IsPermanentLimit(new FocusResult(false, "unavailable", reason!)));
+            Assert.IsType<CodexAccess.Shared>(access);
+        }
+        else
+        {
+            Assert.Equal(NavigationReasons.TerminalUnverified, reason);
+            Assert.False(NavigationReasons.IsPermanentLimit(new FocusResult(false, "unavailable", reason!)));
+            Assert.Null(access);
+        }
+    }
+
+    // A backend whose launcher has already exited: a launcher image starts the agent detached and ends, and the hook runs only
+    // after the launcher is gone, so the agent's parent identifier is absent from the process table. The payload comes from a file.
+    private static async Task<(bool Ran, string Message)> LaunchOrphan(TestWorkspace workspace, string entry, string folder, string agentArguments, string payload)
+    {
+        var agent = StandIns.CopyImage(workspace, "codex", folder + "-agent");
+        var launcher = StandIns.CopyImage(workspace, "launcher", folder + "-launcher");
+        var payloadPath = Path.Combine(workspace.Root, folder + ".json");
+        File.WriteAllText(payloadPath, payload);
+        var go = Path.Combine(workspace.Root, folder + ".go");
+        var marker = Path.Combine(workspace.Root, folder + ".done");
+        var output = Path.Combine(workspace.Root, folder + ".out");
+        var error = Path.Combine(workspace.Root, folder + ".err");
+        var script = Path.Combine(workspace.Root, folder + ".cmd");
+        File.WriteAllText(script,
+            "@echo off\r\n:wait\r\n" +
+            $"if not exist \"{go}\" (ping -n 2 127.0.0.1 >nul & goto wait)\r\n" +
+            $"{StandIns.Hook(entry, "codex", workspace)} <\"{payloadPath}\" >\"{output}\" 2>\"{error}\"\r\n" +
+            $"echo done>\"{marker}\"\r\n" +
+            "ping -n 60 127.0.0.1 >nul\r\n");
+        var start = new ProcessStartInfo(launcher)
+        {
+            UseShellExecute = false,
+            CreateNoWindow = true,
+            Arguments = StandIns.Under("", $"start \"\" /b \"{agent}\" {StandIns.Under(agentArguments, $"\"{script}\"")} >nul 2>&1 <nul")
+        };
+        StandIns.ScrubEnvironment(start);
+        try
+        {
+            using (var process = Process.Start(start)!)
+            {
+                Assert.True(process.WaitForExit(20000), "The launcher did not exit.");
+            }
+            // The agent is detached now; wait until its image is running, then release it after the launcher is gone.
+            var deadline = DateTime.UtcNow + StandIns.Deadline;
+            while (StandIns.Find(agent).Count == 0 && DateTime.UtcNow < deadline)
+            {
+                await Task.Delay(50);
+            }
+            File.WriteAllText(go, "go");
+            var finished = await StandIns.WaitFor(marker);
+            var text = File.Exists(output) ? File.ReadAllText(output).Trim() : "";
+            var errors = File.Exists(error) ? File.ReadAllText(error) : "";
+            return (finished && text == "{}" && errors.Length == 0, $"finished={finished}; stdout={text}; stderr={errors}");
+        }
+        finally
+        {
+            // Only this launch's own folder: the mixed test runs other stand-ins under the same workspace at the same time.
+            StandIns.KillUnder(Path.GetDirectoryName(agent)!);
+        }
     }
 
     // The agent image runs a batch that starts a same-image child (output and input detached so no pipe is held), runs the

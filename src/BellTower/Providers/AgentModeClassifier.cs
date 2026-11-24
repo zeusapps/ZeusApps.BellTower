@@ -13,6 +13,23 @@ public static class AgentModeClassifier
     // No shared backend is known for Claude, so an unreadable Claude command line keeps its existing direct classification.
     public static bool MayShareBackend(string provider) => provider == "codex";
 
+    /// <summary>
+    /// Provider adapter fact: true only for Codex <c>app-server</c> launched as the provider's detached managed daemon, which
+    /// carries <c>--managed-daemon</c> before any <c>--</c>. That backend is pidfile-backed and relaunched by the provider's
+    /// updater, so its parent is whichever transient process last started it and says nothing about whether it is the shared
+    /// backend. Bell Tower's owned runtime, stdio <c>app-server</c>, the updater loop and every Claude invocation are false.
+    /// </summary>
+    public static bool LauncherIndependentBackend(string provider, IReadOnlyList<string>? arguments)
+    {
+        if (provider != "codex" || arguments is null)
+        {
+            return false;
+        }
+        var end = arguments.ToList().IndexOf("--");
+        var scanned = end < 0 ? arguments : arguments.Take(end).ToList();
+        return scanned.Contains("--managed-daemon") && Codex(scanned) == AgentModes.SharedBackend;
+    }
+
     // Codex 0.165.0 options that consume the next token, so the value is never mistaken for a subcommand or prompt.
     private static readonly HashSet<string> CodexValueOptions = new(StringComparer.Ordinal)
     {

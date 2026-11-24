@@ -26,6 +26,7 @@ None; extend the existing capabilities rather than introduce a second session in
 - `session-tracking`: Hook-triggered native adoption, independently evaluated conversation/runtime/terminal evidence, and non-owning runtime observation for both providers.
 - `terminal-navigation`: Evidence-based binding of adopted sessions to existing host registrations, with shared-backend ambiguity handled explicitly.
 - `session-identity`: Identity continuity and separately verified native-name and terminal-presentation capabilities during adoption, disconnection and rebinding.
+- `attention-notifications`: A chip click that shows a permanent navigation limit (for example a shared-backend Codex conversation) hides that episode's timer like a successful click (trial observation T-13, user decision 2026-11-23).
 - `standalone-setup`: Reversible native-command setup with optional terminal profiles and no required changes to shell command resolution; precise capability diagnostics.
 
 ## Impact

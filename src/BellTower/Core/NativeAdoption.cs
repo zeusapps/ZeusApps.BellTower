@@ -38,11 +38,12 @@ public static class NativeAdoption
 
     /// <summary>
     /// The relationships <see cref="CrossCheck"/> needs, so a caller reads only those. A provider without a shared backend and a
-    /// mode no rule judges need none; a shared backend is judged by its parent alone; a client by parent and children.
+    /// mode no rule judges need none; a shared backend is judged by its parent alone unless its invocation is launcher independent
+    /// (then it needs none); a client by parent and children.
     /// </summary>
-    public static Relation Needs(string mode, bool mayShareBackend) => !mayShareBackend ? Relation.None : mode switch
+    public static Relation Needs(string mode, bool mayShareBackend, bool launcherIndependent = false) => !mayShareBackend ? Relation.None : mode switch
     {
-        AgentModes.SharedBackend => Relation.Parent,
+        AgentModes.SharedBackend => launcherIndependent ? Relation.None : Relation.Parent,
         AgentModes.InteractiveClient or AgentModes.EmbeddedRuntime => Relation.Parent | Relation.Children,
         _ => Relation.None
     };
@@ -54,11 +55,13 @@ public static class NativeAdoption
     /// backend must be started by a same-provider client; a client (interactive or embedded) must not be started by a
     /// same-provider process, which is where a backend sits, nor start same-provider backends or clients of its own.
     /// <paramref name="relations"/> is called at most once, and only with the relationships <see cref="Needs"/> names; a null
-    /// result (unreadable) fails a backend to unknown and leaves a client's mode.
+    /// result (unreadable) fails a backend to unknown and leaves a client's mode. A backend that the provider documents as a
+    /// detached, relaunched daemon (<paramref name="launcherIndependent"/>, an adapter fact about the command line) is not judged
+    /// by its launcher: its parent may be an exited client, an updater or a lifecycle command.
     /// </summary>
-    public static string CrossCheck(string mode, bool mayShareBackend, Func<Relation, ProcessRelations?> relations)
+    public static string CrossCheck(string mode, bool mayShareBackend, Func<Relation, ProcessRelations?> relations, bool launcherIndependent = false)
     {
-        var needs = Needs(mode, mayShareBackend);
+        var needs = Needs(mode, mayShareBackend, launcherIndependent);
         if (needs == Relation.None)
         {
             return mode;

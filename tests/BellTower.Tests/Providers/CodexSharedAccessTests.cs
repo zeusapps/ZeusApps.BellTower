@@ -65,6 +65,14 @@ public sealed class CodexSharedAccessTests : IDisposable
         Assert.Equal(CodexTransportFailure.PeerUnreadable, Assert.Throws<CodexTransportException>(() => Check(elevated: null).Verify(Backend)).Failure);
     }
 
+    // ANALYSIS-5601: the transport accepts the 0.172.0 and 0.166.0 managed-daemon lines the capture recognizes without a parent
+    // rule, and still accepts every other app-server line it accepted before.
+    [Theory]
+    [InlineData("codex app-server --listen unix:// --analytics-default-enabled --managed-daemon")]
+    [InlineData("codex app-server --listen unix:// --managed-daemon")]
+    [InlineData("codex app-server --listen unix://")]
+    public void TheTransportAcceptsTheSameManagedDaemonLinesAsCapture(string line) => Check(line: line).Verify(Backend);
+
     [Fact]
     public void IdentityIsRefusedBeforeElevationSoAReasonNamesTheFirstProblem()
     {

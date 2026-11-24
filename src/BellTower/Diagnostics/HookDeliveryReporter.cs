@@ -13,11 +13,23 @@ public sealed class HookDeliveryReporter(DataPaths paths, string? claudeConfigDi
         Codex = Provider("codex", CodexSettingsPath())
     };
 
+    /// <summary>
+    /// The owned hook commands actually present in the provider's settings file: the manifest (an append-only ownership history) only filters
+    /// which commands are ours. Empty when the settings are missing, unreadable, oversized or malformed, or hold no owned command.
+    /// </summary>
+    internal IReadOnlyList<string> LiveOwnedCommands(string provider)
+    {
+        var path = provider == "claude" ? ClaudeSettingsPath() : CodexSettingsPath();
+        return ConfiguredHooks(path, OwnedCommands(path)).Commands;
+    }
+
     private object Provider(string provider, string settingsPath)
     {
         var ownership = OwnedCommands(settingsPath);
         var selectedShell = provider == "codex" ? ReadSelectedCodexShell() : null;
-        var (readable, configuredHooks, brokenHooks) = ConfiguredHooks(settingsPath, provider, ownership, selectedShell);
+        var (readable, liveCommands) = ConfiguredHooks(settingsPath, ownership);
+        var configuredHooks = liveCommands.Count;
+        var brokenHooks = provider == "codex" ? liveCommands.Count(command => IsKnownBrokenCodexCommand(command, selectedShell)) : 0;
         var deliveredAt = LastDeliveredAt(provider);
         var status = deliveredAt is not null
             ? configuredHooks > 0 ? "delivered" : "observed; configuration not detected"
@@ -115,26 +127,24 @@ public sealed class HookDeliveryReporter(DataPaths paths, string? claudeConfigDi
         }
     }
 
-    private (bool Readable, int Count, int Broken) ConfiguredHooks(string path, string provider, HashSet<string> owned, CodexHookShell? selectedShell)
+    private static (bool Readable, List<string> Commands) ConfiguredHooks(string path, HashSet<string> owned)
     {
         if (!File.Exists(path))
         {
-            return (true, 0, 0);
+            return (true, []);
         }
         if (new FileInfo(path).Length > 1024 * 1024)
         {
-            return (false, 0, 0);
+            return (false, []);
         }
         try
         {
             using var document = JsonDocument.Parse(File.ReadAllBytes(path), new JsonDocumentOptions { MaxDepth = 32 });
-            var commands = OwnedCommandsIn(document.RootElement, owned);
-            var broken = provider == "codex" ? commands.Count(command => IsKnownBrokenCodexCommand(command, selectedShell)) : 0;
-            return (true, commands.Count, broken);
+            return (true, OwnedCommandsIn(document.RootElement, owned));
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or JsonException)
         {
-            return (false, 0, 0);
+            return (false, []);
         }
     }
 

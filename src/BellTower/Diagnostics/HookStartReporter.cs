@@ -4,7 +4,7 @@ using BellTower.Protocol;
 namespace BellTower.Diagnostics;
 
 /// <summary>Doctor's view of design decision 9: whether a hook can start a stopped tray, the latest attempt and any user stop.</summary>
-public sealed class HookStartReporter(DataPaths paths)
+public sealed class HookStartReporter(DataPaths paths, Func<string?>? selectedIngressHash = null, string? claudeConfigDirectory = null, string? codexHome = null)
 {
     public object Report()
     {
@@ -16,9 +16,16 @@ public sealed class HookStartReporter(DataPaths paths)
         var taskRecord = HookStartTask.RecordState(paths.Root);
         var refusal = Tray.TrayJobGuard.LastRefusal(paths.Root);
         var shellProblem = HookTrayStart.ShellProblem();
+        var image = new HookIngressImageReporter(paths, selectedIngressHash, claudeConfigDirectory, codexHome);
+        var claudeImage = image.Provider("claude");
+        var codexImage = image.Provider("codex");
+        var stale = claudeImage.Status == HookIngressImageReporter.Stale || codexImage.Status == HookIngressImageReporter.Stale;
         return new
         {
             Available = launcher is not null,
+            // A stale image is the older ingress the hooks still call (it may lack the hook-start behavior); a setup refresh makes it current.
+            Availability = launcher is null ? "unavailable: " + reason : stale ? "needs a setup refresh: " + HookIngressImageReporter.StaleAdvice : "available",
+            IngressImage = new { Claude = claudeImage, Codex = codexImage },
             Launcher = launcher,
             LauncherProblem = launcher is null ? reason : null,
             LatestAttempt = attempt is null ? null : new { At = attempt.Value.At.ToString("O"), Result = attempt.Value.Outcome, Detail = attempt.Value.Detail },
