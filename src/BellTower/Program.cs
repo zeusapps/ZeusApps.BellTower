@@ -9,8 +9,7 @@ public static class Program
     [STAThread]
     public static int Main(string[] args)
     {
-        Console.OutputEncoding = new UTF8Encoding(false);
-        Console.InputEncoding = new UTF8Encoding(false);
+        UseUtf8Console(static e => Console.OutputEncoding = e, static e => Console.InputEncoding = e);
         try
         {
             CaptureCompatibility.EnsureTrayInvocation(args, 1, attachmentHealth: 1);
@@ -30,5 +29,20 @@ public static class Program
             Console.Error.WriteLine("bell-tower: " + exception.Message);
             return 1;
         }
+    }
+
+    // The inherited console host can disconnect during startup (for example a cancelled status-line run); the
+    // encoding setters then throw IOException (0x800700E9). Each setter is independent and only IOException is tolerated.
+    internal static void UseUtf8Console(Action<Encoding> setOutput, Action<Encoding> setInput)
+    {
+        var utf8 = new UTF8Encoding(false);
+        try
+        { setOutput(utf8); }
+        catch (IOException)
+        { }
+        try
+        { setInput(utf8); }
+        catch (IOException)
+        { }
     }
 }
