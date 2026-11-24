@@ -7,9 +7,9 @@ Orchestrator-owned ledger. Reviewers write their assigned reports; developers wr
 Advisory marker; resume and hand-off rules are in the [workflow](../../../../.agents/workflows/openspec-delegation.md#mixed-client-operation).
 
 - Client / version: Claude Code (Opus 5.5)
-- Session identity: claude-testing-before-release-20261122
-- Since (UTC): 2026-11-22T18:00Z
-- Previous owner: none
+- Session identity: claude-coldstart-resume-20261124
+- Since (UTC): 2026-11-24T22:20Z
+- Previous owner: Claude Code session `claude-testing-before-release-20261122` (finished; the user asked this session on 2026-11-24 to merge the work and run task 4.3)
 
 ## Assignments and reservations
 
@@ -63,3 +63,4 @@ None yet.
 - Evidence gaps / provider restrictions: the 16 MiB state decode under the identity lock is unmeasured; the interleaving tests were not run against the pre-fix code (old-order failure derived by trace). No provider restriction.
 - Commit: on the worktree branch `worktree-agent-a2bf97db8a9861fe4`; merge into the main branch pending DEV-058. Not pushed.
 - OpenSpec task reconciliation: 7/8 checked; 4.3 open.
+- 2026-11-24: User asked to merge and set up task 4.3. Merged dc0fe90 (worktree-agent-a2bf97db8a9861fe4) into archive-completed-release-change as d8369dc (clean, no conflicts; on top of the archived adopt-native-sessions-from-hooks work). Orchestrator check of the merged tree: Release build 0 warnings; full suite 2105/2106, PowerShellModuleTests (codex, Windows PowerShell) failing once under load and passing alone 8/8. A test tray leaked again during the run (known ANALYSIS-6000 of the archived change; follow-up in docs/follow-ups.md). Task 4.3 needs a dev build install with user authorization.
