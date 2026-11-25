@@ -22,4 +22,5 @@
 
 - [x] 4.1 Run the Release build, the full .NET suite, format verification and `openspec validate distinct-session-colors --strict`, and record the results.
 - [x] 4.2 One QA review and one code-analyzer review of the stable implementation target. Resolve blocking findings and record suggestions as deferred.
-- [ ] 4.3 Installed check on a dev build, with user authorization: open at least six concurrent sessions across Claude Code and Codex, managed and native, in Windows Terminal and VS Code, and confirm with the user that each has a clearly distinct color and that existing sessions kept theirs. Record the result, or Not performed.
+- [x] 4.3 Installed check on a dev build, with user authorization: open at least six concurrent sessions across Claude Code and Codex, managed and native, in Windows Terminal and VS Code, and confirm with the user that each has a clearly distinct color and that existing sessions kept theirs. Record the result, or Not performed.
+  - Result (2026-11-25, dev 0.1.9032 a9f5a37): passed with partial coverage. Six concurrent native sessions across Claude Code and Codex in Windows Terminal each showed a clearly distinct color, and sessions open before the switch kept theirs (user confirmed). Managed sessions and the VS Code host were not exercised. Evidence: `evidence/installed-check-4.3.png`.
