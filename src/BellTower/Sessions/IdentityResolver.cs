@@ -6,11 +6,14 @@ namespace BellTower.Sessions;
 // Tray-owned resolver. The launch directory, the planning root/store and the working checkout are separate facts;
 // checkout discovery is bounded and cached independently of process ownership, and the shared CheckoutPolicy
 // decides (user pin > verified provider cwd > unique work mapping > launch).
-public sealed class IdentityResolver(DataPaths paths, CheckoutCache checkout, Func<DateTimeOffset>? clock = null)
+public sealed class IdentityResolver(DataPaths paths, CheckoutCache checkout, Func<DateTimeOffset>? clock = null, Func<string, IReadOnlyList<string>?>? listing = null)
 {
     private static readonly TimeSpan CacheLife = TimeSpan.FromSeconds(30);
+    // A failed listing is cached as a failure (never as an empty success) for a shorter life, so a launch directory outside Git or a
+    // listing that times out is not retried on every 2 s pass.
+    private static readonly TimeSpan FailureLife = TimeSpan.FromSeconds(10);
     private readonly Func<DateTimeOffset> clock = clock ?? (() => DateTimeOffset.UtcNow);
-    private readonly Dictionary<string, (DateTimeOffset At, IReadOnlyList<string> Paths)> worktrees = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, (DateTimeOffset At, IReadOnlyList<string>? Paths)> worktrees = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, (DateTimeOffset At, string? Top)> toplevels = new(StringComparer.OrdinalIgnoreCase);
     private readonly GitReader git = new();
 
@@ -22,14 +25,19 @@ public sealed class IdentityResolver(DataPaths paths, CheckoutCache checkout, Fu
         var pin = identity.CheckoutPin;
         var provider = (string?)null;
         var roots = (IReadOnlyList<string>)[];
+        // Null means the listing failed; that is not evidence about the worktrees (see CheckoutPolicy.RetainedCheckout).
+        IReadOnlyList<string>? listed = [];
         if (pin is null)
         {
-            roots = await Task.Run(() => Worktrees(launch), cancellation).ConfigureAwait(false);
+            listed = await Task.Run(() => Worktrees(launch), cancellation).ConfigureAwait(false);
+            roots = listed ?? [];
             provider = identity.ProviderCwd is { } cwd ? await Task.Run(() => VerifiedProvider(cwd, launch, roots), cancellation).ConfigureAwait(false) : null;
         }
         var work = identity.WorkSubject;
-        var choice = CheckoutPolicy.Choose(pin, provider, work, roots,
-            root => Directory.Exists(Path.Combine(root, "openspec", "changes", work!)), Directory.Exists);
+        Func<string, bool> hasChange = root => Directory.Exists(Path.Combine(root, "openspec", "changes", work!));
+        var choice = CheckoutPolicy.Choose(pin, provider, work, roots, hasChange, Directory.Exists);
+        if (choice.Source == CheckoutPolicy.Launch && pin is null && await RetainedAsync(identity, listed, cancellation).ConfigureAwait(false) is { } retained)
+        { choice = CheckoutPolicy.Choose(pin, provider, work, roots, hasChange, Directory.Exists, retained); }
         var selected = choice.Path ?? launch;
         var source = choice.Source;
         if (!Directory.Exists(selected))
@@ -43,15 +51,43 @@ public sealed class IdentityResolver(DataPaths paths, CheckoutCache checkout, Fu
         store.Update(session.Key, session.Directory, value =>
         {
             var before = Json.Encode(value);
+            var hadWork = value.WorkSubject is not null;
             CheckoutPolicy.ApplyBranch(value, value.WorkingCheckout, selected, context.Branch, clock());
+            // A branch change in the checkout the work verified clears the work; that checkout stays the working checkout.
+            var branchCleared = hadWork && value.WorkSubject is null && source == CheckoutPolicy.UniqueWork;
             value.LaunchDirectory ??= session.Directory;
             value.WorkingCheckout = selected;
-            value.CheckoutSource = source;
+            // The final retention decision is made here, against locked fresh state: a Clear, Reset or pin that landed while this pass
+            // awaited Git must win, so retained is written only while the stored source is still the one this pass started from.
+            var retain = branchCleared || source == CheckoutPolicy.Retained;
+            var kept = retain && value.CheckoutPin is null && value.CheckoutSource == identity.CheckoutSource;
+            value.CheckoutSource = retain ? (kept ? CheckoutPolicy.Retained : CheckoutPolicy.Launch) : source;
+            if (source == CheckoutPolicy.UniqueWork)
+            { value.CheckoutWork = work; }
+            else if (!retain)
+            { value.CheckoutWork = null; }
             value.ObservedBranch = context.Branch ?? value.ObservedBranch;
             value.AutomaticSubject = matching.Length == 1 ? matching[0] : ticketText ?? context.Branch;
             return before != Json.Encode(value);
         });
         return context;
+    }
+
+    // The checkout that fills the place of the launch fallback. Two cases, both for the checkout a unique work mapping verified:
+    // it is already retained and no work has appeared since (any new work supersedes it), or the branch of that checkout changed and
+    // the pass is about to clear the branch-bound work, so retention must not depend on the verifying change folder surviving the switch.
+    private async Task<string?> RetainedAsync(SessionIdentity identity, IReadOnlyList<string>? listed, CancellationToken cancellation)
+    {
+        if (CheckoutPolicy.RetainedCheckout(identity.WorkingCheckout, listed) is not { } kept)
+        { return null; }
+        if (identity.CheckoutSource == CheckoutPolicy.Retained)
+        { return identity.WorkSubject is null ? kept : null; }
+        // Only work that verified this checkout may be cleared by its branch change; unrelated new work rebinds to the launch checkout instead.
+        if (identity.CheckoutSource != CheckoutPolicy.UniqueWork || identity.PinnedChange is not null || identity.ActiveWork is null || identity.WorkBranch is null ||
+            identity.ActiveWork != identity.CheckoutWork)
+        { return null; }
+        var branch = (await checkout.ReadAsync(kept, cancellation).ConfigureAwait(false)).Branch;
+        return branch is not null && branch != identity.WorkBranch ? kept : null;
     }
 
     // Provider evidence counts only when the reported cwd belongs to a different checkout than the launch one and
@@ -79,11 +115,11 @@ public sealed class IdentityResolver(DataPaths paths, CheckoutCache checkout, Fu
         return top;
     }
 
-    private IReadOnlyList<string> Worktrees(string launch)
+    private IReadOnlyList<string>? Worktrees(string launch)
     {
-        if (worktrees.TryGetValue(launch, out var hit) && clock() - hit.At < CacheLife)
+        if (worktrees.TryGetValue(launch, out var hit) && clock() - hit.At < (hit.Paths is null ? FailureLife : CacheLife))
         { return hit.Paths; }
-        var roots = git.Worktrees(launch);
+        var roots = (listing ?? git.TryWorktrees)(launch); // null is cached as a failure, which retention reads as "no evidence", not as an empty listing
         if (worktrees.Count >= 128)
         { worktrees.Remove(worktrees.MinBy(pair => pair.Value.At).Key); }
         worktrees[launch] = (clock(), roots);

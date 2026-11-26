@@ -8,9 +8,9 @@ All changes in this plan are required for the same next release. This artifact i
 
 **Scope decisions (2026-11-22):** 0.1.9 was published on 2026-10-27. Publisher-signed updates are deferred to a later release; this release keeps SHA-256 verification and says so in its release notes. Only `adopt-native-sessions-from-hooks` must still land. `verify-codex-repository-subagents` and `sync-native-session-titles` move to a later release. Work completed after 0.1.9 joins the scope for both providers.
 
-**Required predecessors:** shipped in 0.1.9: `speed-up-claude-hook-ingestion`, `reconcile-session-liveness-and-title-refresh`, `fix-vscode-window-activation`, `confirm-claude-human-permission-waits`. Archived after 0.1.9: `fix-codex-hook-command-shell`, `suppress-voice-during-microphone-use`, `add-idle-attention-reminders`, `follow-openspec-session-titles`, `restore-claude-badge-identity`, `bound-ended-session-state`. Still to land: `adopt-native-sessions-from-hooks`. Deferred: `verify-signed-releases-and-update-policy`.
+**Required predecessors:** shipped in 0.1.9: `speed-up-claude-hook-ingestion`, `reconcile-session-liveness-and-title-refresh`, `fix-vscode-window-activation`, `confirm-claude-human-permission-waits`, and the implementations of `follow-openspec-session-titles` and `restore-claude-badge-identity` (archived after 0.1.9). New after 0.1.9: `fix-codex-hook-command-shell`, `suppress-voice-during-microphone-use`, `add-idle-attention-reminders`, `bound-ended-session-state`, `adopt-native-sessions-from-hooks`, `distinct-session-colors`. Deferred: `verify-signed-releases-and-update-policy`.
 
-**Primary source boundaries:** New packaged acceptance fixtures/scripts; scripts/update-acceptance.ps1 and release checks; docs/handoffs/next-release-plan.md, compatibility and release evidence; older OpenSpec reconciliation and version agreement.
+**Primary source boundaries:** New packaged acceptance fixtures/scripts; the shared checkout policy for the branch-change fix found by the field harness (task 2.8); scripts/update-acceptance.ps1 and release checks; docs/handoffs/next-release-plan.md, compatibility and release evidence; older OpenSpec reconciliation and version agreement.
 
 ## Goals / Non-Goals
 
@@ -22,7 +22,7 @@ All changes in this plan are required for the same next release. This artifact i
 
 ### 1. One installed candidate and real baseline
 
-Extend the packaged acceptance project/scripts, retaining the actual published 0.1.9 release archive as baseline rather than compiling current code with a fixture version and calling it historical compatibility. Install candidate and baseline under isolated roots, use distinct --data-dir and fixture homes, and exercise real setup/command/launcher/ingress/VSIX paths. 0.1.9 is published, so the candidate version is the next unused version, chosen once after checking tags and releases. Application, extension, package, release descriptor and probes must agree.
+Extend the packaged acceptance project/scripts, retaining the actual published 0.1.9 release archive as baseline rather than compiling current code with a fixture version and calling it historical compatibility. Install candidate and baseline under isolated roots, use distinct --data-dir and fixture homes, and exercise real setup/command/launcher/ingress/VSIX paths. 0.1.9 is published, so the candidate version is the next unused version, chosen once after checking tags and releases. Application, extension, package, release descriptor and probes must agree in the release commit; until then they stay at the published base so dev builds used for live checks compare correctly against the release. Before that synchronization the harness uses a fixture-version 0.1.11 candidate under `artifacts/update-acceptance/`; the upgrade, rollback and acceptance evidence is rerun on the synchronized release-commit package.
 
 ### 2. Representative field fixture
 

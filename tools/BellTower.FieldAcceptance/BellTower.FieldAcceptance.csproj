@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><OutputType>Exe</OutputType><RootNamespace>BellTower.FieldAcceptance</RootNamespace></PropertyGroup>
+  <ItemGroup>
+    <!-- The one hook timing implementation (sampling plan and statistics), shared with tools/BellTower.Ingress.Bench. -->
+    <Compile Include="../Shared/HookTiming.cs" Link="Shared/HookTiming.cs" />
+    <ProjectReference Include="../../src/BellTower/BellTower.csproj" />
+    <!-- The captured native payloads the provider model builds hook events from; one copy, owned by the test fixtures. -->
+    <None Include="../../tests/BellTower.Tests/Fixtures/native/*.json" Link="FieldAcceptanceFixtures/native/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

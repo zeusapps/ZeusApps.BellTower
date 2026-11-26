@@ -67,3 +67,16 @@ Deferred suggestions from the final review of this change (see its `reports/anal
 - Installed check coverage. On dev build 0.1.9032 the user confirmed six concurrent native Claude Code and Codex sessions in Windows Terminal with clearly distinct colors, and existing sessions kept theirs. Managed sessions and the VS Code host were not exercised; this is an evidence gap, not a provider restriction. Archived by user decision on 2026-11-25.
 - Early-trimmed ended sessions (QA-002). An ended session trimmed from the monitoring state early can still reserve its color for up to an hour. The reservation is bounded and errs toward distinct colors.
 - Reuse `IdentityPath` (ANALYSIS-006). Three existing sites build the identity file path themselves instead of calling `IdentityPath`.
+
+## 0.1.11 release follow-ups
+
+- ANALYSIS-265: a Bell Tower-launched Codex conversation whose first hook cannot identify the Codex process loses its later events (regression, new in 0.1.11). Workaround: restart the conversation.
+- ANALYSIS-240: Codex owned-runtime hooks are lost after a manual rollback following a 0.1.11 setup. Recovery: rerun the older version's setup, then resume or restart open Codex conversations.
+- Codex explicit native-name provenance gap: a Codex name set outside Bell Tower has no read side outside owned runtimes and a shared backend.
+- ANALYSIS-300: fork-time identity parity between Claude Code and Codex stays unverified (live fork shape not observed).
+- ANALYSIS-100: pass `CODEX_HOME` and `CLAUDE_CONFIG_DIR` to a hook-started tray.
+- ANALYSIS-242: a plain Claude whose hooks find no agent process gets a fresh id per hook (pre-existing in 0.1.9).
+- Smoke teardown race: `tools/BellTower.Smoke/Program.cs:210` (`RequestExit` right after `start --silent`) failed once and also leaves hook-started acceptance trays running.
+- The field harness should prune its old runs under `artifacts/field-acceptance/runs`; dev builds accumulate in `artifacts/dev-builds`.
+- Installed-harness scenarios descoped from 0.1.11 (tasks 2.5 to 2.7, 3.1, 3.2) and the known harness limitations in `openspec/changes/validate-next-release-field-acceptance/evidence/implementation-012.md`.
+- The full .NET suite has load-sensitive failures (a different set each run); each passes alone.

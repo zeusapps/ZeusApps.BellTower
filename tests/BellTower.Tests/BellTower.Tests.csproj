@@ -15,6 +15,7 @@
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
     <ProjectReference Include="../../src/BellTower/BellTower.csproj" />
+    <ProjectReference Include="../../tools/BellTower.FieldAcceptance/BellTower.FieldAcceptance.csproj" />
     <ProjectReference Include="../../src/BellTower.Ingress/BellTower.Ingress.csproj" ReferenceOutputAssembly="false" />
     <ProjectReference Include="../../src/BellTower.Launcher/BellTower.Launcher.csproj" ReferenceOutputAssembly="false" />
     <ProjectReference Include="../BellTower.Tests.FakeLauncher/BellTower.Tests.FakeLauncher.csproj" ReferenceOutputAssembly="false" />

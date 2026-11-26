@@ -25,6 +25,9 @@ public sealed record SessionIdentity
     // Latest working directory reported by a main-thread provider hook; verified by the resolver before use.
     public string? ProviderCwd { get; set; }
     public string CheckoutSource { get; set; } = "launch";
+    // The work subject whose change folder verified the checkout while CheckoutSource was unique-work. Additive and optional: 0.1.9 keeps it
+    // through AdditionalData. The retained-checkout rule for a vanished change folder applies only while ActiveWork still equals it.
+    public string? CheckoutWork { get; set; }
     public string? ObservedBranch { get; set; }
     public string? TranscriptPath { get; set; }
     public long HistoryOffset { get; set; }

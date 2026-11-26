@@ -89,7 +89,7 @@ public sealed class SessionCatalog
         { _ = Palette.FromColor(color.Trim()); }
         if (checkout is not null)
         {
-            identities.Update(key, session.Directory, value => { value.CheckoutPin = pin; return true; });
+            identities.Update(key, session.Directory, value => { value.CheckoutPin = pin; CheckoutPolicy.Release(value); return true; });
         }
         return color is not null || reset ? identities.SetColor(key, session.Directory, color, reset) : identities.Get(key, session.Directory);
     }

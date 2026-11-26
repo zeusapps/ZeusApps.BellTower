@@ -2,7 +2,7 @@
 
 ## Why
 
-Component tests passed for 0.1.8 while the installed hook chain, resumed Claude identity and VS Code foreground activation failed in real use. The retained repairs and additions in both field reports require installed-package acceptance. On 2026-10-29 the user cancelled remote webhook notifications, including Teams; that scope is removed rather than deferred or counted as implemented. Version 0.1.9 was published on 2026-10-27 with four of the retained changes (hook ingestion speed-up, liveness and title refresh, VS Code window activation, human permission waits); the remaining retained changes and later work exist only in development builds, so this gate now covers the first release after 0.1.9.
+Component tests passed for 0.1.8 while the installed hook chain, resumed Claude identity and VS Code foreground activation failed in real use. The retained repairs and additions in both field reports require installed-package acceptance. On 2026-10-29 the user cancelled remote webhook notifications, including Teams; that scope is removed rather than deferred or counted as implemented. Version 0.1.9 was published on 2026-10-27 with the hook ingestion speed-up, liveness and title refresh, VS Code window activation and human permission waits, and with the session-title and badge-identity implementations, whose changes were archived only afterwards with live checks transferred here; the remaining retained changes and later work exist only in development builds, so this gate now covers the first release after 0.1.9.
 
 ## What Changes
 
@@ -31,13 +31,13 @@ The user approved archiving `follow-openspec-session-titles` and `restore-claude
 
 ### Modified Capabilities
 
-None.
+- `session-identity`: a uniquely verified working checkout is kept across a branch change in that checkout instead of falling back to the launch checkout (field harness finding ANALYSIS-163, user decision 2026-11-25; task 2.8).
 
 ## Impact
 
-New packaged acceptance fixtures/scripts; scripts/update-acceptance.ps1 and release checks; docs/handoffs/next-release-plan.md, compatibility and release evidence; older OpenSpec reconciliation and version agreement.
+New packaged acceptance fixtures/scripts; scripts/update-acceptance.ps1 and release checks; docs/handoffs/next-release-plan.md, compatibility and release evidence; older OpenSpec reconciliation and version agreement; the shared checkout policy and identity resolver for the branch-change fix (task 2.8).
 
-Execution dependencies: shipped in 0.1.9: `speed-up-claude-hook-ingestion`, `reconcile-session-liveness-and-title-refresh`, `fix-vscode-window-activation`, `confirm-claude-human-permission-waits`; archived after 0.1.9: `fix-codex-hook-command-shell`, `suppress-voice-during-microphone-use`, `add-idle-attention-reminders`, `follow-openspec-session-titles`, `restore-claude-badge-identity`, `bound-ended-session-state`; still to land: `adopt-native-sessions-from-hooks`. `verify-signed-releases-and-update-policy` is deferred (2026-11-22). Coverage: Release gate for retained field report items 1-13, badge parity, original VS Code report and confirmed release scope; item 12 retains local reminders only.
+Execution dependencies: shipped in 0.1.9: `speed-up-claude-hook-ingestion`, `reconcile-session-liveness-and-title-refresh`, `fix-vscode-window-activation`, `confirm-claude-human-permission-waits`, and the implementations of `follow-openspec-session-titles` and `restore-claude-badge-identity` (archived after 0.1.9); new after 0.1.9: `fix-codex-hook-command-shell`, `suppress-voice-during-microphone-use`, `add-idle-attention-reminders`, `bound-ended-session-state`, `adopt-native-sessions-from-hooks`, `distinct-session-colors`. `verify-signed-releases-and-update-policy` is deferred (2026-11-22). Coverage: Release gate for retained field report items 1-13, badge parity, original VS Code report and confirmed release scope; item 12 retains local reminders only.
 
 This is required for the single next release after 0.1.9. Deliver each feature for both Codex and Claude Code through shared product policies and provider adapters. Preserve data, user overrides and safe runtime compatibility; provider-specific limitations require versioned evidence and a supported fallback. Test only isolated data/configuration, fake or fixture agents and silent sinks; never modify production settings, transcripts or sessions. The ordered release handoff is docs/handoffs/next-release-plan.md; the design and tasks repeat all context needed for this change.
 

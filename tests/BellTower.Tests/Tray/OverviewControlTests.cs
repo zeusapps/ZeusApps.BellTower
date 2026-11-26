@@ -108,6 +108,28 @@ public sealed class OverviewControlTests
         });
     }
 
+    // A retained checkout has no pin, so the checkout box is already empty; Clear must still release it (ANALYSIS-200).
+    [Theory]
+    [InlineData("claude")]
+    [InlineData("codex")]
+    public void ClearCheckoutOnAnUnpinnedRetainedRowStillSendsAnEmptyCheckout(string provider)
+    {
+        InSta(() =>
+        {
+            using var form = new OverviewForm { Opacity = 0 };
+            _ = form.Handle;
+            var configure = new List<(string Key, string? Checkout, string? Color, bool Reset)>();
+            form.ConfigureIdentity += (key, checkout, color, reset) => configure.Add((key, checkout, color, reset));
+            var row = Row(provider);
+            row.Identity.CheckoutSource = CheckoutPolicy.Retained;
+            row.Identity.CheckoutPin = null;
+            form.RefreshRows([row], DateTimeOffset.UtcNow);
+            Select(form, 0);
+            Click(All<Button>(form).Single(button => button.Text == "Clear checkout"));
+            Assert.Equal((provider + ":one", "", null, false), Assert.Single(configure));
+        });
+    }
+
     private static void InSta(Action action)
     {
         Exception? failure = null;

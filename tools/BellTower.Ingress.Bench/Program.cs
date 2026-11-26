@@ -7,6 +7,7 @@ using BellTower.Distribution;
 using BellTower.IO;
 using BellTower.Protocol;
 using BellTower.Setup;
+using BellTower.Tools;
 
 try
 {
@@ -62,9 +63,10 @@ static async Task Execute(string[] args)
         // long-term machine drift is less likely to favor one measurement.
         baseline.Add(await RunNoop(provider, 0));
         native.Add(await Run(provider, direct, 0, true));
-        for (var batch = 0; batch < parallelSamples / parallelism; batch++)
+        var batches = HookTiming.Batches(parallelSamples, parallelism);
+        for (var batch = 0; batch < batches.Count; batch++)
         {
-            var sampleNumbers = Enumerable.Range(1 + batch * parallelism, parallelism).ToArray();
+            var sampleNumbers = batches[batch];
             async Task<TimingSample[]> RunBatch(bool isNative)
             {
                 var results = new ConcurrentBag<TimingSample>();
@@ -77,7 +79,7 @@ static async Task Execute(string[] args)
                 return results.OrderBy(item => item.Sample).ToArray();
             }
 
-            if ((batch + (provider == "codex" ? 1 : 0)) % 2 == 0)
+            if (HookTiming.BaselineFirst(batch, provider == "codex" ? 1 : 0))
             {
                 foreach (var item in await RunBatch(false))
                 {
@@ -206,27 +208,8 @@ static async Task Execute(string[] args)
 
     string IOJson<T>(T value) => BellTower.IO.Json.Encode(value);
 
-    TimingSummary Statistics(IEnumerable<TimingSample> samples, string mode, int parallelism, int parallelSamples)
-    {
-        var measured = samples.OrderBy(item => item.Sample).ToArray();
-        var ordered = measured.Select(item => item.Milliseconds).Order().ToArray();
-        double Percentile(double quantile) => ordered[Math.Max(0, (int)Math.Ceiling(quantile * ordered.Length) - 1)];
-        return new TimingSummary(
-            mode,
-            measured.Length,
-            1,
-            parallelSamples,
-            parallelism,
-            measured[0].Milliseconds,
-            ordered.Average(),
-            Percentile(0.5),
-            Percentile(0.95),
-            Percentile(0.99),
-            ordered[^1],
-            measured.Count(item => !item.Success),
-            measured.Count(item => item.Milliseconds >= 3000),
-            measured.Select(item => new SampleDuration(item.Sample, item.Milliseconds, item.Success)).ToArray());
-    }
+    TimingSummary Statistics(IEnumerable<TimingSample> samples, string mode, int parallelism, int parallelSamples) =>
+        HookTiming.Summarize(samples, mode, parallelism, parallelSamples);
 
     string ResolveClaudeBash()
     {
@@ -386,9 +369,3 @@ static async Task Execute(string[] args)
         return new TimingSample(sample, clock.Elapsed.TotalMilliseconds, success);
     }
 }
-
-internal sealed record TimingSample(int Sample, double Milliseconds, bool Success);
-internal sealed record SampleDuration(int Sample, double Milliseconds, bool Success);
-internal sealed record TimingSummary(string Mode, int Samples, int FirstSampleCount, int ParallelSamples, int Parallelism,
-    double FirstSampleMilliseconds, double MeanMilliseconds, double MedianMilliseconds, double P95Milliseconds,
-    double P99Milliseconds, double MaximumMilliseconds, int FailedCalls, int OverThreeSeconds, SampleDuration[] Timings);

@@ -3,6 +3,7 @@
     <OutputType>Exe</OutputType>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="../Shared/HookTiming.cs" Link="Shared/HookTiming.cs" />
     <ProjectReference Include="../../src/BellTower/BellTower.csproj" />
   </ItemGroup>
 </Project>

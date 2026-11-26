@@ -131,7 +131,7 @@ public sealed class OverviewForm : Form
         var configure = new Button { Text = "Apply checkout/color", AutoSize = true };
         configure.Click += (_, _) => Configure(false, false);
         var clearCheckout = new Button { Text = "Clear checkout", AutoSize = true };
-        clearCheckout.Click += (_, _) => { checkout.Clear(); Configure(false, false); };
+        clearCheckout.Click += (_, _) => { checkout.Clear(); Configure(false, false, true); };
         var random = new Button { Text = "Random color", AutoSize = true };
         random.Click += (_, _) => Configure(false, true);
         var reset = new Button { Text = "Reset pins", AutoSize = true };
@@ -230,7 +230,7 @@ public sealed class OverviewForm : Form
 
     // Same status and wording for both clients; the checkout provenance explains where the Git context comes from.
     public static string NativeStatus(OverviewRow row) => ProviderLabel(row.State.Provider) + " native name: " + NativeNamePolicy.StatusFor(row.State.Provider, row.Identity) +
-        " | checkout (" + (row.Identity.CheckoutPin is null ? row.Identity.CheckoutSource : CheckoutPolicy.User) + "): " + row.Identity.Checkout(row.State.Directory);
+        " | checkout (" + CheckoutPolicy.Describe(row.Identity.CheckoutPin is null ? row.Identity.CheckoutSource : CheckoutPolicy.User) + "): " + row.Identity.Checkout(row.State.Directory);
 
     private void Save()
     {
@@ -255,13 +255,14 @@ public sealed class OverviewForm : Form
         }
     }
 
-    private void Configure(bool reset, bool random)
+    // Clear always sends "" so a retained checkout (no pin, so the box was already empty) is released too, as the CLI does.
+    private void Configure(bool reset, bool random, bool clear = false)
     {
         if (editing is null)
         { return; }
         try
         {
-            ConfigureIdentity?.Invoke(editing, checkout.Text == originalCheckout ? null : checkout.Text,
+            ConfigureIdentity?.Invoke(editing, clear ? "" : checkout.Text == originalCheckout ? null : checkout.Text,
                 random ? "random" : string.IsNullOrWhiteSpace(color.Text) ? null : color.Text.Trim(), reset);
             originalCheckout = checkout.Text;
             color.Clear();

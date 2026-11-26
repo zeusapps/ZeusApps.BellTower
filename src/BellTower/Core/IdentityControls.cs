@@ -21,6 +21,7 @@ public static class IdentityControls
         identity.ManualName = null;
         ChangeOrigin.Pin(identity, null);
         identity.CheckoutPin = null;
+        CheckoutPolicy.Release(identity);
         identity.ColorPin = null;
         identity.Palette = allocate();
     }

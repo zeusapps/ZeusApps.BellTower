@@ -40,11 +40,12 @@ public sealed class GitReader
 
     public string? Toplevel(string directory) => Run(directory, "rev-parse", "--show-toplevel");
 
-    public IReadOnlyList<string> Worktrees(string directory)
+    // Null means the listing failed (timeout, start failure, unreachable directory), which is not the same as an empty listing.
+    public IReadOnlyList<string>? TryWorktrees(string directory)
     {
         var output = Run(directory, "worktree", "list", "--porcelain");
         return output?.Split('\n').Where(line => line.StartsWith("worktree ", StringComparison.Ordinal))
-            .Select(line => line[9..].TrimEnd('\r')).Where(Directory.Exists).Take(128).ToArray() ?? [];
+            .Select(line => line[9..].TrimEnd('\r')).Where(Directory.Exists).Take(128).ToArray();
     }
 
     private string? Run(string directory, params string[] arguments)

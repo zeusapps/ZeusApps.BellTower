@@ -24,6 +24,8 @@ The original plan created ten changes with proposal.md, design.md, specs/<capabi
 
 The companion [field report notes](claude-field-reports-0.1.8.md) preserve the supplied evidence, old badge rules and corrections. Each change repeats the context and constraints it needs; reading the original chat is unnecessary.
 
+**Current state (2026-11-25), after the 2026-11-22 scope decisions:** the published 0.1.9 release is the baseline for upgrade and rollback. Publisher-signed updates (`verify-signed-releases-and-update-policy`) are deferred to a later release; this release keeps SHA-256 update verification, claims no publisher signature and says so in its release notes. `adopt-native-sessions-from-hooks` has landed (archived 2026-11-24) and `distinct-session-colors` joined the release as post-0.1.9 work (archived 2026-11-25). `verify-codex-repository-subagents` and `sync-native-session-titles` move to a later release. Only `validate-next-release-field-acceptance` remains before this release; it started on 2026-11-25. The selected candidate is 0.1.11: 0.1.10 is skipped because an unpublished, unmarked maintainer trial build of that number would make a published 0.1.10 look already installed (see the [version rationale](../../openspec/changes/validate-next-release-field-acceptance/evidence/implementation-001.md)). Version declarations stay at 0.1.9 until the release commit, so dev builds used for live checks keep base 0.1.9. After upgrading from 0.1.9, the hook-side features (native adoption, the hook-started tray, the repaired Codex hook command) need `setup --host-bridge --apply`; there is no automatic re-provision in this release, and the release notes say so. Read "next release" in this handoff as the first release after 0.1.9, and read the older sections below as history where they disagree with this paragraph.
+
 ## Product parity rule (2026-10-23 amendment)
 
 The user explicitly requires one Bell Tower product with feature parity between Claude Code and Codex by default. This supersedes the earlier report constraint to keep Codex features unchanged. The reports remain evidence of Claude failures; they do not limit the scope of fixes to that provider.
@@ -72,17 +74,19 @@ Do not automatically start a later change, archive unrelated work, update the in
 
 Use the following serial order. Some changes have fewer hard dependencies, but this order avoids overlapping edits to Core, configuration, audio and setup while establishing the contracts used later.
 
-| Order | Change | Hard implementation predecessors | Completion contract for the next session |
+| Order | Change | Hard implementation predecessors | State (2026-11-25) |
 |---|---|---|---|
-| 1 | [speed-up-claude-hook-ingestion](../../openspec/changes/archive/2026-10-23-speed-up-claude-hook-ingestion/proposal.md) | None | Shared fast immutable ingress for both clients, versioned minimal envelopes, durable consumer, causal receipts, direct provider-aware setup with async where supported and migration/diagnostics |
-| 2 | [reconcile-session-liveness-and-title-refresh](../../openspec/changes/reconcile-session-liveness-and-title-refresh/proposal.md) | 1 | Durable shell ownership, shared managed-provider attachment health, shared checkout cache and change-driven isolated title writer |
-| 3 | [restore-claude-badge-identity](../../openspec/changes/archive/2026-10-29-restore-claude-badge-identity/proposal.md) | 1, 2 | Shared resolver with provider history adapters, working checkout, shared presentation, override/color/reset/import controls |
-| 4 | [fix-vscode-window-activation](../../openspec/changes/fix-vscode-window-activation/proposal.md) | 2 | Instance-verified editor activation/reveal receipts and recoverable temp-file writes |
-| 5 | [confirm-claude-human-permission-waits](../../openspec/changes/confirm-claude-human-permission-waits/proposal.md) | 1, 2 | Shared provisional/confirmed approval policy with provider signal adapters |
-| 6 | [suppress-voice-during-microphone-use](../../openspec/changes/archive/2026-10-28-suppress-voice-during-microphone-use/proposal.md) | None | Playback-time active/inactive/unknown microphone policy reusable by reminders |
-| 7 | [add-idle-attention-reminders](../../openspec/changes/archive/2026-10-29-add-idle-attention-reminders/proposal.md) | 2, 5, 6 | Persistent idle-gated reminder scheduler and compatible per-episode receipts |
-| 8 | [verify-signed-releases-and-update-policy](../../openspec/changes/verify-signed-releases-and-update-policy/proposal.md) | 1 | Signed descriptor/asset contract, embedded trust, protected signing handoff and exposed update-check policy |
-| 9 | [validate-next-release-field-acceptance](../../openspec/changes/validate-next-release-field-acceptance/proposal.md) | All 1-8 | Combined installed candidate, report coverage ledger, actual-baseline upgrade/rollback and targeted field evidence |
+| 1 | [speed-up-claude-hook-ingestion](../../openspec/changes/archive/2026-10-23-speed-up-claude-hook-ingestion/proposal.md) | None | Shipped in 0.1.9 |
+| 2 | [reconcile-session-liveness-and-title-refresh](../../openspec/changes/archive/2026-10-23-reconcile-session-liveness-and-title-refresh/proposal.md) | 1 | Shipped in 0.1.9 |
+| 3 | [restore-claude-badge-identity](../../openspec/changes/archive/2026-10-29-restore-claude-badge-identity/proposal.md) | 1, 2 | Implementation shipped in 0.1.9; archived afterwards with task 5.1 transferred to the release gate (6.3) |
+| 4 | [fix-vscode-window-activation](../../openspec/changes/archive/2026-10-25-fix-vscode-window-activation/proposal.md) | 2 | Shipped in 0.1.9 |
+| 5 | [confirm-claude-human-permission-waits](../../openspec/changes/archive/2026-10-27-confirm-claude-human-permission-waits/proposal.md) | 1, 2 | Shipped in 0.1.9 |
+| 6 | [suppress-voice-during-microphone-use](../../openspec/changes/archive/2026-10-28-suppress-voice-during-microphone-use/proposal.md) | None | New after 0.1.9; archived |
+| 7 | [add-idle-attention-reminders](../../openspec/changes/archive/2026-10-29-add-idle-attention-reminders/proposal.md) | 2, 5, 6 | New after 0.1.9; archived |
+| 8 | [verify-signed-releases-and-update-policy](../../openspec/changes/verify-signed-releases-and-update-policy/proposal.md) | 1 | Deferred to a later release (2026-11-22); this release is SHA-256-verified only |
+| 9 | [validate-next-release-field-acceptance](../../openspec/changes/validate-next-release-field-acceptance/proposal.md) | 1-7 and the post-0.1.9 changes below | In progress since 2026-11-25 |
+
+Post-0.1.9 changes in this release, all archived: [fix-codex-hook-command-shell](../../openspec/changes/archive/2026-10-28-fix-codex-hook-command-shell/proposal.md), [bound-ended-session-state](../../openspec/changes/archive/2026-11-22-bound-ended-session-state/proposal.md), [adopt-native-sessions-from-hooks](../../openspec/changes/archive/2026-11-24-adopt-native-sessions-from-hooks/proposal.md) and [distinct-session-colors](../../openspec/changes/archive/2026-11-25-distinct-session-colors/proposal.md). [recover-unready-dev-operation](../../openspec/changes/archive/2026-11-22-recover-unready-dev-operation/proposal.md) is maintainer tooling, covered by documentation rather than product acceptance. The [follow-openspec-session-titles](../../openspec/changes/archive/2026-10-29-follow-openspec-session-titles/proposal.md) implementation shipped in 0.1.9 like badge identity; its tasks 1.1 and 5.3 were transferred to the release gate as 6.1 and 6.2.
 
 The order is an implementation order. Package and ship one final release after the integrated gate.
 
@@ -195,6 +199,8 @@ Persist reminder ordinal/deadline/receipt separately from the normal one-announc
 
 ### Signed releases and policy
 
+Deferred to a later release by the 2026-11-22 decision. The contract below is retained for that release; the current release keeps SHA-256 verification only.
+
 Use a maintained minisign-compatible verifier and detached signature over the exact public release descriptor bytes. The descriptor authenticates version/runtime/contracts/archive identity and SHA-256, with helper/VSIX inventory covered by the signed package. Embedded key IDs establish trust; an unsigned feed cannot authorize its own new key.
 
 Protected signing signs already-validated bytes. PR validation uses disposable keys and cannot access publisher secrets. Document authenticated rotation/revocation and a public fingerprint.
@@ -234,7 +240,7 @@ Restore locked dependencies as needed using existing development instructions. D
 
 The hook timing gate measures each provider with at least 100 samples through the actual packaged provider shell/command: median below 300 ms, median/p95/p99/max recorded, no lost accepted envelopes, and ordinary durable capture within three seconds. Async ignoring timeout is not a performance result.
 
-Use actual historical 0.1.8 bytes for baseline update/rollback, not a rebuilt current application with an old fixture version. Every candidate feature must be tested together through its installed layout, helper provisioning, VSIX and signed metadata.
+Use actual published 0.1.9 bytes for baseline update/rollback, not a rebuilt current application with an old fixture version. Every candidate feature must be tested together through its installed layout, helper provisioning, VSIX and SHA-256-verified release metadata.
 
 ## Field finding ownership ledger
 
@@ -253,9 +259,10 @@ Use actual historical 0.1.8 bytes for baseline update/rollback, not a rebuilt cu
 | 11 Voice during microphone use | 6 | Playback race, active/unknown tone-only and no speech catch-up |
 | 12 Local reminders | 7 | Idle gates/caps/dismissal/restart receipts |
 | 12 Remote notification portion | Cancelled by user 2026-10-29 | Removed from implementation and acceptance scope; local reminder coverage remains |
-| 13 Signature and managed update policy | 8 | Wrong-key/tamper/unsigned rejection and disabled automatic checks |
+| 13 Signature and managed update policy | 8, deferred 2026-11-22 | This release: modified or mismatched archive and invalid offer rejected by SHA-256 verification; signing and the managed check control remain open for a later release |
 | Original VS Code foreground defect | 4 | Correct owner foreground when behind/minimized, duplicate-window safety |
 | Legacy badge naming/color/voice parity | 3 | Resume/work-touch/branch fallback, controls, shared identity, normalized speech |
+| Post-0.1.9 work (native adoption, hook-started tray, Codex hook shell, bounded state, distinct colors) | Archived post-0.1.9 changes | Installed candidate for both providers and mixed sessions (release gate task 2.7) |
 | Integrated installed release | 9 | All owners above implemented and evidence ledger complete |
 
 ## External prerequisites and honest completion
@@ -264,7 +271,7 @@ These do not prevent artifact creation or independent fixture work, but may be r
 - Small real redacted Claude hook/transcript schemas, especially custom main-agent agent_id and custom-title/timeout fields. Do not invent field names.
 - Targeted Windows 11/RDP live foreground and resumed-worktree identity checks after an updated owned VSIX is activated. Existing reports remain valid failures until specifically fixed.
 - Representative loaded-machine hook timing evidence.
-- A publisher-controlled signing key and protected CI signing configuration, with reviewed public fingerprint.
+- A publisher-controlled signing key and protected CI signing configuration, with reviewed public fingerprint: not required for this release after the 2026-11-22 deferral; required by the later signed-release change.
 
 Finish every independently testable task. Record any missing live evidence or external provisioning precisely; never replace required release features with deferred follow-ups or mark them accepted solely from synthetic fixtures.
 

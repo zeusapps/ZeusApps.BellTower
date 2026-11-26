@@ -101,6 +101,44 @@ public sealed class DistributionTests
         Assert.Throws<InvalidDataException>(() => UpdateTransaction.Stage(installation, workspace.Paths, "missing.zip", new ReleaseOffer(new ReleaseContract("0.1.9"), new string('a', 64))));
         Assert.Equal("0.1.7", installation.Selection().Version);
     }
+    [Fact]
+    public void ModifiedMismatchedAndInvalidOffersAreRejectedWithoutChangingSelectionOrSessions()
+    {
+        using var workspace = new TestWorkspace();
+        var installation = CreateInstallation(Path.Combine(workspace.Root, "installed"), "0.1.7");
+        var candidate = CreateInstallation(Path.Combine(workspace.Root, "candidate"), "0.1.8");
+        // A health-v1 consumer, so the attachment-health gate passes and every rejection below comes from the checksum checks.
+        var contract = DistributionJson.Read<ReleaseContract>(Path.Combine(candidate.Payload("0.1.8"), "release.json")) with { AttachmentHealth = 1 };
+        DistributionJson.Write(Path.Combine(candidate.Payload("0.1.8"), "release.json"), contract);
+        var archive = Path.Combine(workspace.Root, contract.PackageName);
+        ZipFile.CreateFromDirectory(candidate.Root, archive);
+        var offer = new ReleaseOffer(contract, Installation.Hash(archive));
+        File.WriteAllText(archive + ".sha256", offer.ArchiveHash + "  " + contract.PackageName);
+        new EventStore(workspace.Paths).Publish(TestWorkspace.ConfirmedPermission());
+        new StateStore(workspace.Paths).Drain();
+        var beforeState = File.ReadAllBytes(workspace.Paths.State);
+        var beforeSelection = File.ReadAllBytes(installation.SelectionPath);
+        void AssertUnchanged()
+        {
+            Assert.Equal(beforeSelection, File.ReadAllBytes(installation.SelectionPath));
+            Assert.Equal(beforeState, File.ReadAllBytes(workspace.Paths.State));
+            Assert.False(Directory.Exists(Path.Combine(installation.Root, "versions", "0.1.8")));
+        }
+        // A sidecar that disagrees with the offer.
+        File.WriteAllText(archive + ".sha256", new string('b', 64) + "  " + contract.PackageName);
+        Assert.Equal("Checksum file mismatch.", Assert.Throws<InvalidDataException>(() => UpdateTransaction.Stage(installation, workspace.Paths, archive, offer)).Message);
+        AssertUnchanged();
+        File.WriteAllText(archive + ".sha256", offer.ArchiveHash + "  " + contract.PackageName);
+        // An offer whose hash is not a SHA-256 digest.
+        Assert.Equal("Invalid release hash.", Assert.Throws<InvalidDataException>(() => UpdateTransaction.Stage(installation, workspace.Paths, archive, offer with { ArchiveHash = "not-a-digest" })).Message);
+        AssertUnchanged();
+        // An archive modified after the offer was published.
+        using (var zip = ZipFile.Open(archive, ZipArchiveMode.Update))
+        using (var writer = new StreamWriter(zip.CreateEntry("versions/0.1.8/extra.txt").Open()))
+        { writer.Write("modified"); }
+        Assert.Equal("Release package checksum mismatch.", Assert.Throws<InvalidDataException>(() => UpdateTransaction.Stage(installation, workspace.Paths, archive, offer)).Message);
+        AssertUnchanged();
+    }
     [Theory]
     [InlineData("../escape.txt")]
     [InlineData("versions/0.1.8/../../escape.txt")]
