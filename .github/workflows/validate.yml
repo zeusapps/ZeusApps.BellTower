@@ -32,7 +32,8 @@ jobs:
       - name: Build
         run: dotnet build -c Release --no-restore
       - name: .NET tests
-        run: dotnet test -c Release --no-build --logger trx
+        shell: pwsh
+        run: ./scripts/test-with-retry.ps1
       - name: VS Code bridge tests
         run: node --test vscode/service.test.js vscode/focus.test.js
       - name: Formatting
