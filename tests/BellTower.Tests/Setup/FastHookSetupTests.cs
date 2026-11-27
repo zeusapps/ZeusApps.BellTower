@@ -40,6 +40,14 @@ public sealed class FastHookSetupTests
             observedWhileRunning: false, timedOut: false, runnerExited: false, data: workspace.Paths, provider: "codex"));
     }
 
+    [Fact]
+    public void MissingCodexCliReportsItselfInsteadOfTheShellSelectionFailure()
+    {
+        var failure = Assert.Throws<IOException>(() => ProviderHookProbe.RequireCodex(null));
+        Assert.Contains("Codex CLI is not available", failure.Message, StringComparison.Ordinal);
+        Assert.Equal("codex.exe", ProviderHookProbe.RequireCodex("codex.exe"));
+    }
+
     [Theory]
     [InlineData("claude")]
     [InlineData("codex")]

@@ -19,8 +19,12 @@ internal static class ProviderHookProbe
         CodexHookShell.Bash
     ];
 
+    internal static string RequireCodex(string? resolved) =>
+        resolved ?? throw new IOException("Codex CLI is not available to verify hook delivery; no settings were changed.");
+
     public static CodexHookShell SelectCodexShell(string executable, string ingress)
     {
+        RequireCodex(ResolveCodexExecutable());
         var deadline = DateTimeOffset.UtcNow + TimeSpan.FromSeconds(30);
         foreach (var shell in WindowsCodexShellCandidates)
         {
@@ -116,7 +120,7 @@ internal static class ProviderHookProbe
 
     private static void VerifyCodex(DataPaths data, string hook, string root, TimeSpan timeout)
     {
-        var codex = ResolveCodexExecutable() ?? throw new IOException("Codex CLI is not available to verify hook delivery; no settings were changed.");
+        var codex = RequireCodex(ResolveCodexExecutable());
         var home = Path.Combine(root, "codex-home");
         var project = Path.Combine(root, "project");
         Directory.CreateDirectory(home);

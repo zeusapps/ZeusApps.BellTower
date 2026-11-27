@@ -6,7 +6,7 @@ Build packages with PowerShell 7, .NET 10, MSVC x64/x86 build tools and the Wind
 
 Setup copies verified helper bytes to a content-addressed path under the data root. Retain referenced images across version selection and cleanup. Enabled capture-v1 requires a compatible consumer on rollback; legacy normalized helpers remain supported. [Contract and acceptance evidence](hook-ingress.md) includes isolated benchmarks and lifecycle trials. Unverified provider transcript schemas and authenticated field acceptance remain explicitly open.
 
-Bell Tower is distributed from [zeusapps/ZeusApps.BellTower](https://github.com/zeusapps/ZeusApps.BellTower). The primary branch is main. Ordinary pushes and pull requests run Windows validation. A matching immutable vMAJOR.MINOR.PATCH tag calls the same validation before publishing its exact checked ZIP, SHA-256 file, and small release-metadata JSON sidecar. Automatic application checks never publish source or install an update.
+Bell Tower is distributed from [zeusapps/ZeusApps.BellTower](https://github.com/zeusapps/ZeusApps.BellTower). The primary branch is main. Pushes to every branch and pull requests run Windows validation, which installs the pinned Codex CLI 0.172.0 for the hook shell-selection probe. A matching immutable vMAJOR.MINOR.PATCH tag calls the same validation before publishing its exact checked ZIP, SHA-256 file, and small release-metadata JSON sidecar. Automatic application checks never publish source or install an update.
 
 ## Install a versioned release
 
